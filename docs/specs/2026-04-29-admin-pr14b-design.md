@@ -45,7 +45,7 @@
 | Detail 404 errorCode | `AdminMemberException.MEMBER_NOT_FOUND` |
 | List 400 errorCode | `AdminMemberException.INVALID_LIST_QUERY` |
 | `AuthorityTier` enum | `FM`(FULL_MEMBER) / `AM`(ASSOCIATE_MEMBER) / `GT`(GUEST). **member 테이블은 가입 시 AM 시작 → wallet 등록 시 FM 자동 승격. GT는 별도 `guest` 테이블의 tier이며 member 테이블에는 admin 강등(`changeTier(GT)`) edge case에만 등장.** |
-| `ProviderType` enum | OAuth provider 식별자 (KAKAO, GOOGLE 등 — 실제 enum은 G1에서 코드 grep으로 확정) |
+| `ProviderType` enum | `GOOGLE`, `TWITTER`, `LOCAL`. **`LOCAL`은 admin local login + virtual users용** — 어드민 본인 + 운영용 가상 유저 row가 `LOCAL`로 표시되므로 list/detail UI가 첫날부터 처리해야 함. (위치: `common/.../security/enums/ProviderType.java`) |
 
 ### 2.2 파티룸 (`partyroom` 테이블)
 
@@ -55,16 +55,20 @@
 | Detail endpoint | `GET /api/v1/admin/partyrooms/{partyroomId}` |
 | 권한 가드 | `@adminAuth.isAdmin()` |
 | List 응답 envelope | `Page<AdminPartyroomListItemResponse>` (**raw — `ApiCommonResponse` wrap 없음**. 14b 시점 backend 비대칭. §13에 future polish로 통일 backfill) |
-| List query params | `status` (`PartyroomStatus` enum), `stageType` (`StageType` enum), `createdFrom` (LocalDateTime ISO), `createdTo` (LocalDateTime ISO), `host` (String — host nickname like 매칭 추정, G1에서 service 코드 확인), `page`, `size`, `sort` |
+| List query params | `status` (`PartyroomStatus` enum), `stageType` (`StageType` enum), `createdFrom` (LocalDateTime ISO), `createdTo` (LocalDateTime ISO), `host` (String — `email LIKE '%q%' OR nickname LIKE '%q%'` 부분일치, 양 필드 동시 검색. backend 내부 DTO 필드명은 `hostQuery`, controller param 이름은 `host`), `page`, `size`, `sort` |
+| **Status default 동작** | **`status=null` → TERMINATED 자동 제외** (ACTIVE + SUSPENDED만 반환, admin usability Risk #6 backend 결정). 명시적 `status=TERMINATED`로만 종료 룸 조회 가능. UI는 status dropdown 옆에 info 힌트 |
 | Sort default | `createdAt,desc` (Spring Pageable 형태) |
-| Sort 화이트리스트 위반 | controller가 `IllegalArgumentException` → 로컬 변환 400 `ADM-PR-001 "Unsupported sort field"` |
+| Sort 화이트리스트 | `createdAt`, `lastActivityAt`, `crewCount`, `title`, `hostNickname` (5개. 위치: `AdminPartyroomQueryRepositoryImpl.applySort`). `hostNickname`은 `Bio.nickname` cast string. unsorted 시 `createdAt desc` |
+| Sort 화이트리스트 위반 | repo `IllegalArgumentException` → controller 로컬 변환 400 `ADM-PR-001 "Unsupported sort field: <name>"` |
 | List size cap | 200 (어드민 DOS 방어) |
 | `AdminPartyroomListItemResponse` | `partyroomId`, `title`, `stageType`, `hostUserAccountId`, `hostNickname`, `crewCount`, `djCount`, `playbackActivated`, `status`, `displayFlag`, `createdAt`, `lastActivityAt` |
 | Detail 응답 envelope | `AdminPartyroomDetailResponse` (raw, wrap 없음 동일) |
 | `AdminPartyroomDetailResponse` 필드 | `partyroomId`, `title`, `status`, `displayFlag`, `hostUserAccountId`, `hostNickname`, `hostEmail`, `crewCount`, `lastActivityAt`, `stageType`, `playback: PlaybackSummary`, `crews: List<CrewSummary>`, `djQueue: List<DjSummary>`, `recentPenalties: List<PenaltySummary>` (top 5), `recentReports: List<ReportSummary>` (PR-13 이후 채워짐), `recentAdminActions: List<AdminActionSummary>` |
 | `PlaybackSummary` | `activated`, `currentTrackName`(nullable), `currentDjCrewId`(nullable) — playlist 모듈 query port 부재로 `currentTrackName`/`playlistName` 일부 null |
 | Detail 404 errorCode | `NOT_FOUND_ROOM` |
-| Enum (다수) | `PartyroomStatus`, `StageType`, `DisplayFlag`, `GradeType`, `PenaltyType`, `PartyroomAdminActionType` — 실제 값은 G1/G5에서 코드 grep으로 확정 |
+| `PartyroomStatus` enum | `ACTIVE`, `SUSPENDED`, `TERMINATED` (위치: `app/.../party/domain/enums/PartyroomStatus.java`) |
+| `StageType` enum | `MAIN`, `GENERAL` |
+| 기타 enum | `DisplayFlag`, `GradeType`, `PenaltyType`, `PartyroomAdminActionType` — detail 뱃지/section 라벨에서만 쓰이고 filter 안 함. G7/G8에서 코드 grep으로 확정 후 §12 backfill |
 
 ### 2.3 인증/인가 (14a 인프라 그대로)
 
@@ -88,7 +92,7 @@ src/
 │   ├── config/                    ← 14a 그대로
 │   └── lib/
 │       ├── utils.ts               ← 14a 그대로
-│       └── url-state.ts           ← NEW: URL search params ↔ form state 동기화 helper (실제 위치는 §12 catch-up에서 확정)
+│       └── url-state.ts           ← NEW: URL search params ↔ form state 동기화 helper
 ├── entities/
 │   ├── session/                   ← 14a 기존
 │   ├── member/                    ← NEW
@@ -166,13 +170,14 @@ src/
 
 ### 3.4 사이드바 (`app/layout.tsx`)
 
-| 라벨 | 경로 | 아이콘 | 14a | 14b |
-|---|---|---|---|---|
-| 대시보드 | `/` | LayoutDashboard | enabled | enabled |
-| 가상 유저 | `/users` | Users | disabled | **삭제 → 회원** |
-| 회원 | `/members` | Users | — | **enabled** |
-| 파티룸 | `/rooms` (14a) → `/partyrooms` (14b) | DoorOpen | disabled | **enabled** |
-| 시나리오 | `/scenarios` | PlaySquare | enabled | enabled (변경 없음) |
+총 4개 nav 유지 (변경: 1행 relabel + 경로 변경 + 1행 enable + 1행 enable+경로 변경).
+
+| # | 14a 라벨/경로/상태 | 14b 라벨/경로/상태 | 아이콘 |
+|---|---|---|---|
+| 1 | "대시보드" / `/` / enabled | "대시보드" / `/` / enabled | LayoutDashboard |
+| 2 | "가상 유저" / `/users` / disabled | **"회원" / `/members` / enabled** | Users |
+| 3 | "파티룸" / `/rooms` / disabled | **"파티룸" / `/partyrooms` / enabled** | DoorOpen |
+| 4 | "시나리오" / `/scenarios` / enabled | "시나리오" / `/scenarios` / enabled | PlaySquare |
 
 ## 4. Page<T> + ApiCommonResponse 처리
 
@@ -275,11 +280,12 @@ export function useMemberDetail(memberId: number) {
 
 ### 5.3 Detail composition
 
-`AdminMemberDetailResponse`의 5개 sub-record를 widget이 4개 카드로 분할 렌더:
-1. UserAccount 카드 — `email` / `providerType` / `userAccountId` / `createdAt`
-2. Profile 카드 — `nickname` / `introduction` (avatar 필드는 14c 이후)
-3. Tier + meta — `authorityTier` 뱃지 + `createdAt`
-4. Recent activity log — top 30 table (`occurredAt` / `type` / `summary`)
+`AdminMemberDetailResponse`의 top-level 6개 멤버 (`memberId`, `userAccount: UserAccountSummary`, `profile: MemberProfileSummary`, `authorityTier`, `createdAt`, `recentActivityLog: List<RecentActivityLogItem>`)를 widget이 다음 5개 카드로 분할:
+1. **Header** — `memberId`, 닉네임(profile.nickname), withdrawn 뱃지(있으면 `withdrawnAt` 툴팁) — list에서 받아와 prefetch 가능
+2. **UserAccount 카드** — `userAccount.email` / `userAccount.providerType` (`GOOGLE`/`TWITTER`/`LOCAL`) / `userAccount.userAccountId` / `userAccount.createdAt`
+3. **Profile 카드** — `profile.nickname` / `profile.introduction` (avatar/wallet 필드는 14c 이후)
+4. **Tier + meta** — `authorityTier` 뱃지 (FM/AM, GT는 강등 edge — `tier=GT`인 row면 "강등" 부가 라벨) + `createdAt`
+5. **Recent activity log** — `recentActivityLog` top 30 table (`occurredAt` / `type` / `summary`). 빈 상태 시 "최근 활동 없음"
 
 ## 6. partyrooms 도메인 — list + detail + filter
 
@@ -287,18 +293,27 @@ export function useMemberDetail(memberId: number) {
 
 ```ts
 // features/partyrooms/model/filter-schema.ts
-export const PartyroomStatusEnum = z.enum([/* G5에서 코드 확인 후 채움 */])
-export const StageTypeEnum = z.enum(["MAIN", "GENERAL"])  // 잠정, G1/G5 grep으로 확정
+export const PartyroomStatusEnum = z.enum(["ACTIVE", "SUSPENDED", "TERMINATED"])
+export const StageTypeEnum = z.enum(["MAIN", "GENERAL"])
+
+// backend 화이트리스트 = createdAt | lastActivityAt | crewCount | title | hostNickname × asc/desc
+export const PartyroomSortEnum = z.enum([
+  "createdAt,desc", "createdAt,asc",
+  "lastActivityAt,desc", "lastActivityAt,asc",
+  "crewCount,desc", "crewCount,asc",
+  "title,desc", "title,asc",
+  "hostNickname,desc", "hostNickname,asc",
+])
 
 export const partyroomsListQuerySchema = z.object({
   status: PartyroomStatusEnum.optional(),
   stageType: StageTypeEnum.optional(),
   createdFrom: z.string().datetime().optional(),  // ISO datetime
   createdTo: z.string().datetime().optional(),
-  host: z.string().max(50).optional(),  // backend 검증 부재 — 클라 selflimit
+  host: z.string().max(50).optional(),  // backend = email LIKE OR nickname LIKE 부분일치. 클라 self-limit 50자
   page: z.coerce.number().int().min(0).default(0),
   size: z.coerce.number().int().min(1).max(200).default(50),
-  sort: z.string().default("createdAt,desc"),  // Spring Pageable 형태
+  sort: PartyroomSortEnum.default("createdAt,desc"),
 }).superRefine((v, ctx) => {
   if (v.createdFrom && v.createdTo && v.createdFrom > v.createdTo) {
     ctx.addIssue({ code: "custom", path: ["createdTo"], message: "생성일 종료가 시작보다 빨라요" })
@@ -306,19 +321,22 @@ export const partyroomsListQuerySchema = z.object({
 })
 ```
 
-Sort 화이트리스트 — 백엔드 `AdminPartyroomQueryRepositoryImpl.applySort`가 결정. G5에서 코드 확인 후 frontend dropdown 옵션 제한.
+**필터 form 라벨/힌트:**
+- `host` 필드 라벨: "호스트 (이메일 또는 닉네임)" + placeholder "부분일치"
+- `status` dropdown 옆: info 아이콘 + 툴팁 "기본 보기는 종료 룸을 제외합니다. 종료 룸을 보려면 'TERMINATED' 선택."
+- `sort` dropdown: 위 10개 옵션을 한국어 라벨로 매핑 ("최신순"/"오래된순"/"마지막 활동 ↓" 등)
 
 ### 6.2 Detail composition
 
-`AdminPartyroomDetailResponse`의 8개 필드 + 5개 sub-list를 7개 카드로 분할:
-1. Header — `title` / `status` 뱃지 / `displayFlag` 뱃지
-2. Top-level meta — `stageType` / `host`(`hostNickname`/`hostEmail`/`hostUserAccountId`) / `crewCount` / `lastActivityAt`
-3. Playback — `activated` / `currentTrackName` (null fallback "-") / `currentDjCrewId`
-4. Crews — table (`crewId` / `memberId` / `gradeType` / `nickname` / `enteredAt`)
-5. DJ queue — table (`djId` / `crewId` / `playlistName` / `orderNumber`)
-6. Penalties — top 5 (`id` / `crewId` / `penaltyType` / `punisherType` / `reason` / `date`)
-7. Reports — (`id` / `category` / `status` / `reporterUserAccountId` / `createdAt`) — PR-13 이후 데이터, 빈 상태 명시 메시지 포함
-8. Admin actions — (`actionId` / `actionType` / `administratorId` / `occurredAt`)
+`AdminPartyroomDetailResponse`의 top-level 9개 스칼라 + `playback` 1개 record + 5개 sub-list (총 15개 멤버)를 widget이 다음 8개 카드로 분할:
+1. **Header** — `partyroomId` / `title` / `status` 뱃지 / `displayFlag` 뱃지 + "← 목록으로" 링크
+2. **Top-level meta** — `stageType` / host (`hostNickname`/`hostEmail`/`hostUserAccountId`) / `crewCount` / `lastActivityAt`
+3. **Playback** — `playback.activated` / `playback.currentTrackName` (null fallback "-") / `playback.currentDjCrewId`
+4. **Crews** — table (`crewId` / `memberId` / `gradeType` / `nickname` / `enteredAt`)
+5. **DJ queue** — table (`djId` / `crewId` / `playlistName` (null fallback "-") / `orderNumber`)
+6. **Recent penalties** — top 5 (`id` / `crewId` / `penaltyType` / `punisherType` / `reason` / `date`). 빈 상태 "최근 페널티 없음"
+7. **Recent reports** — (`id` / `category` / `status` / `reporterUserAccountId` / `createdAt`) PR-13 이후 데이터. 빈 상태 "신고 내역 없음"
+8. **Recent admin actions** — (`actionId` / `actionType` / `administratorId` / `occurredAt`). 빈 상태 "최근 관리자 액션 없음"
 
 ## 7. URL ↔ filter 동기화
 
@@ -327,8 +345,15 @@ Sort 화이트리스트 — 백엔드 `AdminPartyroomQueryRepositoryImpl.applySo
 ```tsx
 function MembersPage() {
   const [params, setParams] = useSearchParams()
-  const query = membersListQuerySchema.parse(Object.fromEntries(params))  // invalid → throw → ErrorBoundary or fallback
-  const { data, isLoading, error } = useMembersList(query)
+  const parsed = membersListQuerySchema.safeParse(Object.fromEntries(params))
+  if (!parsed.success) {
+    // invalid 필드만 drop → URL replace로 정정 + toast 1회
+    const cleaned = stripInvalidParams(params, parsed.error)
+    setParams(cleaned, { replace: true })
+    toast.error("필터 일부가 잘못돼 무시했어요")
+    return null  // 다음 렌더에서 cleaned 기반으로 재진입
+  }
+  const { data, isLoading, error } = useMembersList(parsed.data)
   ...
 }
 ```
@@ -338,9 +363,6 @@ function MembersPage() {
 - dropdown / sort / date: 즉시 `setParams`
 - pagination: 즉시 `setParams({ ...query, page: nextPage })`
 - 초기화 버튼: `setParams({})`
-
-**URL parse 실패:**
-- `safeParse` → 실패 시 invalid 필드 drop + URL replace로 정정 + toast "필터 일부가 잘못돼 무시했어요"
 
 **Page reset 규칙:**
 - `email`/`tier`/`joined_*`/`status`/`stageType`/`host`/`createdFrom`/`createdTo`/`sort` 변경 → `page=0`로 reset
@@ -361,7 +383,7 @@ function MembersPage() {
 | 403 | inline ("이 화면을 볼 권한이 없습니다") + sonner toast |
 | 400 (`INVALID_LIST_QUERY` / `ADM-PR-001`) | sonner toast (errorCode + message) — 정상 운용에선 frontend zod가 미리 차단 |
 | 404 (`MEMBER_NOT_FOUND` / `NOT_FOUND_ROOM`) | inline ("존재하지 않는 회원/파티룸") + "목록으로" 버튼 |
-| 5xx | inline + toast + react-query `retry: 1` |
+| 5xx | inline + toast + react-query `retry: 1` (network error만 retry, `ApiError 5xx`는 retry 안 함 — `retry: (n,e) => !(e instanceof ApiError) && n < 1`). list/detail 모두 동일. `keepPreviousData: true`와 충돌 없음(retry는 새 fetch 사이클 시작 전, previous data 유지는 그 위 layer) |
 
 ### 8.2 shadcn 컴포넌트 의존
 
@@ -393,8 +415,8 @@ backend가 enum을 추가/변경할 때 frontend가 즉시 깨지지 않도록:
 
 ### 9.5 권한
 
-- backend: `@adminAuth.isAdmin()` (SUPER_ADMIN + ADMIN 둘 다 통과)
-- frontend: `useSessionStore().meta.role` 무관하게 둘 다 메뉴 표시. 14b에서 role-기반 가시성 분기 없음
+- backend: `@adminAuth.isAdmin()` — SUPER_ADMIN과 ADMIN 둘 다 통과
+- frontend: 14b는 role 기반 메뉴 가시성 분기 없음. SUPER_ADMIN이든 ADMIN이든 회원/파티룸 메뉴를 동일하게 노출 (14a 사이드바와 동일 정책)
 
 ### 9.6 Resource 크기
 
@@ -446,7 +468,7 @@ backend가 enum을 추가/변경할 때 frontend가 즉시 깨지지 않도록:
 | **G1** | demo 슬라이스 삭제 (`entities/{user,room}`, `features/{users,rooms}`, `widgets/{users,rooms}`, `pages/{users,rooms}-page`) + App.tsx 라우트 정리 + 사이드바 라벨/경로 변경 + react-query + 누락 shadcn 설치 + `entities/{member,partyroom}` 타입 정의 + `shared/api/page.ts` + `shared/lib/url-state.ts` + `mocks/handlers/{members,partyrooms}.ts` 분할 + `QueryClientProvider` wiring |
 | **G2** | `features/members/{api,model}` (list query + zod schema + URL serialize + react-query hook) + msw mock + unit test |
 | **G3** | `widgets/members-list` + `pages/members-page` (filter form + table + pagination) + integration test (`/members`) |
-| **G4** | `features/members/api` detail + `widgets/members-detail` + `pages/member-detail-page` (header + 4 카드 + activity log) + integration test (`/members/:memberId`) |
+| **G4** | `features/members/api` detail + `widgets/members-detail` + `pages/member-detail-page` (header + 5 카드 = §5.3) + integration test (`/members/:memberId`) |
 | **G5** | `features/partyrooms/{api,model}` (list query + zod + sort 화이트리스트 정렬) + msw mock + unit test |
 | **G6** | `widgets/partyrooms-list` + `pages/partyrooms-page` + integration test |
 | **G7** | `features/partyrooms/api` detail + `widgets/partyrooms-detail` + `pages/partyroom-detail-page` (header + top-level + playback + crews + djQueue) + integration test |
@@ -460,15 +482,14 @@ backend가 enum을 추가/변경할 때 frontend가 즉시 깨지지 않도록:
 **위험**: 14b 안에서 두 패턴이 공존 → 신규 도메인 추가 시 어느 쪽을 따를지 혼동.
 **대응**: §13 future polish로 backend 일괄 통일. 14b 시점 두 패턴 spec §4.1에 명시. helper 파일 위치는 `shared/api/page.ts` 단일.
 
-### R2 — `host` 필터 부분일치 vs 정확일치
+### R2 — `host` 필터 매칭 정책 (해소됨, 운용 risk만 잔존)
 
-**위험**: backend `host` String 필드가 nickname like 매칭인지 정확일치인지 controller만 봐서는 불명. service/repo impl 코드 미확인.
-**대응**: G5에서 `AdminPartyroomQueryRepositoryImpl` 또는 service 코드 grep으로 확정 후 spec §6.1에 backfill (catch-up).
+**확정**: backend `email LIKE '%q%' OR nickname LIKE '%q%'` 양 필드 부분일치 (`AdminPartyroomQueryRepositoryImpl.buildPredicates`). filter form 라벨 "호스트 (이메일 또는 닉네임)" + placeholder "부분일치"로 사용자 명확화 (§6.1).
+**잔존 운용 risk**: 검색어 1~2자 입력 시 LIKE가 광범위 매칭 → 응답 큼. UI: 최소 2자 클라 검증 + debounce 300ms.
 
-### R3 — partyroom sort 화이트리스트
+### R3 — partyroom sort 화이트리스트 (해소됨)
 
-**위험**: backend 화이트리스트 미확인. frontend dropdown이 invalid sort key 보내면 400.
-**대응**: G5에서 service/repo `applySort` 코드 grep → frontend dropdown 옵션은 화이트리스트로 제한 + msw 400 핸들러로 회귀 잡기.
+**확정**: `createdAt | lastActivityAt | crewCount | title | hostNickname` × asc/desc (10 옵션). frontend zod `PartyroomSortEnum`으로 화이트리스트 enforce (§6.1) + msw 핸들러는 화이트리스트 위반 400 시뮬레이션 케이스 1개 보유 (회귀 잡기).
 
 ### R4 — `tier=GT` filter 결과 의미
 
@@ -520,26 +541,24 @@ backend가 enum을 추가/변경할 때 frontend가 즉시 깨지지 않도록:
 4. URL ↔ form 동기화 helper 실제 구현 위치
 5. `Page<T>` 응답에서 사용 안 하는 필드(`pageable`, `sort` 객체) 처리 — 무시 vs 타입 정의 포함
 6. backend wrap 비대칭 (멤버 wrap / 파티룸 raw) 두 패턴 공존 정당화
-7. partyroom sort 화이트리스트 실제 값 (R3)
-8. `host` 필터 매칭 정책 (R2)
-9. demo `api-client.ts` 사용처 grep 결과 (R8)
+7. demo `api-client.ts` 사용처 grep 결과 (R8)
+8. `DisplayFlag` / `GradeType` / `PenaltyType` / `PartyroomAdminActionType` enum 실제 값 (G7/G8 confirm)
 
 각 항목 `**[Gx SHA <hash>]** 사유 / impact` 형식으로 기록.
 
 ## 15. Future Polish (§13.1 14a 상속 + 14b 신규)
 
-### 15.1 14a §13에서 상속
+### 15.1 14a §13에서 상속 — 14b에 직접 영향 있는 항목만 추림
 
-- 백엔드 `GET /api/v1/admin/me` 추가 (R3, R8 동시 해소)
-- 백엔드 로그인 응답에 명시적 `Set-Cookie: XSRF-TOKEN`
-- `AdminLoginResponse.issuedAt` 타임존 명시 (`OffsetDateTime` or `Z` suffix)
-- 403 응답 인터셉터
-- e2e Playwright (login + members + partyrooms happy path)
-- Storybook + 시각적 회귀
-- 다국어 i18n
-- a11y axe-core
-- 비번 표시 토글, 캡스락 경고
-- 다중 탭 동기화 (storage event)
+- 백엔드 `GET /api/v1/admin/me` 추가 (새로고침 시 role/mustChangePassword 복원 — 14b list/detail에도 직접 영향)
+- `AdminLoginResponse.issuedAt` 타임존 명시 (`OffsetDateTime` or `Z` suffix) — 14b의 모든 LocalDateTime 표시와 같은 결로 일괄 처리
+- 403 응답 인터셉터 — 14b는 `@adminAuth.isAdmin()` 통과지만 미래 SUPER_ADMIN 전용 경로 추가 시 인터셉터 일괄 처리
+- e2e Playwright (login + members + partyrooms happy path) — 14b 회귀 catch
+- Storybook + 시각적 회귀 — 14b 도입 컴포넌트(table/filter form/카드) 회귀 catch
+- 다국어 i18n — 14b 한국어 하드코딩 일괄 처리
+- a11y axe-core — 14b 도입 widget 검증
+
+(14a §13의 비번 표시 토글, 캡스락 경고, 다중 탭 storage event, `Set-Cookie: XSRF-TOKEN` 명시 등은 14b와 직접 결합 없음 — 14a 자체 §13 유지)
 
 ### 15.2 14b 신규
 
