@@ -28,12 +28,6 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
-interface FormShape {
-  title?: string
-  introduction?: string
-  playbackTimeLimit?: number | string
-}
-
 export function UpdateMetaDialog({
   partyroomId,
   currentTitle,
@@ -48,7 +42,7 @@ export function UpdateMetaDialog({
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<FormShape>({
+  } = useForm<UpdatePartyroomMetaRequest>({
     resolver: zodResolver(UpdatePartyroomMetaSchema),
     defaultValues: { title: undefined, introduction: undefined, playbackTimeLimit: undefined },
   })
@@ -60,11 +54,11 @@ export function UpdateMetaDialog({
     }
   }, [open])
 
-  const onSubmit = (data: FormShape) => {
+  const onSubmit = (data: UpdatePartyroomMetaRequest) => {
     const body: UpdatePartyroomMetaRequest = {
       title: data.title?.trim() || undefined,
       introduction: data.introduction?.trim() || undefined,
-      playbackTimeLimit: data.playbackTimeLimit ? Number(data.playbackTimeLimit) : undefined,
+      playbackTimeLimit: data.playbackTimeLimit ?? undefined,
     }
     mutation.mutate(
       { partyroomId, body },
