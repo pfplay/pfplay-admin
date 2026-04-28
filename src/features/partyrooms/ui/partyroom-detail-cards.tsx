@@ -15,15 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { AdminPartyroomDetail } from "@/entities/partyroom"
-
-// G3.1과 동일한 null/invalid 가드 패턴 (members detail-cards 참조).
-// 두 곳 이상에서 사용 중이지만 G7 시점엔 shared 추출 미실시 — G9 catch-up 후보.
-function formatKst(iso: string | null): string {
-  if (!iso) return "-"
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return "-"
-  return d.toLocaleString("ko-KR", { hour12: false })
-}
+import { formatKst } from "@/shared/lib/format-kst"
 
 const STATUS_VARIANT: Record<
   string,

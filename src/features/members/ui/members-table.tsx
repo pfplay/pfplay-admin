@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { AdminMemberSummary } from "@/entities/member"
+import { formatKst } from "@/shared/lib/format-kst"
 
 interface Props {
   rows: AdminMemberSummary[]
@@ -21,13 +22,6 @@ const TIER_LABEL: Record<string, string> = {
   FM: "FM",
   AM: "AM",
   GT: "GT (강등)",
-}
-
-function formatKst(iso: string | null): string {
-  if (!iso) return "-"
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return "-"
-  return d.toLocaleString("ko-KR", { hour12: false })
 }
 
 export function MembersTable({ rows, isLoading, isEmpty }: Props) {

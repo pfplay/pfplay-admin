@@ -534,18 +534,52 @@ backend가 enum을 추가/변경할 때 frontend가 즉시 깨지지 않도록:
 
 ## 14. Open Items / Implementation Reality (post-build catch-up)
 
-**G9 catch-up 자리**. G1~G8 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impact로 backfill. 예상 항목:
+G1~G8 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impact로 G9에서 backfill.
 
-1. msw mock fixture 분할 timing/구조 결정
-2. shadcn 컴포넌트 추가 설치 목록 (G1 grep 결과)
-3. `react-query` `QueryClientProvider` 추가 위치 (App.tsx vs main.tsx)
-4. URL ↔ form 동기화 helper 실제 구현 위치
-5. `Page<T>` 응답에서 사용 안 하는 필드(`pageable`, `sort` 객체) 처리 — 무시 vs 타입 정의 포함
-6. demo `api-client.ts` 사용처 grep 결과 (R8)
-7. `DisplayFlag` / `GradeType` / `PenaltyType` / `PartyroomAdminActionType` enum 실제 값 (G7/G8 confirm)
-8. wrap 통일 SHA backfill — backend가 §15.2 R1을 닫으면 14b의 `unwrap()` 마이그레이션 SHA를 여기 기록
+1. **[G1 SHA `fb6c7a0`]** msw mocks 분할 + fixtures 분리 — `mocks/handlers/{auth,members,partyrooms,index}.ts` 디렉토리 분할 + `mocks/fixtures/{members,partyrooms}.ts` 별도 신규. spec §3.1은 handlers만 명시했으나 fixture 재사용성 위해 별도 디렉토리 추가. impact: test 파일이 fixtures를 직접 import해 mock data 일관 유지.
 
-각 항목 `**[Gx SHA <hash>]** 사유 / impact` 형식으로 기록.
+2. **[G1 SHA `fb6c7a0`]** `components.json` 신규 추가 (shadcn CLI 요구). spec §3.1 file structure scope-out — config 파일이라 영향 없음.
+
+3. **[G1 SHA `fb6c7a0`]** `react-query-devtools` peer-dep version skew (`5.100.5` wants `react-query@^5.100.5`, repo has `5.90.16`). 빌드/테스트 무영향. devtools dev-only, prod 번들 무영향. §15.2에 "react-query 버전 통일" 미해결 후보 추가.
+
+4. **[G1 SHA `fb6c7a0`]** `shared/lib/index.ts` 통째 삭제 — barrel re-export 사용처 0 확인 후 삭제. utils/url-state/query-client 등은 직접 import 패턴 유지.
+
+5. **[G1.1 SHA `71c98de`]** `shared/lib/utils.ts` demo simulation helpers 5개 + `constants.ts` 통째 삭제. spec §3.2 "demo 코드 보존 ❌" 원칙에 utils/constants 영역도 적용 (spec 본문 G0.3 작성 시 이 영역 미명시 → reviewer가 catch).
+
+6. **[G1 SHA `fb6c7a0`]** `App.tsx` 신규 라우트 등록 timing — placeholder 페이지 4개로 G1에서 일괄 등록. 사이드바 enable과 동시에 라우트 깨짐 회피.
+
+7. **[G3 SHA `8af5b1e`]** `MembersListWidget` outer/inner split + `useEffect`로 invalid URL drop. spec §7 sample은 render 중 `setParams` 호출 → react-router-dom v7 warning. 외부 컴포넌트가 `useEffect`에서 `setParams(stripped, { replace: true })` + toast 실행, 내부 컴포넌트가 검증된 query로 fetch. PartyroomsListWidget도 동일 패턴 (G6).
+
+8. **[G3 SHA `8af5b1e`]** `src/test/setup.ts` jsdom polyfill 추가 — `Element.prototype.{hasPointerCapture,setPointerCapture,releasePointerCapture,scrollIntoView}` 4 메소드. radix Select가 jsdom에서 hang하는 회피책. test-only.
+
+9. **[G3 SHA `8af5b1e`]** shadcn Select 테스트 idiom — `userEvent.setup({ pointerEventsCheck: 0, delay: null })` + `getByRole("combobox")` + `findByRole("option")`. radix Select는 closed 상태 옵션이 DOM 부재.
+
+10. **[G3 SHA `8af5b1e`]** sonner toast assertion — `vi.spyOn(toast, "error")` 사용. 포털 마운트가 jsdom + useEffect에서 timing flake. recovery는 별도 DOM 검증.
+
+11. **[G3 SHA `8af5b1e`]** `useId` for label/input/Select association — `<label htmlFor>` + `<Input id>` 또는 `<SelectTrigger id aria-label>`. `getByLabelText`/`getByRole("combobox", { name })` 동작 위해.
+
+12. **[G3.1 SHA `f00f1a4`]** `MembersFilterForm.emailDraft` 재동기화 — query.email 변화 시 로컬 state 갱신 (초기화 후 input 잔존 버그 fix). PartyroomsFilterForm도 동일 패턴 적용 (G6).
+
+13. **[G4 SHA `a7e912c`]** `idValid` + 훅 무조건 호출 패턴 — Rules of Hooks 안전 + invalid id 시 NotFoundView 짧은 회로. plan sample의 conditional hook 호출 회피.
+
+14. **[G4 SHA `a7e912c`]** `formatKst` 로컬 중복 (3 위치) — G9에서 `shared/lib/format-kst.ts`로 추출 (entry 20 참조).
+
+15. **[G5 SHA `7d7e70e`]** `partyrooms-api.ts` invalid sort 400 테스트 — msw 핸들러 400 분기 부재 (G0.3 polish 제거)에 따라 `server.use(http.get(...))` per-test override + type-cast `sort` 사용해 backend 400 propagation 검증.
+
+16. **[G5 SHA `7d7e70e`]** spec §6.1 vs plan host 검증 — spec은 `max(50)`만, plan은 `min(2).max(50)`. 코드는 plan 따름. spec §6.1 본문 "2자 이상 부분일치" hint와 일관. spec §6.1 zod 코드 블록 보정 후보 (즉시 미적용 — frontend는 plan 권위).
+
+17. **[G7 SHA `b25c4e8`]** widget 분기 순서 — `error 404 → isLoading → !data` (404 우선). plan은 `isLoading → 404` 순. react-query에서 `isLoading=true && error=ApiError`는 동시 발생 안 함. 기능 동일.
+
+18. **[G8 SHA `e009aec`]** Card test 1 (`currentTrackName=null` fallback) tighten — `getByText("현재 트랙").nextElementSibling` + `toHaveTextContent("-")`. 이전 `getAllByText("-").length > 0` loose assertion 강화.
+
+19. **[G9 SHA `<see commit log>`]** partyroom enum 4개 backend 실제 값 확정 (Sub-task 2 grep 결과):
+    - `DisplayFlag` (party.domain.enums): `NORMAL`, `FEATURED`, `HIDDEN`
+    - `GradeType` (party.domain.enums): `HOST(5)`, `COMMUNITY_MANAGER(4)`, `MODERATOR(3)`, `CLUBBER(2)`, `LISTENER(1)` — int level 동반
+    - `PenaltyType` (party.domain.enums): `CHAT_MESSAGE_REMOVAL`, `CHAT_BAN_30_SECONDS`, `ONE_TIME_EXPULSION`, `PERMANENT_EXPULSION` — description + durationInSeconds 동반
+    - `PartyroomAdminActionType` (administration.domain.enums): `SUSPEND_PARTYROOM`, `RESTORE_PARTYROOM`, `TERMINATE_PARTYROOM`, `SET_FEATURED`, `SET_HIDDEN`, `SET_NORMAL`, `UPDATE_PARTYROOM_META`, `PENALIZE_CREW`, `RELEASE_CREW_PENALTY`, `PUBLISH_AVATAR_RESOURCE`, `RETIRE_AVATAR_RESOURCE`
+    - frontend 타입은 forward-compat 위해 `string` 유지 (§9.1 unknown fallback 정책). zod enum 좁히기는 §15.2에 미해결 항목으로 추가.
+
+20. **[G9 SHA `<see commit log>`]** `formatKst` 추출 완료 — `shared/lib/format-kst.ts` + 3 unit test (null / invalid / valid ISO), 3 사용처(`members-table.tsx`, `member-detail-cast.tsx`, `partyroom-detail-cards.tsx`) import 교체. 77/77 PASS (74 + 3 신규).
 
 ## 15. Future Polish (§13.1 14a 상속 + 14b 신규)
 
@@ -572,3 +606,7 @@ backend가 enum을 추가/변경할 때 frontend가 즉시 깨지지 않도록:
 - backend playlist 모듈 query port 추가 후 `currentTrackName`/`playlistName` 채움 (R6)
 - mutation chunk (14c 이후): tier 변경, withdraw, partyroom 강제 종료/penalty/admin action
 - guest 어드민: backend `AdminGuestQueryController` + frontend `/guests` 라우트 (14c 이후 별 묶음)
+- **react-query 버전 통일** (`^5.100.5`로 bump) — `react-query-devtools` peer-dep mismatch 해소 (§14 entry 3)
+- **partyroom enum 4개** (`DisplayFlag` / `GradeType` / `PenaltyType` / `PartyroomAdminActionType`) frontend zod enum으로 좁히기 — 현재 `string` (forward-compat). backend 실제 값은 §14 entry 19 참조
+- **spec §6.1 host validator zod 블록을 `min(2).max(50)`로 보정** — 현재 max만 명시 (§14 entry 16)
+- **shared `useUrlQueryState` hook 추출** — `parseSearchParams` + `useEffect` cleanup + `setParams` replace 패턴이 members + partyrooms 위젯 양쪽에 중복 (§14 entry 7)

@@ -14,15 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import type { AdminMemberDetail } from "@/entities/member"
-
-// G3.1과 동일한 null/invalid 가드 패턴 (members-table.tsx 참조).
-// 두 곳에서 사용 중이지만 G4 시점엔 shared 추출 미실시 — G9 catch-up 후보.
-function formatKst(iso: string | null): string {
-  if (!iso) return "-"
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return "-"
-  return d.toLocaleString("ko-KR", { hour12: false })
-}
+import { formatKst } from "@/shared/lib/format-kst"
 
 interface Props {
   detail: AdminMemberDetail

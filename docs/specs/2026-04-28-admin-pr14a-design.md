@@ -461,3 +461,4 @@ Task 6.3의 5 시나리오(① happy login / ② expired cookie 401 / ③ mustCh
 - **403 응답 인터셉터** — CSRF 토큰 만료/누락은 401 아닌 403. 현재 `http.ts`는 401만 인터셉트. 사용자가 SPA 한 탭 24시간 이상 띄워두면 XSRF-TOKEN 쿠키 만료 + AdminAccessToken은 sliding 갱신되어 살아있음 → 변형 요청 시 403. 14b 이후 405/403 처리 일반화 필요.
 - **SessionMeta 타입 stale 경고 UX** — `expiresAt` 정보를 가지고 있으니 만료 5분 전 토스트 알림 등 UX 추가 가능. 14a YAGNI.
 - **테스트 mocks/handlers 환경 의존** — `handlers.ts`가 `API_BASE_URL`을 직접 import. 테스트 환경 `VITE_API_BASE_URL` 미설정이면 dev 기본값 `http://localhost:8080`으로 매칭. CI에서 다른 base url 사용 시 handlers 경로도 동기화 필요. 14b에서 handlers 분리 또는 wildcard 매칭으로 경량화 고려.
+- **demo 잔존 코드 일괄 삭제** — `entities/{user,room,scenario,playlist,dj-queue}` + `features/{users,rooms,scenarios}` + `widgets/{users,rooms,scenarios}` + `pages/{users,rooms,scenarios}-page.tsx` + `shared/lib/api-client.ts` + `shared/lib/{utils,constants}.ts` 데드 helpers 일괄 삭제 — **PR 14b G1 SHA `fb6c7a0`** + **G1.1 SHA `71c98de`**. 14a 시점엔 R1(데모 잔존 허용 정책)에 따라 보존.
