@@ -21,7 +21,8 @@
 
 - **Mutation** — tier 변경(`AdminMemberTierCommandController`), withdraw(`AdminMemberWithdrawCommandController`), 파티룸 강제 종료/penalty/admin action(`AdminPartyroomCommandController`)은 backend endpoint가 이미 존재하지만 14c 이후 별도 chunk.
 - **Guest 어드민 화면** — `guest` 테이블은 별도 entity(`GuestData`)이며 backend에 어드민 조회 endpoint(`/admin/guests` 등)가 부재. PR-14b는 `member` 테이블만 다룸. 14c 이후 backend + frontend 한 묶음으로 분리.
-- **Avatar / 신고 / Scenario 어드민 화면** — 14c/14d 또는 별 PR.
+- **Avatar / 신고 어드민 화면** — 14c/14d 또는 별 PR.
+- **Scenario (가상 유저 시나리오) 어드민 화면** — demo 슬라이스(`entities/{scenario,playlist,dj-queue}`, `features/scenarios`, `widgets/scenarios`, `pages/scenarios-page`)는 14b에서 **삭제**한다. demo `entities/{user,room}` 의존 chain 단절을 위해. 향후 운영용 시나리오 도구가 필요해지면 backend `AdminScenarioController` 신규 + frontend 새 slice 재구축으로 처리(이번 demo 코드 보존하지 않음).
 - **e2e Playwright, Storybook, 시각적 회귀, axe-core a11y, i18n, 다국어** — 14a §13에서 미해결로 박혀 있고 14b도 상속.
 - **모바일/Sheet 반응형** — 어드민은 desktop-first.
 
@@ -146,14 +147,15 @@ src/
 
 ### 3.2 삭제 대상 (G1 chunk)
 
-- `entities/user/` 전체 (mock `VirtualUser`)
-- `entities/room/` 전체 (mock `PartyRoom`)
-- `features/users/` 전체 (`bulk-actions.tsx`, `user-create-form.tsx`, `users-list-table.tsx`)
-- `features/rooms/` 전체 (`dj-queue-panel.tsx`, `room-selector.tsx`, `rooms-list-panel.tsx`, `user-assignment-panel.tsx`)
-- `widgets/users/`, `widgets/rooms/` 전체
-- `pages/users-page.tsx`, `pages/rooms-page.tsx`
-- App.tsx 라우트 `/users`, `/rooms` 제거
-- demo `src/shared/lib/api-client.ts` — G1에서 grep `from "@/shared/lib/api-client"` 후 사용처 0이면 삭제, 잔존(`scenarios`/`dj-queue`/`playlist`)이면 보존하고 §12에 reality 기록
+demo subsystem 전체 18 파일 + 디렉토리들 일괄 삭제. demo는 자기들끼리만 import (외부 의존 없음 — G0.3 polish 시 grep 검증). **demo가 다시 필요해지면 backend endpoint 신설 + 새 slice 재구축. 현재 코드 보존 ❌.**
+
+- **entities (5)**: `entities/user/`, `entities/room/`, `entities/scenario/`, `entities/playlist/`, `entities/dj-queue/`
+- **features (3)**: `features/users/`, `features/rooms/`, `features/scenarios/`
+- **widgets (3)**: `widgets/users/`, `widgets/rooms/`, `widgets/scenarios/`
+- **pages (3)**: `pages/users-page.tsx`, `pages/rooms-page.tsx`, `pages/scenarios-page.tsx`
+- **shared (1)**: `src/shared/lib/api-client.ts` (demo 전용 클래스, 잔존 사용처 모두 위 demo subsystem 안)
+- **App.tsx 라우트**: `/users`, `/rooms`, `/scenarios` 제거
+- **사이드바**: "시나리오" nav 항목 제거 (4 → 3)
 
 ### 3.3 라우트 (App.tsx)
 
@@ -166,18 +168,17 @@ src/
 | `/members/:memberId` | MemberDetailPage | ProtectedRoute + Layout |
 | `/partyrooms` | PartyroomsPage | ProtectedRoute + Layout |
 | `/partyrooms/:partyroomId` | PartyroomDetailPage | ProtectedRoute + Layout |
-| `/scenarios` | ScenariosPage | ProtectedRoute + Layout (demo 잔존, 14d에서 처리) |
 
 ### 3.4 사이드바 (`app/layout.tsx`)
 
-총 4개 nav 유지 (변경: 1행 relabel + 경로 변경 + 1행 enable + 1행 enable+경로 변경).
+14a의 4 nav (대시보드/가상 유저/파티룸/시나리오) → 14b 3 nav (대시보드/회원/파티룸). 시나리오 메뉴는 demo subsystem 삭제와 함께 제거.
 
 | # | 14a 라벨/경로/상태 | 14b 라벨/경로/상태 | 아이콘 |
 |---|---|---|---|
 | 1 | "대시보드" / `/` / enabled | "대시보드" / `/` / enabled | LayoutDashboard |
 | 2 | "가상 유저" / `/users` / disabled | **"회원" / `/members` / enabled** | Users |
 | 3 | "파티룸" / `/rooms` / disabled | **"파티룸" / `/partyrooms` / enabled** | DoorOpen |
-| 4 | "시나리오" / `/scenarios` / enabled | "시나리오" / `/scenarios` / enabled | PlaySquare |
+| (4) | "시나리오" / `/scenarios` / enabled | **삭제** | — |
 
 ## 4. Page<T> + ApiCommonResponse 처리
 
