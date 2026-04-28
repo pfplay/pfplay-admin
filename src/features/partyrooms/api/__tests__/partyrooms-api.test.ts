@@ -7,6 +7,7 @@ import {
   terminatePartyroom,
   suspendPartyroom,
   restorePartyroom,
+  updatePartyroomMeta,
 } from "../partyrooms-api"
 import { partyroomListItemFixture } from "@/test/mocks/fixtures/partyrooms"
 import { ApiError } from "@/shared/api/error"
@@ -154,6 +155,20 @@ describe("partyrooms-api", () => {
         status: 409,
         errorCode: "ILLEGAL_STATE_TRANSITION",
       })
+    })
+  })
+
+  describe("updatePartyroomMeta", () => {
+    it("PATCH /admin/partyrooms/:id with body, 204", async () => {
+      let bodySeen: unknown
+      server.use(
+        http.patch("*/api/v1/admin/partyrooms/1", async ({ request }) => {
+          bodySeen = await request.json()
+          return new HttpResponse(null, { status: 204 })
+        }),
+      )
+      await updatePartyroomMeta(1, { title: "new title", playbackTimeLimit: 30 })
+      expect(bodySeen).toEqual({ title: "new title", playbackTimeLimit: 30 })
     })
   })
 })

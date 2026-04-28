@@ -3,7 +3,11 @@ import type { Page } from "@/shared/api/page"
 import { serializeQuery } from "@/shared/lib/url-state"
 import type { AdminPartyroomListItem, AdminPartyroomDetail } from "@/entities/partyroom"
 import type { PartyroomsListQuery } from "../model/filter-schema"
-import type { TerminateRequest, SuspendRequest } from "../model/mutation-schema"
+import type {
+  TerminateRequest,
+  SuspendRequest,
+  UpdatePartyroomMetaRequest,
+} from "../model/mutation-schema"
 
 /**
  * Raw Page<T> 반환 — backend가 ApiCommonResponse wrap 안 함 (spec §4.1).
@@ -47,5 +51,15 @@ export async function suspendPartyroom(
 export async function restorePartyroom(partyroomId: number): Promise<void> {
   await http<void>(`/api/v1/admin/partyrooms/${partyroomId}/restore`, {
     method: "POST",
+  })
+}
+
+export async function updatePartyroomMeta(
+  partyroomId: number,
+  body: UpdatePartyroomMetaRequest,
+): Promise<void> {
+  await http<void>(`/api/v1/admin/partyrooms/${partyroomId}`, {
+    method: "PATCH",
+    body,
   })
 }
