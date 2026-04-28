@@ -44,4 +44,14 @@ describe("PartyroomDetailPage integration (G7)", () => {
     const backLink = screen.getByRole("link", { name: "목록으로" })
     expect(backLink).toHaveAttribute("href", "/partyrooms")
   })
+
+  it("happy: 빈 penalties/reports/adminActions → 3 빈 상태 메시지 노출", async () => {
+    // fixture 기본이 빈 recentPenalties/recentReports/recentAdminActions
+    wrap("/partyrooms/1")
+    await waitFor(() =>
+      expect(screen.getByText("최근 페널티 없음")).toBeInTheDocument(),
+    )
+    expect(screen.getByText("신고 내역 없음")).toBeInTheDocument()
+    expect(screen.getByText("최근 관리자 액션 없음")).toBeInTheDocument()
+  })
 })

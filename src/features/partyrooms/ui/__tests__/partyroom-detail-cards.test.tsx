@@ -4,15 +4,19 @@ import { MemoryRouter } from "react-router-dom"
 import { PartyroomDetailCards } from "../partyroom-detail-cards"
 import { partyroomDetailFixture } from "@/test/mocks/fixtures/partyrooms"
 
-describe("PartyroomDetailCards (G7 partial — 5/8 카드)", () => {
-  it("currentTrackName=null → '-' fallback", () => {
+describe("PartyroomDetailCards (G8 — 8/8 카드)", () => {
+  it("currentTrackName=null → playback section '-' fallback", () => {
     render(
       <MemoryRouter>
         <PartyroomDetailCards detail={partyroomDetailFixture} />
       </MemoryRouter>,
     )
-    // fixture has currentTrackName=null → at least one '-' is rendered as playback fallback.
-    expect(screen.getAllByText("-").length).toBeGreaterThan(0)
+    // G7 review polish: scope assertion to playback section instead of loose getAllByText.
+    // "현재 트랙" label is unique to playback card; its sibling div renders the fallback.
+    const trackLabel = screen.getByText("현재 트랙")
+    const trackValue = trackLabel.nextElementSibling
+    expect(trackValue).not.toBeNull()
+    expect(trackValue).toHaveTextContent("-")
   })
 
   it("crews 빈 배열 → '크루 없음'", () => {
@@ -35,5 +39,46 @@ describe("PartyroomDetailCards (G7 partial — 5/8 카드)", () => {
       </MemoryRouter>,
     )
     expect(screen.getByText("TERMINATED")).toBeInTheDocument()
+  })
+
+  it("recentPenalties / recentReports / recentAdminActions 모두 빈 → 각 빈 상태 메시지", () => {
+    render(
+      <MemoryRouter>
+        <PartyroomDetailCards
+          detail={{
+            ...partyroomDetailFixture,
+            recentPenalties: [],
+            recentReports: [],
+            recentAdminActions: [],
+          }}
+        />
+      </MemoryRouter>,
+    )
+    expect(screen.getByText("최근 페널티 없음")).toBeInTheDocument()
+    expect(screen.getByText("신고 내역 없음")).toBeInTheDocument()
+    expect(screen.getByText("최근 관리자 액션 없음")).toBeInTheDocument()
+  })
+
+  it("recentReports 채움 → 행 노출 (ABUSE / #99)", () => {
+    render(
+      <MemoryRouter>
+        <PartyroomDetailCards
+          detail={{
+            ...partyroomDetailFixture,
+            recentReports: [
+              {
+                id: 1,
+                category: "ABUSE",
+                status: "PENDING",
+                reporterUserAccountId: 99,
+                createdAt: "2026-04-28T10:00:00",
+              },
+            ],
+          }}
+        />
+      </MemoryRouter>,
+    )
+    expect(screen.getByText("ABUSE")).toBeInTheDocument()
+    expect(screen.getByText("#99")).toBeInTheDocument()
   })
 })

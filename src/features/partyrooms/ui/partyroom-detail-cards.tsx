@@ -175,7 +175,114 @@ export function PartyroomDetailCards({ detail }: Props) {
         </CardContent>
       </Card>
 
-      {/* 6/7/8 카드 (penalties / reports / admin actions) — G8에서 추가 */}
+      {/* 6. Recent penalties */}
+      <Card>
+        <CardHeader>
+          <CardTitle>최근 페널티 (top 5)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {detail.recentPenalties.length === 0 ? (
+            <p className="text-sm text-muted-foreground">최근 페널티 없음</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>id</TableHead>
+                  <TableHead>crewId</TableHead>
+                  <TableHead>유형</TableHead>
+                  <TableHead>가한 주체</TableHead>
+                  <TableHead>사유</TableHead>
+                  <TableHead>일시</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {detail.recentPenalties.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.id}</TableCell>
+                    <TableCell>{p.crewId}</TableCell>
+                    <TableCell>{p.penaltyType}</TableCell>
+                    <TableCell>{p.punisherType}</TableCell>
+                    <TableCell className="max-w-xs truncate" title={p.reason}>
+                      {p.reason}
+                    </TableCell>
+                    <TableCell>{formatKst(p.date)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 7. Recent reports */}
+      <Card>
+        <CardHeader>
+          <CardTitle>최근 신고</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {detail.recentReports.length === 0 ? (
+            <p className="text-sm text-muted-foreground">신고 내역 없음</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>id</TableHead>
+                  <TableHead>분류</TableHead>
+                  <TableHead>상태</TableHead>
+                  <TableHead>신고자</TableHead>
+                  <TableHead>일시</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {detail.recentReports.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>{r.id}</TableCell>
+                    <TableCell>{r.category}</TableCell>
+                    <TableCell>{r.status}</TableCell>
+                    <TableCell>#{r.reporterUserAccountId}</TableCell>
+                    <TableCell>{formatKst(r.createdAt)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 8. Recent admin actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>최근 관리자 액션</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {detail.recentAdminActions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              최근 관리자 액션 없음
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>actionId</TableHead>
+                  <TableHead>유형</TableHead>
+                  <TableHead>관리자</TableHead>
+                  <TableHead>일시</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {detail.recentAdminActions.map((a) => (
+                  <TableRow key={a.actionId}>
+                    <TableCell>{a.actionId}</TableCell>
+                    <TableCell>{a.actionType}</TableCell>
+                    <TableCell>#{a.administratorId}</TableCell>
+                    <TableCell>{formatKst(a.occurredAt)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
