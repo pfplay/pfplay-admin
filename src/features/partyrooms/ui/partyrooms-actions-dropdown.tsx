@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { TerminateDialog } from "./mutation-dialogs/terminate-dialog"
 import { SuspendDialog } from "./mutation-dialogs/suspend-dialog"
 import { RestoreDialog } from "./mutation-dialogs/restore-dialog"
+import { UpdateMetaDialog } from "./mutation-dialogs/update-meta-dialog"
 import type { AdminPartyroomDetail } from "@/entities/partyroom/model/types"
 
 type ActiveDialog = null | "terminate" | "suspend" | "restore" | "update-meta" | "display-flag"
@@ -26,6 +27,7 @@ export function PartyroomsActionsDropdown({ partyroom }: Props) {
   const canTerminate = status === "ACTIVE" || status === "SUSPENDED"
   const canSuspend = status === "ACTIVE"
   const canRestore = status === "SUSPENDED"
+  const canUpdateMeta = status === "ACTIVE" || status === "SUSPENDED"
 
   return (
     <>
@@ -49,13 +51,19 @@ export function PartyroomsActionsDropdown({ partyroom }: Props) {
             재개
           </DropdownMenuItem>
           <DropdownMenuItem
+            disabled={!canUpdateMeta}
+            onSelect={() => canUpdateMeta && setActive("update-meta")}
+          >
+            메타 수정
+          </DropdownMenuItem>
+          <DropdownMenuItem
             disabled={!canTerminate}
             onSelect={() => canTerminate && setActive("terminate")}
             className="text-destructive focus:text-destructive"
           >
             강제 종료
           </DropdownMenuItem>
-          {/* G4: 메타 수정, G5: 표시 변경 — 후속 chunk에서 추가 */}
+          {/* G5: 표시 변경 — 후속 chunk에서 추가 */}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -72,6 +80,19 @@ export function PartyroomsActionsDropdown({ partyroom }: Props) {
       <RestoreDialog
         partyroomId={partyroom.partyroomId}
         open={active === "restore"}
+        onOpenChange={(o) => !o && setActive(null)}
+      />
+      {/*
+        14b AdminPartyroomDetail에 introduction/playbackTimeLimit 부재 (verified
+        entities/partyroom/model/types.ts). placeholder 사용 안 함, 빈 form으로 시작.
+        백엔드 DTO 확장은 spec §13.2 future polish.
+      */}
+      <UpdateMetaDialog
+        partyroomId={partyroom.partyroomId}
+        currentTitle={partyroom.title}
+        currentIntroduction={null}
+        currentPlaybackTimeLimit={null}
+        open={active === "update-meta"}
         onOpenChange={(o) => !o && setActive(null)}
       />
     </>
