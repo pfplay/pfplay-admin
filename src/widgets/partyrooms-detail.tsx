@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom"
 import { usePartyroomDetail } from "@/features/partyrooms/api/use-partyroom-detail"
 import { PartyroomDetailCards } from "@/features/partyrooms/ui/partyroom-detail-cards"
+import { PartyroomsActionsDropdown } from "@/features/partyrooms/ui/partyrooms-actions-dropdown"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { ApiError } from "@/shared/api/error"
@@ -32,6 +33,9 @@ export function PartyroomsDetailWidget() {
 
   return (
     <div className="p-6 lg:p-8">
+      <div className="flex justify-end mb-4">
+        <PartyroomsActionsDropdown partyroom={data} />
+      </div>
       <PartyroomDetailCards detail={data} />
     </div>
   )
