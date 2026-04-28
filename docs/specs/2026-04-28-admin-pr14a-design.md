@@ -311,7 +311,7 @@ const changePasswordSchema = z.object({
 | **G2** | entities/session | `types.ts`, `store.ts` (zustand persist), `api/session.ts`, unit test 1-3 |
 | **G3** | features/login + LoginPage | schema, mutation, form, page, App.tsx /login 라우트, component test 6-7, integration test 9-12 |
 | **G4** | ProtectedRoute + change-password | widget, change-password feature/page, dashboard placeholder, App.tsx 보호 라우트 wiring, layout 로그아웃 버튼, component test 8, integration test 13-15 |
-| **G5** | logout + 운영 수동 검증 | logout feature, layout wire, dev 서버 띄우고 5 시나리오 검증, 1 추가 test |
+| **G5** | logout + 운영 수동 검증 | logout feature, layout wire, dev 서버에서 5 시나리오 수동 검증 + 1 추가 test. 검증 시나리오: ① happy login(올바른 credentials → 대시보드) ② expired cookie(쿠키 수동 삭제 후 API 호출 → 401 인터셉터 → /login + returnTo 보존) ③ mustChangePassword 흐름(true → /password/change 강제 → 변경 → /) ④ logout(쿠키 클리어 + store.clear + /login) ⑤ CSRF 토큰 발급 확인(로그인 직후 `document.cookie`에 `XSRF-TOKEN` 존재 → R4 검증) |
 | **G6** | spec catch-up | §12 deviations + ground-truth backfill |
 | **G6.1+** | polish follow-up | 리뷰 결과에 따라 |
 
@@ -341,6 +341,22 @@ const changePasswordSchema = z.object({
 
 **R6 — zustand persist 마이그레이션**
 - store shape 변경 시 마이그레이션 필요. `version: 1` 명시 + 향후 변경 시 `migrate` 함수 제공 정책.
+
+**R7 — dev/staging/prod 환경 변수 정합성**
+- 4개 설정이 정렬되어야 동작: 클라 측 `VITE_API_BASE_URL` ↔ 백엔드 `CORS_ALLOWED_ORIGINS` ↔ `ADMIN_COOKIE_DOMAIN` ↔ `admin-origin-guard.allowed`. 하나라도 어긋나면 CORS 거부 / 쿠키 미전송 / Origin Guard 차단.
+
+| 환경 | VITE_API_BASE_URL (admin) | CORS_ALLOWED_ORIGINS (server) | ADMIN_COOKIE_DOMAIN | admin-origin-guard.allowed |
+|---|---|---|---|---|
+| dev (로컬) | `http://localhost:8080` | `http://localhost:3000` | `localhost` | `http://localhost:3000` (yml 기본) |
+| staging | `https://stg-api.pfplay.xyz` | `https://stg-admin.pfplay.xyz` | `.pfplay.xyz` | `https://stg-admin.pfplay.xyz` (env로 주입 필요) |
+| prod | `https://api.pfplay.xyz` | `https://admin.pfplay.xyz` | `.pfplay.xyz` | `https://admin.pfplay.xyz` |
+
+- **완화**: G5 수동 검증 시 stg env에서 4개 설정 정합 확인. staging의 `admin-origin-guard.allowed`에 `https://stg-admin.pfplay.xyz` 등록 여부는 백엔드 `application.yml` 또는 deploy env 확인(현재 yml은 운영 도메인만 명시 — staging은 env 주입 의존).
+
+**R8 — Safari ITP localStorage 7일 만료**
+- Safari Intelligent Tracking Prevention은 third-party 또는 미사용 사이트의 localStorage를 7일 후 자동 purge. AdminAccessToken 쿠키는 살아있어도 `pfplay-admin-session` localStorage 키가 사라지면 §4.2 row 3 시나리오(쿠키 살아있음 + localStorage 비움)로 진입 → `/login` 강제. 쿠키 인증으로 자동 재로그인 불가능 (서버에 쿠키 → 메타 응답 endpoint 부재).
+- **수용 비용**: 7일 이상 비활동 어드민은 재로그인 필요. 정상 운영 어드민은 매일 접속이라 risk 낮음.
+- **완화**: GET /api/v1/admin/me 도입(R3 future polish) 시 자연스럽게 해결됨 — 새로고침마다 fresh fetch + localStorage 재구성.
 
 ### 11.2 미해결 future polish (§13)
 
