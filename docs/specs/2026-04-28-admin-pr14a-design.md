@@ -268,18 +268,18 @@ const changePasswordSchema = z.object({
 6. `http.ts` XSRF-TOKEN 쿠키 존재 + 변형 method → `X-XSRF-TOKEN` 헤더 echo
 
 **Component (3)**:
-6. LoginForm: invalid email format → field error
-7. LoginForm: short password → field error
-8. ChangePasswordForm: newPassword === currentPassword → field error
+7. LoginForm: invalid email format → field error
+8. LoginForm: short password → field error
+9. ChangePasswordForm: newPassword === currentPassword → field error
 
 **Integration (7)**:
-9. LoginPage: happy path → `/` navigate + sessionStore meta 갱신
-10. LoginPage: 401 응답 → "이메일 또는 비밀번호가 올바르지 않습니다" form-level
-11. LoginPage: 429 응답 → "잠시 후 다시 시도해주세요"
-12. LoginPage: mustChangePassword=true → `/password/change` navigate
-13. ProtectedRoute: 미인증 + `/rooms` 접근 → `/login` + `state.returnTo="/rooms"`
-14. ProtectedRoute: 인증 + mustChangePassword=true + `/rooms` → `/password/change`
-15. ChangePasswordPage: 204 → `clearMustChangePassword()` + `/` navigate
+10. LoginPage: happy path → `/` navigate + sessionStore meta 갱신
+11. LoginPage: 401 응답 → "이메일 또는 비밀번호가 올바르지 않습니다" form-level
+12. LoginPage: 429 응답 → "잠시 후 다시 시도해주세요"
+13. LoginPage: mustChangePassword=true → `/password/change` navigate
+14. ProtectedRoute: 미인증 + `/rooms` 접근 → `/login` + `state.returnTo="/rooms"`
+15. ProtectedRoute: 인증 + mustChangePassword=true + `/rooms` → `/password/change`
+16. ChangePasswordPage: 204 → `clearMustChangePassword()` + `/` navigate
 
 ### 8.3 msw 핸들러
 
@@ -308,11 +308,12 @@ const changePasswordSchema = z.object({
 | Chunk | 내용 | 산출물 |
 |---|---|---|
 | **G0** | spec + plan 작성 | docs/specs/2026-04-28-admin-pr14a-design.md (본 문서) + plan |
-| **G1** | shared 인프라 | `shared/api/{http,error,csrf}.ts`, `shared/config/env.ts`, vitest 셋업, msw 스켈레톤, unit test 4-5 |
-| **G2** | entities/session | `types.ts`, `store.ts` (zustand persist), `api/session.ts`, unit test 1-3 |
-| **G3** | features/login + LoginPage | schema, mutation, form, page, App.tsx /login 라우트, component test 6-7, integration test 9-12 |
-| **G4** | ProtectedRoute + change-password | widget, change-password feature/page, dashboard placeholder, App.tsx 보호 라우트 wiring, layout 로그아웃 버튼, component test 8, integration test 13-15 |
-| **G5** | logout + 운영 수동 검증 | logout feature, layout wire, dev 서버에서 5 시나리오 수동 검증 + 1 추가 test. 검증 시나리오: ① happy login(올바른 credentials → 대시보드) ② expired cookie(쿠키 수동 삭제 후 API 호출 → 401 인터셉터 → /login + returnTo 보존) ③ mustChangePassword 흐름(true → /password/change 강제 → 변경 → /) ④ logout(쿠키 클리어 + store.clear + /login) ⑤ CSRF 토큰 발급 확인(로그인 직후 `document.cookie`에 `XSRF-TOKEN` 존재 → R4 검증) |
+| **G1** | shared 인프라 (deps + setup) | vitest+RTL+msw 의존성, `vite.config.ts` test 블록, `src/test/{setup,mocks/{handlers,server}}.ts`, `shared/{config/env, api/{error,csrf}}.ts`. 테스트 0건 (이 단계는 셋업만) |
+| **G2** | entities/session | `types.ts`, `store.ts` (zustand persist), `index.ts` barrel. unit test 1-3 |
+| **G3a** | shared/api/http.ts + session API | http.ts (credentials/CSRF/401 인터셉터), `entities/session/api/session.ts`. unit test 4-6 (CSRF echo 포함) |
+| **G3b** | features/login + LoginPage | @hookform/resolvers 추가, schema, mutation, form, page, App.tsx /login 라우트. component test 7-8, integration test 10-13 |
+| **G4** | ProtectedRoute + change-password | widget, change-password feature/page, dashboard placeholder, App.tsx 보호 라우트 wiring(`/`, `/scenarios`, `/rooms`, `/users`, `/password/change`). component test 9, integration test 14-16 |
+| **G5** | logout + 운영 수동 검증 | logout feature, layout wire, dev 서버에서 5 시나리오 수동 검증. 검증 시나리오: ① happy login(올바른 credentials → 대시보드) ② expired cookie(쿠키 수동 삭제 후 API 호출 → 401 인터셉터 → /login + returnTo 보존) ③ mustChangePassword 흐름(true → /password/change 강제 → 변경 → /) ④ logout(쿠키 클리어 + store.clear + /login) ⑤ CSRF 토큰 발급 확인(로그인 직후 `document.cookie`에 `XSRF-TOKEN` 존재 → R4 검증) |
 | **G6** | spec catch-up | §12 deviations + ground-truth backfill |
 | **G6.1+** | polish follow-up | 리뷰 결과에 따라 |
 
