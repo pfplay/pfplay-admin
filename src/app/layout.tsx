@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom"
-import { Users, DoorOpen, PlaySquare, LogOut, LayoutDashboard } from "lucide-react"
+import { Users, DoorOpen, LogOut, LayoutDashboard } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { useSessionStore } from "@/entities/session"
 import { useLogout } from "@/features/logout/api/use-logout"
@@ -11,9 +11,8 @@ export default function AppLayout() {
 
   const navItems = [
     { to: "/", icon: LayoutDashboard, label: "대시보드", disabled: false },
-    { to: "/users", icon: Users, label: "가상 유저", disabled: true },
-    { to: "/rooms", icon: DoorOpen, label: "파티룸", disabled: true },
-    { to: "/scenarios", icon: PlaySquare, label: "시나리오", disabled: false },
+    { to: "/members", icon: Users, label: "회원", disabled: false },
+    { to: "/partyrooms", icon: DoorOpen, label: "파티룸", disabled: false },
   ]
 
   return (

@@ -1,0 +1,39 @@
+import type { AdminPartyroomListItem, AdminPartyroomDetail } from "@/entities/partyroom"
+
+export const partyroomListItemFixture: AdminPartyroomListItem = {
+  partyroomId: 1,
+  title: "테스트 파티룸",
+  stageType: "GENERAL",
+  hostUserAccountId: 100,
+  hostNickname: "alice",
+  crewCount: 5,
+  djCount: 2,
+  playbackActivated: true,
+  status: "ACTIVE",
+  displayFlag: "PUBLIC", // 실제 enum 값은 G7에서 확정
+  createdAt: "2026-04-25T10:00:00",
+  lastActivityAt: "2026-04-28T11:00:00",
+}
+
+export const partyroomDetailFixture: AdminPartyroomDetail = {
+  partyroomId: 1,
+  title: "테스트 파티룸",
+  status: "ACTIVE",
+  displayFlag: "PUBLIC",
+  hostUserAccountId: 100,
+  hostNickname: "alice",
+  hostEmail: "alice@example.com",
+  crewCount: 5,
+  lastActivityAt: "2026-04-28T11:00:00",
+  stageType: "GENERAL",
+  playback: { activated: true, currentTrackName: null, currentDjCrewId: 10 },
+  crews: [
+    { crewId: 10, memberId: 1, gradeType: "DJ", nickname: "alice", enteredAt: "2026-04-25T10:00:00" },
+  ],
+  djQueue: [
+    { djId: 5, crewId: 10, playlistName: null, orderNumber: 1 },
+  ],
+  recentPenalties: [],
+  recentReports: [],
+  recentAdminActions: [],
+}
