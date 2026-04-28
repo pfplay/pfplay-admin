@@ -1,0 +1,60 @@
+import { useState } from "react"
+import { ChevronDown } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { ChangeTierDialog } from "./mutation-dialogs/change-tier-dialog"
+import { WithdrawDialog } from "./mutation-dialogs/withdraw-dialog"
+import type { AuthorityTier } from "@/entities/member/model/types"
+
+type ActiveDialog = null | "change-tier" | "withdraw"
+
+interface Props {
+  memberId: number
+  currentTier: AuthorityTier
+  displayName: string
+}
+
+export function MembersActionsDropdown({ memberId, currentTier, displayName }: Props) {
+  const [active, setActive] = useState<ActiveDialog>(null)
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" aria-label="Actions">
+            Actions <ChevronDown className="ml-2 h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => setActive("change-tier")}>
+            등급 변경
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => setActive("withdraw")}
+            className="text-destructive focus:text-destructive"
+          >
+            비식별화 탈퇴
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ChangeTierDialog
+        memberId={memberId}
+        currentTier={currentTier}
+        open={active === "change-tier"}
+        onOpenChange={(open) => !open && setActive(null)}
+      />
+      <WithdrawDialog
+        memberId={memberId}
+        displayName={displayName}
+        open={active === "withdraw"}
+        onOpenChange={(open) => !open && setActive(null)}
+      />
+    </>
+  )
+}
