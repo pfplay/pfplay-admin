@@ -42,3 +42,16 @@ export interface AdminMemberDetail {
   createdAt: string
   recentActivityLog: RecentActivityLogItem[]
 }
+
+export interface AdminMemberTierChangeResponse {
+  memberId: number
+  oldTier: AuthorityTier
+  newTier: AuthorityTier
+}
+
+export interface AdminMemberWithdrawResponse {
+  memberId: number
+  userAccountId: number
+  withdrawnAt: string
+  alreadyWithdrawn: boolean
+}
