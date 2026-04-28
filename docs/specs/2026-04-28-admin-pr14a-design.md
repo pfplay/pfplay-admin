@@ -372,12 +372,92 @@ const changePasswordSchema = z.object({
 
 ## 12. Open Items / Implementation Reality (post-build catch-up)
 
-> *G6 chunk에서 작성. 구현 중 발견된 백엔드 가정 vs 실제 deviations + 검증 결과.*
+### 12.1 Chunk SHA backfill
 
-(빈 섹션 — G6에서 backfill)
+| Chunk | SHA | Subject |
+|---|---|---|
+| G0 | `a141d58` | docs(spec): PR 14a design 작성 |
+| G0.1 | `211ce27` | docs(spec): polish PR 14a §10 G5 시나리오 열거 + R7 env 정합성 + R8 Safari ITP |
+| G0 | `559e162` | docs(plan): PR 14a 구현 계획 작성 + reviewer 권고 반영 |
+| G0.2 | `de6f418` | docs(spec): polish §8.2 ordinal collision + §10 chunk table 동기화 |
+| G1 (deps) | `5e9509b` | chore: add vitest + RTL + msw devDependencies |
+| G1 (setup) | `5cd1a35` | feat(shared): vitest+msw 셋업 + shared/{config,api/{error,csrf}} |
+| G2 | `237c0df` | feat(session): zustand persist store + types + barrel |
+| G3a | `3ce2ef0` | feat(shared,session): http.ts (credentials/CSRF/401) + session API |
+| G3b | `75d3f29` | feat(login): LoginForm + LoginPage + /login route + integration tests |
+| G4 | `4006d88` | feat(change-password,widgets): ProtectedRoute + ChangePassword + dashboard placeholder + 보호 라우트 wiring |
+| G5 | `4c4cdd2` | feat(logout): logout mutation + sidebar wire + 권한 표시 |
+| G6 | (this commit) | docs(spec): §12 catch-up + §13 future polish backfill |
+
+### 12.2 Backend ground-truth deviations 관찰 결과
+
+구현 중 백엔드 측 가정(spec §2)에 대한 **실제 deviation은 0건**. PR 4/PR 6 코드 read 결과와 spec §2 ground-truth 표가 정확히 일치했다. 다만 다음 항목은 자동 검증되지 않아 수동 검증 결과(§12.3~§12.5) 의존:
+
+- `AdminLoginResponse.issuedAt`: 백엔드 LocalDateTime → JSON 직렬화 시 타임존이 어떻게 표기되는지(예: `"2026-04-28T10:00:00"` vs `"2026-04-28T10:00:00.000Z"`) 미확인. `entities/session/api/session.ts`의 `toSessionMeta`는 `new Date(raw.issuedAt)`로 JS 엔진 기본 파싱 — 타임존 표기 누락 시 로컬 타임존 가정. 운영 검증 시 §12.3 같이 확인.
+- `mustChangePassword=true` 응답 케이스: 자동 테스트(LoginPage integration #13)는 msw로 모킹 검증. 실제 백엔드가 동일 응답 shape으로 보내는지 운영 검증.
+
+### 12.3 R1 (CORS / SameSite cross-subdomain) 검증 결과
+
+**상태**: ⬜ 미수행 (다음 세션 deferred)
+
+운영 또는 staging(`stg-admin.pfplay.xyz` ↔ `stg-api.pfplay.xyz`)에서 `SameSite=Strict` cross-subdomain 쿠키 전송 동작 확인 필요. 실패 시 백엔드 cookie 옵션 조정 별 PR로 분리.
+
+### 12.4 R4 (CSRF 토큰 발급 timing) 검증 결과
+
+**상태**: ⬜ 미수행 (다음 세션 deferred)
+
+로그인 직후 `document.cookie`에 `XSRF-TOKEN` 존재 여부 운영 확인 필요. Spring Security `CookieCsrfTokenRepository` 표준 동작은 모든 응답에 `Set-Cookie: XSRF-TOKEN`을 포함하므로 발급될 것으로 예상하나, `AdminCsrfRequestMatcher`가 login을 면제했기 때문에 실제 발급 timing 검증 필요. 부재 시 follow-up commit으로 로그인 직후 가벼운 GET 호출 추가.
+
+### 12.5 R7 (env 정합성) 검증 결과
+
+**상태**: ⬜ 미수행 (다음 세션 deferred)
+
+dev/staging/prod 4개 설정(`VITE_API_BASE_URL`, `CORS_ALLOWED_ORIGINS`, `ADMIN_COOKIE_DOMAIN`, `admin-origin-guard.allowed`) 정합 확인 필요. staging에 `https://stg-admin.pfplay.xyz` 등록 여부는 백엔드 deploy env 의존.
+
+### 12.6 R8 (Safari ITP) 결과
+
+운영 모니터링 항목으로 기록. 별도 측정 없음. 7일 이상 비활동 어드민 재로그인은 정상 보안 동작으로 간주.
+
+### 12.7 수동 검증 5 시나리오 결과 (G5 Task 6.3)
+
+**상태**: ⬜ 미수행 (다음 세션 deferred)
+
+Task 6.3의 5 시나리오(① happy login / ② expired cookie 401 / ③ mustChangePassword 흐름 / ④ logout / ⑤ CSRF 토큰 발급)는 라이브 백엔드 + 브라우저 인터랙션 필요. 다음 세션에서 `pnpm dev` + 백엔드 `:app:bootRun` 동시 실행하여 수행 후 §12 결과 backfill.
+
+### 12.8 자동 테스트 결과 (16/16 PASS)
+
+| 카테고리 | 카운트 | 파일 |
+|---|---|---|
+| Unit | 6 | `entities/session/model/__tests__/store.test.ts` (3), `shared/api/__tests__/http.test.ts` (3) |
+| Component | 3 | `features/login/__tests__/login-form.test.tsx` (2), `features/change-password/__tests__/change-password-form.test.tsx` (1) |
+| Integration | 7 | `pages/login-page.test.tsx` (4), `widgets/__tests__/protected-route.test.tsx` (2), `pages/change-password-page.test.tsx` (1) |
+
+`pnpm test:run` exit 0, `pnpm exec tsc --noEmit` errors=0, `pnpm build` success (1820 modules).
+
+### 12.9 G5.1 polish follow-up
+
+**상태**: 없음 (chunk별 implementer dispatch 결과 모두 verbatim 적용, deviations 0건).
+
+수동 검증(§12.3~§12.5, §12.7) 결과에 따라 G5.1 follow-up commit이 필요할 수 있음 (CSRF 발급 timing 부재 시 등).
 
 ## 13. Future Polish (§11.2 + 신규 발견 누적)
 
-> *G6 chunk에서 backfill.*
+### 13.1 §11.2 항목 (계획 단계 식별)
 
-(빈 섹션 — G6에서 backfill)
+- **백엔드: `GET /api/v1/admin/me` 엔드포인트 추가** — 새로고침 시 fresh role/mustChangePassword 조회. R3, R8 동시 해소.
+- **백엔드: 로그인 응답에 명시적 `Set-Cookie: XSRF-TOKEN`** — R4 timing risk 제거 (백엔드 변경 1줄).
+- **e2e Playwright** (login happy/sad path)
+- **Storybook + 시각적 회귀 테스트**
+- **다국어(i18n)** — 현재 한국어 하드코딩
+- **a11y audit** (axe-core)
+- **비번 표시 토글, 캡스락 경고**
+- **다중 탭 동기화** (storage event 리스너로 한 탭 로그아웃 시 다른 탭도 자동 로그아웃)
+
+### 13.2 구현 후 신규 발견 항목
+
+- **`AdminLoginResponse.issuedAt` 타임존 명시** — 백엔드 LocalDateTime이 ISO 8601 with timezone(`Z` suffix 또는 `+09:00`)으로 직렬화되도록 정렬. 백엔드 1줄 변경(`Jackson` config 또는 type을 `OffsetDateTime`으로 교체).
+- **`useLogout` 자동 unit test** — 14a에서는 manual scenario ④로 대체. 14b 이후 logout 분기 추가 시 자동화 가치 증가하면 도입.
+- **CSRF echo 보호: 토큰 부재 케이스 명시 처리** — 현재 `getCsrfToken()` null 시 헤더 없이 전송 → 백엔드 403. UX 개선 여지: null 시 사전 GET 1회로 발급 유도. 운영 검증(R4) 결과에 따라.
+- **403 응답 인터셉터** — CSRF 토큰 만료/누락은 401 아닌 403. 현재 `http.ts`는 401만 인터셉트. 사용자가 SPA 한 탭 24시간 이상 띄워두면 XSRF-TOKEN 쿠키 만료 + AdminAccessToken은 sliding 갱신되어 살아있음 → 변형 요청 시 403. 14b 이후 405/403 처리 일반화 필요.
+- **SessionMeta 타입 stale 경고 UX** — `expiresAt` 정보를 가지고 있으니 만료 5분 전 토스트 알림 등 UX 추가 가능. 14a YAGNI.
+- **테스트 mocks/handlers 환경 의존** — `handlers.ts`가 `API_BASE_URL`을 직접 import. 테스트 환경 `VITE_API_BASE_URL` 미설정이면 dev 기본값 `http://localhost:8080`으로 매칭. CI에서 다른 base url 사용 시 handlers 경로도 동기화 필요. 14b에서 handlers 분리 또는 wildcard 매칭으로 경량화 고려.
