@@ -26,6 +26,7 @@ describe("MembersFilterForm", () => {
   })
 
   it("정렬 dropdown 변경 → 즉시 onChange({ sort, page: 0 })", async () => {
+    // jsdom + radix Select: pointer-events check + delay 비활성화 필요 (G0.3 reviewer note)
     const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
     const onChange = vi.fn()
     render(
@@ -43,5 +44,20 @@ describe("MembersFilterForm", () => {
     )
     fireEvent.click(screen.getByText("초기화"))
     expect(onReset).toHaveBeenCalled()
+  })
+
+  it("query.email 변경 시 input draft 동기화 (초기화 후 입력란 비워짐)", () => {
+    const { rerender } = render(
+      <MembersFilterForm
+        query={{ ...baseQuery, email: "alice" }}
+        onChange={vi.fn()}
+        onReset={vi.fn()}
+      />,
+    )
+    expect(screen.getByLabelText("이메일")).toHaveValue("alice")
+    rerender(
+      <MembersFilterForm query={baseQuery} onChange={vi.fn()} onReset={vi.fn()} />,
+    )
+    expect(screen.getByLabelText("이메일")).toHaveValue("")
   })
 })

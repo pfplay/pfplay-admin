@@ -26,6 +26,7 @@ const TIER_LABEL: Record<string, string> = {
 function formatKst(iso: string | null): string {
   if (!iso) return "-"
   const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return "-"
   return d.toLocaleString("ko-KR", { hour12: false })
 }
 

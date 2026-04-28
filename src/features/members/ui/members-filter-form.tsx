@@ -41,6 +41,9 @@ export function MembersFilterForm({ query, onChange, onReset }: Props) {
   const sortId = useId()
 
   const [emailDraft, setEmailDraft] = useState(query.email ?? "")
+  useEffect(() => {
+    setEmailDraft(query.email ?? "")
+  }, [query.email])
   const debouncedEmail = useDebounce(emailDraft, 300)
 
   useEffect(() => {
