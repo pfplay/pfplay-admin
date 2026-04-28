@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom"
 import { useMemberDetail } from "@/features/members/api/use-member-detail"
 import { MemberDetailCards } from "@/features/members/ui/member-detail-cards"
+import { MembersActionsDropdown } from "@/features/members/ui/members-actions-dropdown"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { ApiError } from "@/shared/api/error"
@@ -32,12 +33,19 @@ export function MembersDetailWidget() {
 
   return (
     <div className="p-6 lg:p-8">
-      <Link
-        to="/members"
-        className="text-sm text-muted-foreground mb-4 inline-block"
-      >
-        ← 목록으로
-      </Link>
+      <div className="flex items-center justify-between mb-4">
+        <Link
+          to="/members"
+          className="text-sm text-muted-foreground inline-block"
+        >
+          ← 목록으로
+        </Link>
+        <MembersActionsDropdown
+          memberId={data.memberId}
+          currentTier={data.authorityTier}
+          displayName={data.profile.nickname ?? data.userAccount.email}
+        />
+      </div>
       <MemberDetailCards detail={data} />
     </div>
   )
