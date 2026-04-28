@@ -150,9 +150,8 @@ export function useChangeMemberTier() {
   return useMutation({
     mutationFn: (vars: { memberId: number; tier: AuthorityTier }) =>
       changeMemberTier(vars.memberId, { tier: vars.tier }),
-    onSuccess: (_data, vars) => {
-      qc.invalidateQueries({ queryKey: ["members"] })
-      qc.invalidateQueries({ queryKey: ["member", vars.memberId] })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["members"] })  // prefix — list+detail 모두 stale
       mutationSuccessToast("등급 변경 완료")
     },
     onError: mutationErrorToast,
@@ -162,18 +161,21 @@ export function useChangeMemberTier() {
 
 ### 4.1 Invalidate 키 매트릭스
 
+14b 실제 query 키 (verified `use-{member,partyroom}-detail.ts`, `use-{members,partyrooms}-list.ts`):
+- members: `["members", "list", query]` / `["members", "detail", memberId]`
+- partyrooms: `["partyrooms", "list", query]` / `["partyrooms", "detail", partyroomId]`
+
 | Mutation | invalidate 키 |
 |---|---|
-| changeTier | `["members"]`, `["member", id]` |
-| withdraw | `["members"]`, `["member", id]` |
-| terminate | `["partyrooms"]`, `["partyroom", id]` |
-| suspend | `["partyrooms"]`, `["partyroom", id]` |
-| restore | `["partyrooms"]`, `["partyroom", id]` |
-| updateMeta | `["partyrooms"]`, `["partyroom", id]` |
-| displayFlag | `["partyrooms"]`, `["partyroom", id]` |
+| changeTier | `["members"]` (prefix — list+detail 모두 매칭) |
+| withdraw | `["members"]` |
+| terminate | `["partyrooms"]` |
+| suspend | `["partyrooms"]` |
+| restore | `["partyrooms"]` |
+| updateMeta | `["partyrooms"]` |
+| displayFlag | `["partyrooms"]` |
 
-14b의 list cache 키는 `["members", "list", filters]` / `["partyrooms", "list", filters]` 형태로, prefix invalidate `["members"]` / `["partyrooms"]`로 모든 filter 변형 무효화.
-detail 키는 `["members", "detail", id]` / `["partyrooms", "detail", id]` (14b §5.2). prefix invalidate가 detail까지 같이 무효화하지만 명시적 detail 키도 추가해 의도 명확히.
+**정책**: prefix-only invalidate. react-query `invalidateQueries({ queryKey: ["members"] })`는 `["members", "list", *]`와 `["members", "detail", *]` 모두 stale 처리. 명시적 detail 키 중복 호출은 redundant라 제거 (14c 시점 채택). 만약 micro-optimization 필요해지면 §13.2 future polish.
 
 ### 4.2 `shared/lib/mutation-toast.ts`
 
@@ -364,9 +366,9 @@ export const UpdateDisplayFlagSchema = z.object({ flag: DisplayFlagEnum })
 | Endpoint | errorCode | HTTP | UI |
 |---|---|---|---|
 | change-tier | `TIER_UNCHANGED` | 400 | toast.error("동일한 등급입니다") + 모달 유지 (현재 tier 비교 disable로 정상 운용엔 미도달) |
-| change-tier | `MEMBER_NOT_FOUND` | 404 | toast + 모달 닫기 + `["member", id]` invalidate (UI ↔ backend 동기화) |
+| change-tier | `MEMBER_NOT_FOUND` | 404 | toast + 모달 닫기 + `["members"]` prefix invalidate (UI ↔ backend 동기화) |
 | withdraw | `MEMBER_NOT_FOUND` | 404 | 동일 |
-| terminate | `NOT_FOUND_ROOM` | 404 | toast + 모달 닫기 + `["partyroom", id]` invalidate |
+| terminate | `NOT_FOUND_ROOM` | 404 | toast + 모달 닫기 + `["partyrooms"]` prefix invalidate |
 | **terminate** | `ALREADY_TERMINATED` | **403** | toast.error("이미 종료된 룸입니다") + 모달 닫기 + invalidate. **terminate 전용** — `ILLEGAL_STATE_TRANSITION` 발생 안 함 |
 | **suspend / restore** | `ILLEGAL_STATE_TRANSITION` | **409** | toast.error("현재 상태에서 불가") + 모달 닫기 + invalidate. **suspend/restore 전용** — `ALREADY_TERMINATED` 발생 안 함 |
 | suspend / restore | `NOT_FOUND_ROOM` | 404 | toast + 모달 닫기 + invalidate |
@@ -546,6 +548,7 @@ G1~G5 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impac
 ### 13.2 14c 신규
 
 - **`AdminMemberDetailResponse`에 `withdrawn`/`withdrawnAt` 필드 추가** (R1) — α 결정으로 14c 시점 idempotent 우회 적용. 백엔드 DTO 확장 후 frontend dropdown disable 로직 활성화 + types.ts mirror
+- **`AdminPartyroomDetailResponse`에 `introduction`/`playbackTimeLimit` 필드 노출** — 14b 시점 detail DTO에 부재. 14c update-meta-dialog는 placeholder를 `currentTitle`에서만 받고 introduction/playbackTimeLimit는 빈 form으로 시작 (어드민이 새로 타이핑). 백엔드 DTO 확장 후 dialog가 현재 값을 placeholder로 보여주도록 개선 + 14b detail card에도 두 필드 표시
 - **bulk-action 14d 분리 작업 패키지** — list page row selection 인프라 + per-item 결과 모달 + bulk handlers
 - **penalty UI** — backend admin command endpoint 신설 (`AdminPartyroomPenaltyCommandController` 가칭) + frontend mutation
 - **avatar publish/retire UI** — backend 별 도메인 PR 후 frontend 추가
