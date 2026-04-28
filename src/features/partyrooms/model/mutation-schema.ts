@@ -26,3 +26,7 @@ export const UpdatePartyroomMetaSchema = z
     { message: "최소 1개 필드는 변경 필요" },
   )
 export type UpdatePartyroomMetaRequest = z.infer<typeof UpdatePartyroomMetaSchema>
+
+export const DisplayFlagEnum = z.enum(["NORMAL", "FEATURED", "HIDDEN"])
+export const UpdateDisplayFlagSchema = z.object({ flag: DisplayFlagEnum })
+export type UpdateDisplayFlagRequest = z.infer<typeof UpdateDisplayFlagSchema>

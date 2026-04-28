@@ -3,6 +3,7 @@ import {
   TerminateReasonSchema,
   SuspendReasonSchema,
   UpdatePartyroomMetaSchema,
+  UpdateDisplayFlagSchema,
 } from "@/features/partyrooms/model/mutation-schema"
 
 describe("TerminateReasonSchema", () => {
@@ -61,5 +62,21 @@ describe("UpdatePartyroomMetaSchema", () => {
   it("rejects playbackTimeLimit < 1 or > 60", () => {
     expect(() => UpdatePartyroomMetaSchema.parse({ playbackTimeLimit: 0 })).toThrow()
     expect(() => UpdatePartyroomMetaSchema.parse({ playbackTimeLimit: 61 })).toThrow()
+  })
+})
+
+describe("UpdateDisplayFlagSchema", () => {
+  it("accepts NORMAL/FEATURED/HIDDEN", () => {
+    expect(UpdateDisplayFlagSchema.parse({ flag: "NORMAL" })).toEqual({ flag: "NORMAL" })
+    expect(UpdateDisplayFlagSchema.parse({ flag: "FEATURED" })).toEqual({ flag: "FEATURED" })
+    expect(UpdateDisplayFlagSchema.parse({ flag: "HIDDEN" })).toEqual({ flag: "HIDDEN" })
+  })
+
+  it("rejects unknown flag", () => {
+    expect(() => UpdateDisplayFlagSchema.parse({ flag: "PUBLIC" })).toThrow()
+  })
+
+  it("rejects missing flag", () => {
+    expect(() => UpdateDisplayFlagSchema.parse({})).toThrow()
   })
 })
