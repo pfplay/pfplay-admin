@@ -34,4 +34,23 @@ export const memberHandlers = [
     }
     return HttpResponse.json({ data: memberDetailFixture })
   }),
+
+  // mutation: tier 변경 (default happy path; per-test override는 server.use)
+  http.patch(`${API}/:memberId/tier`, ({ params }) => {
+    return HttpResponse.json({
+      data: { memberId: Number(params.memberId), oldTier: "AM", newTier: "FM" },
+    })
+  }),
+
+  // mutation: withdraw (idempotent default — alreadyWithdrawn=false)
+  http.post(`${API}/:memberId/withdraw`, ({ params }) => {
+    return HttpResponse.json({
+      data: {
+        memberId: Number(params.memberId),
+        userAccountId: 100,
+        withdrawnAt: "2026-04-29T10:00:00",
+        alreadyWithdrawn: false,
+      },
+    })
+  }),
 ]

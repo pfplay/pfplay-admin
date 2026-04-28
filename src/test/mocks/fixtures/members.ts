@@ -40,3 +40,16 @@ export const memberDetailFixture: AdminMemberDetail = {
     { occurredAt: "2026-04-28T10:00:00", type: "LOGIN", summary: "로그인" },
   ],
 }
+
+// 14c mutation error fixtures (per-test server.use 시 사용)
+export const tierUnchangedErrorFixture = {
+  status: 400,
+  errorCode: "TIER_UNCHANGED",
+  message: "동일 등급",
+}
+
+export const memberNotFoundErrorFixture = {
+  status: 404,
+  errorCode: "MEMBER_NOT_FOUND",
+  message: "회원을 찾을 수 없음",
+}
