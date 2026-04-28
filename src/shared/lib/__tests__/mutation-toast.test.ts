@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest"
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest"
 import { toast } from "sonner"
 import { ApiError } from "@/shared/api/error"
 import { mutationSuccessToast, mutationErrorToast } from "@/shared/lib/mutation-toast"
@@ -7,6 +7,10 @@ describe("mutation-toast", () => {
   beforeEach(() => {
     vi.spyOn(toast, "success").mockImplementation(() => "")
     vi.spyOn(toast, "error").mockImplementation(() => "")
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it("mutationSuccessToast calls toast.success with message", () => {
