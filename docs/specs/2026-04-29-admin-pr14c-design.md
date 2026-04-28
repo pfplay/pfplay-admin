@@ -315,6 +315,7 @@ export const TerminateReasonSchema = z.object({
 export const SuspendReasonSchema = TerminateReasonSchema   // 동일 형태
 
 // backend §2.2 ground-truth mirror
+// (.int()는 backend Integer 타입을 zod 단에서 enforce — annotation 1:1 mirror가 아니라 타입 정합성 확장)
 export const UpdatePartyroomMetaSchema = z.object({
   title: z.string().min(1).max(100).optional(),
   introduction: z.string().max(500).optional(),
@@ -459,9 +460,9 @@ mutation 후 invalidate `["members"]` / `["partyrooms"]` prefix → 14b list 페
 | **G2.1** | polish (모달 close 타이밍 / toast 메시지 / a11y) |
 | **G3** | **partyroom status lifecycle** — `partyrooms-api.ts` 확장 (terminate/suspend/restore) + `mutation-schema.ts` (reason) + 3 hook + 3 dialog (terminate/suspend는 form, restore는 confirm) + `partyrooms-actions-dropdown.tsx` skeleton (status-aware disabled 포함, 단 메뉴는 lifecycle 3개만) + msw mutation handlers + error fixtures + 테스트 |
 | **G3.1** | polish (status 전이 매트릭스 edge case, 409 toast 메시지) |
-| **G4** | partyroom updateMeta — `partyrooms-api.updateMeta` + `mutation-schema.ts` 확장 + hook + `update-meta-dialog.tsx` (title/introduction/playbackTimeLimit, 1+ 필드 refine) + dropdown에 항목 추가 + 테스트. backend validator 길이/범위 grep 후 zod에 mirror — §14에 reality 박음 |
+| **G4** | partyroom updateMeta — `partyrooms-api.updateMeta` + `mutation-schema.ts` 확장 + hook + `update-meta-dialog.tsx` (title/introduction/playbackTimeLimit, 1+ 필드 refine) + dropdown에 항목 추가 + 테스트. backend validator 길이/범위 sanity grep (R3 잔존) — 변경됐으면 §12에 reality 박음 |
 | **G5** | partyroom display-flag — `partyrooms-api.updateDisplayFlag` + `mutation-schema.ts` 확장 + hook + `display-flag-dialog.tsx` (NORMAL/FEATURED/HIDDEN, 현재 flag disable) + dropdown 마지막 항목 + 테스트 |
-| **G6** | spec §11 Implementation Reality + §12 Future Polish catch-up — 14b §13.2 forward-evolution backfill (14b 시점에 14c가 정리할 future polish 항목 SHA 기록) + AdminMemberDetailResponse withdrawn 필드 추가 항목 §12에 명시 |
+| **G6** | spec §12 Implementation Reality + §13.2 Future Polish catch-up — 14b §13.2 forward-evolution backfill (14b 시점에 14c가 정리할 future polish 항목 SHA 기록). §13.2 "AdminMemberDetailResponse withdrawn 필드 추가" 항목은 14c spec 본문에 이미 박혀 있음 (작성 시 backfill 완료) |
 
 ## 11. 위험 / 미해결
 
@@ -521,7 +522,10 @@ mutation 후 invalidate `["members"]` / `["partyrooms"]` prefix → 14b list 페
 **위험**: 기본 `onError`가 toast만 띄우고 mutation 상태는 isError true로 남음. 모달이 다시 열렸을 때 stale isError 잔존 가능.
 **대응**: 모달 close 시 `mutation.reset()` 호출 (`useEffect(() => { if (!open) mutation.reset() }, [open])`).
 
-## 12. Open Items / Implementation Reality (post-build catch-up)
+### R12 — updateMeta / displayFlag 백엔드 status 가드 미확인
+
+**위험**: §6.4 disabled matrix는 status=TERMINATED 시 클라에서 두 mutation을 disable하지만, backend가 동일 가드를 강제하는지(403/409 vs 200) 미검증. 클라 disable이 모종의 이유로 우회되면 backend가 막아주는지 확인 필요.
+**대응**: G4(updateMeta) / G5(displayFlag) chunk 진입 시 backend 서비스 코드 grep — `AdminPartyroomCommandService.updateMeta`/`setDisplayFlag` 안에 status 체크 있는지 확인. 가드 부재 시 §12에 reality 박음 + §13.2에 backend 보강 future polish 추가.
 
 G1~G5 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impact로 G6에서 backfill. 14b §14 패턴 그대로.
 
