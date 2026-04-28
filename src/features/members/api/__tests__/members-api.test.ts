@@ -3,6 +3,7 @@ import { server } from "@/test/mocks/server"
 import { http, HttpResponse } from "msw"
 import { listMembers, getMemberDetail } from "../members-api"
 import { memberSummaryFixture, memberDetailFixture } from "@/test/mocks/fixtures/members"
+import { ApiError } from "@/shared/api/error"
 
 describe("members-api", () => {
   describe("listMembers", () => {
@@ -57,7 +58,11 @@ describe("members-api", () => {
     })
 
     it("404 → ApiError throw", async () => {
-      await expect(getMemberDetail(9999)).rejects.toThrow()
+      await expect(getMemberDetail(9999)).rejects.toMatchObject({
+        status: 404,
+        errorCode: "MEMBER_NOT_FOUND",
+      })
+      await expect(getMemberDetail(9999)).rejects.toBeInstanceOf(ApiError)
     })
   })
 })
