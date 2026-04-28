@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest"
 import { server } from "@/test/mocks/server"
 import { http, HttpResponse } from "msw"
-import { listPartyrooms, getPartyroomDetail } from "../partyrooms-api"
+import {
+  listPartyrooms,
+  getPartyroomDetail,
+  terminatePartyroom,
+  suspendPartyroom,
+  restorePartyroom,
+} from "../partyrooms-api"
 import { partyroomListItemFixture } from "@/test/mocks/fixtures/partyrooms"
 import { ApiError } from "@/shared/api/error"
 
@@ -83,6 +89,71 @@ describe("partyrooms-api", () => {
         errorCode: "NOT_FOUND_ROOM",
       })
       await expect(getPartyroomDetail(9999)).rejects.toBeInstanceOf(ApiError)
+    })
+  })
+
+  describe("terminatePartyroom", () => {
+    it("POST /admin/partyrooms/:id/terminate with body, 204", async () => {
+      let bodySeen: unknown
+      server.use(
+        http.post("*/api/v1/admin/partyrooms/1/terminate", async ({ request }) => {
+          bodySeen = await request.json()
+          return new HttpResponse(null, { status: 204 })
+        }),
+      )
+      await terminatePartyroom(1, { reason: "abuse" })
+      expect(bodySeen).toEqual({ reason: "abuse" })
+    })
+
+    it("propagates ApiError on 403 ALREADY_TERMINATED", async () => {
+      server.use(
+        http.post("*/api/v1/admin/partyrooms/1/terminate", () =>
+          HttpResponse.json(
+            { status: 403, errorCode: "ALREADY_TERMINATED", message: "이미 종료" },
+            { status: 403 },
+          ),
+        ),
+      )
+      await expect(terminatePartyroom(1, { reason: "x" })).rejects.toMatchObject({
+        status: 403,
+        errorCode: "ALREADY_TERMINATED",
+      })
+    })
+  })
+
+  describe("suspendPartyroom / restorePartyroom", () => {
+    it("suspend 204", async () => {
+      server.use(
+        http.post("*/api/v1/admin/partyrooms/1/suspend", () => new HttpResponse(null, { status: 204 })),
+      )
+      await expect(suspendPartyroom(1, { reason: "x" })).resolves.toBeUndefined()
+    })
+
+    it("restore 204 with no body", async () => {
+      let bodySeen = "presence-marker"
+      server.use(
+        http.post("*/api/v1/admin/partyrooms/1/restore", async ({ request }) => {
+          bodySeen = await request.text()
+          return new HttpResponse(null, { status: 204 })
+        }),
+      )
+      await restorePartyroom(1)
+      expect(bodySeen).toBe("")
+    })
+
+    it("suspend propagates 409 ILLEGAL_STATE_TRANSITION", async () => {
+      server.use(
+        http.post("*/api/v1/admin/partyrooms/1/suspend", () =>
+          HttpResponse.json(
+            { status: 409, errorCode: "ILLEGAL_STATE_TRANSITION", message: "전이 불가" },
+            { status: 409 },
+          ),
+        ),
+      )
+      await expect(suspendPartyroom(1, { reason: "x" })).rejects.toMatchObject({
+        status: 409,
+        errorCode: "ILLEGAL_STATE_TRANSITION",
+      })
     })
   })
 })
