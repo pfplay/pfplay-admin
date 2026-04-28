@@ -257,14 +257,15 @@ const changePasswordSchema = z.object({
 
 `vite.config.ts`에 `test: { environment: "jsdom", globals: true, setupFiles: ["./src/test/setup.ts"] }` 추가.
 
-### 8.2 테스트 케이스 (15개)
+### 8.2 테스트 케이스 (16개)
 
-**Unit (5)**:
+**Unit (6)**:
 1. `useSessionStore.setSession` → `isAuthenticated=true` + meta 저장 + localStorage persist
 2. `useSessionStore.clear` → 초기화 + localStorage 비움
 3. `useSessionStore.clearMustChangePassword` → meta.mustChangePassword=false
 4. `http.ts` 401 응답 → `store.clear()` + `window.location.href` 호출 (jsdom mock)
 5. `http.ts` `skip401Redirect: true` → 인터셉터 우회 + ApiError throw
+6. `http.ts` XSRF-TOKEN 쿠키 존재 + 변형 method → `X-XSRF-TOKEN` 헤더 echo
 
 **Component (3)**:
 6. LoginForm: invalid email format → field error
