@@ -8,6 +8,7 @@ import {
   suspendPartyroom,
   restorePartyroom,
   updatePartyroomMeta,
+  updatePartyroomDisplayFlag,
 } from "../partyrooms-api"
 import { partyroomListItemFixture } from "@/test/mocks/fixtures/partyrooms"
 import { ApiError } from "@/shared/api/error"
@@ -169,6 +170,20 @@ describe("partyrooms-api", () => {
       )
       await updatePartyroomMeta(1, { title: "new title", playbackTimeLimit: 30 })
       expect(bodySeen).toEqual({ title: "new title", playbackTimeLimit: 30 })
+    })
+  })
+
+  describe("updatePartyroomDisplayFlag", () => {
+    it("PATCH /admin/partyrooms/:id/display-flag with body, 204", async () => {
+      let bodySeen: unknown
+      server.use(
+        http.patch("*/api/v1/admin/partyrooms/1/display-flag", async ({ request }) => {
+          bodySeen = await request.json()
+          return new HttpResponse(null, { status: 204 })
+        }),
+      )
+      await updatePartyroomDisplayFlag(1, { flag: "FEATURED" })
+      expect(bodySeen).toEqual({ flag: "FEATURED" })
     })
   })
 })

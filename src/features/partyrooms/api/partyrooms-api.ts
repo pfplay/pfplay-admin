@@ -7,6 +7,7 @@ import type {
   TerminateRequest,
   SuspendRequest,
   UpdatePartyroomMetaRequest,
+  UpdateDisplayFlagRequest,
 } from "../model/mutation-schema"
 
 /**
@@ -59,6 +60,16 @@ export async function updatePartyroomMeta(
   body: UpdatePartyroomMetaRequest,
 ): Promise<void> {
   await http<void>(`/api/v1/admin/partyrooms/${partyroomId}`, {
+    method: "PATCH",
+    body,
+  })
+}
+
+export async function updatePartyroomDisplayFlag(
+  partyroomId: number,
+  body: UpdateDisplayFlagRequest,
+): Promise<void> {
+  await http<void>(`/api/v1/admin/partyrooms/${partyroomId}/display-flag`, {
     method: "PATCH",
     body,
   })
