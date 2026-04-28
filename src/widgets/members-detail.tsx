@@ -20,9 +20,11 @@ export function MembersDetailWidget() {
   if (isLoading) {
     return (
       <div className="p-6 lg:p-8 space-y-4">
-        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-8 w-64" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-48 w-full" />
       </div>
     )
   }
@@ -44,7 +46,9 @@ export function MembersDetailWidget() {
 function NotFoundView() {
   return (
     <div className="p-6 lg:p-8">
-      <p className="text-muted-foreground mb-4">존재하지 않는 회원입니다</p>
+      <h2 className="text-xl font-semibold text-muted-foreground mb-4">
+        존재하지 않는 회원입니다
+      </h2>
       <Button asChild variant="outline">
         <Link to="/members">목록으로</Link>
       </Button>

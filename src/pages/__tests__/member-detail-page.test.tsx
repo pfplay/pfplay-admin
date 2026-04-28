@@ -44,6 +44,7 @@ describe("MemberDetailPage integration", () => {
     await waitFor(() =>
       expect(screen.getByText(/존재하지 않는 회원/)).toBeInTheDocument(),
     )
-    expect(screen.getByText("목록으로")).toBeInTheDocument()
+    const backLink = screen.getByRole("link", { name: "목록으로" })
+    expect(backLink).toHaveAttribute("href", "/members")
   })
 })
