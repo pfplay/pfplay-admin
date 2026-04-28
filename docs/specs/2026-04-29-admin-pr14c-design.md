@@ -207,7 +207,7 @@ export async function changeMemberTier(
 ): Promise<AdminMemberTierChangeResponse> {
   const res = await http<ApiCommonResponse<AdminMemberTierChangeResponse>>(
     `/api/v1/admin/members/${memberId}/tier`,
-    { method: "PATCH", json: body },
+    { method: "PATCH", body },
   )
   return unwrap(res)
 }
@@ -288,7 +288,7 @@ export async function terminatePartyroom(
 ): Promise<void> {
   await http<void>(`/api/v1/admin/partyrooms/${partyroomId}/terminate`, {
     method: "POST",
-    json: body,
+    body,
   })
 }
 
