@@ -10,9 +10,9 @@ export default function AppLayout() {
   const logout = useLogout()
 
   const navItems = [
-    { to: "/", icon: LayoutDashboard, label: "대시보드", disabled: false },
-    { to: "/members", icon: Users, label: "회원", disabled: false },
-    { to: "/partyrooms", icon: DoorOpen, label: "파티룸", disabled: false },
+    { to: "/", icon: LayoutDashboard, label: "대시보드" },
+    { to: "/members", icon: Users, label: "회원" },
+    { to: "/partyrooms", icon: DoorOpen, label: "파티룸" },
   ]
 
   return (
@@ -22,22 +22,15 @@ export default function AppLayout() {
           <h1 className="text-xl font-bold text-foreground">PFPlay Admin</h1>
         </div>
         <nav className="flex-1 space-y-1 p-4">
-          {navItems.map((item) =>
-            item.disabled ? (
-              <div key={item.to}
-                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground/50 cursor-not-allowed">
-                <item.icon className="h-5 w-5" />{item.label}
-              </div>
-            ) : (
-              <NavLink key={item.to} to={item.to}
-                className={({ isActive }) => cn(
-                  "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
-                  isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                )} end={item.to === "/"}>
-                <item.icon className="h-5 w-5" />{item.label}
-              </NavLink>
-            )
-          )}
+          {navItems.map((item) => (
+            <NavLink key={item.to} to={item.to}
+              className={({ isActive }) => cn(
+                "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+              )} end={item.to === "/"}>
+              <item.icon className="h-5 w-5" />{item.label}
+            </NavLink>
+          ))}
         </nav>
         <div className="border-t border-border p-4 space-y-2">
           {meta && (
