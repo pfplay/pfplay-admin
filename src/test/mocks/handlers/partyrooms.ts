@@ -30,4 +30,9 @@ export const partyroomHandlers = [
     }
     return HttpResponse.json(partyroomDetailFixture)
   }),
+
+  // 14c lifecycle mutations (default happy path; per-test override는 server.use)
+  http.post(`${API}/:partyroomId/terminate`, () => new HttpResponse(null, { status: 204 })),
+  http.post(`${API}/:partyroomId/suspend`, () => new HttpResponse(null, { status: 204 })),
+  http.post(`${API}/:partyroomId/restore`, () => new HttpResponse(null, { status: 204 })),
 ]

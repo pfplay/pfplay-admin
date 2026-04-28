@@ -37,3 +37,22 @@ export const partyroomDetailFixture: AdminPartyroomDetail = {
   recentReports: [],
   recentAdminActions: [],
 }
+
+// 14c mutation error fixtures (per-test server.use 시 사용)
+export const alreadyTerminatedErrorFixture = {
+  status: 403,
+  errorCode: "ALREADY_TERMINATED",
+  message: "이미 종료된 룸",
+}
+
+export const illegalStateTransitionErrorFixture = {
+  status: 409,
+  errorCode: "ILLEGAL_STATE_TRANSITION",
+  message: "현재 상태에서 불가",
+}
+
+export const partyroomNotFoundErrorFixture = {
+  status: 404,
+  errorCode: "NOT_FOUND_ROOM",
+  message: "존재하지 않는 룸",
+}
