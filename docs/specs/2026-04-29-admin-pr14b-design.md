@@ -468,7 +468,7 @@ backend가 enum을 추가/변경할 때 frontend가 즉시 깨지지 않도록:
 | **G1** | demo 슬라이스 삭제 (`entities/{user,room}`, `features/{users,rooms}`, `widgets/{users,rooms}`, `pages/{users,rooms}-page`) + App.tsx 라우트 정리 + 사이드바 라벨/경로 변경 + react-query + 누락 shadcn 설치 + `entities/{member,partyroom}` 타입 정의 + `shared/api/page.ts` + `shared/lib/url-state.ts` + `mocks/handlers/{members,partyrooms}.ts` 분할 + `QueryClientProvider` wiring |
 | **G2** | `features/members/{api,model}` (list query + zod schema + URL serialize + react-query hook) + msw mock + unit test |
 | **G3** | `widgets/members-list` + `pages/members-page` (filter form + table + pagination) + integration test (`/members`) |
-| **G4** | `features/members/api` detail + `widgets/members-detail` + `pages/member-detail-page` (header + 5 카드 = §5.3) + integration test (`/members/:memberId`) |
+| **G4** | `features/members/api` detail + `widgets/members-detail` + `pages/member-detail-page` (5 카드 — §5.3 참조) + integration test (`/members/:memberId`) |
 | **G5** | `features/partyrooms/{api,model}` (list query + zod + sort 화이트리스트 정렬) + msw mock + unit test |
 | **G6** | `widgets/partyrooms-list` + `pages/partyrooms-page` + integration test |
 | **G7** | `features/partyrooms/api` detail + `widgets/partyrooms-detail` + `pages/partyroom-detail-page` (header + top-level + playback + crews + djQueue) + integration test |
@@ -540,9 +540,9 @@ backend가 enum을 추가/변경할 때 frontend가 즉시 깨지지 않도록:
 3. `react-query` `QueryClientProvider` 추가 위치 (App.tsx vs main.tsx)
 4. URL ↔ form 동기화 helper 실제 구현 위치
 5. `Page<T>` 응답에서 사용 안 하는 필드(`pageable`, `sort` 객체) 처리 — 무시 vs 타입 정의 포함
-6. backend wrap 비대칭 (멤버 wrap / 파티룸 raw) 두 패턴 공존 정당화
-7. demo `api-client.ts` 사용처 grep 결과 (R8)
-8. `DisplayFlag` / `GradeType` / `PenaltyType` / `PartyroomAdminActionType` enum 실제 값 (G7/G8 confirm)
+6. demo `api-client.ts` 사용처 grep 결과 (R8)
+7. `DisplayFlag` / `GradeType` / `PenaltyType` / `PartyroomAdminActionType` enum 실제 값 (G7/G8 confirm)
+8. wrap 통일 SHA backfill — backend가 §15.2 R1을 닫으면 14b의 `unwrap()` 마이그레이션 SHA를 여기 기록
 
 각 항목 `**[Gx SHA <hash>]** 사유 / impact` 형식으로 기록.
 
