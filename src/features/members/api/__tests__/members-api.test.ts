@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { server } from "@/test/mocks/server"
 import { http, HttpResponse } from "msw"
-import { listMembers, getMemberDetail } from "../members-api"
+import { listMembers, getMemberDetail, changeMemberTier, withdrawMember } from "../members-api"
 import { memberSummaryFixture, memberDetailFixture } from "@/test/mocks/fixtures/members"
 import { ApiError } from "@/shared/api/error"
 
@@ -63,6 +63,58 @@ describe("members-api", () => {
         errorCode: "MEMBER_NOT_FOUND",
       })
       await expect(getMemberDetail(9999)).rejects.toBeInstanceOf(ApiError)
+    })
+  })
+
+  describe("changeMemberTier", () => {
+    it("PATCH /admin/members/:id/tier with body and unwraps response", async () => {
+      server.use(
+        http.patch("*/api/v1/admin/members/1/tier", async ({ request }) => {
+          const body = await request.json()
+          expect(body).toEqual({ tier: "FM" })
+          return HttpResponse.json({ data: { memberId: 1, oldTier: "AM", newTier: "FM" } })
+        }),
+      )
+      const res = await changeMemberTier(1, { tier: "FM" })
+      expect(res).toEqual({ memberId: 1, oldTier: "AM", newTier: "FM" })
+    })
+
+    it("propagates ApiError on 400 TIER_UNCHANGED", async () => {
+      server.use(
+        http.patch("*/api/v1/admin/members/1/tier", () =>
+          HttpResponse.json({ status: 400, errorCode: "TIER_UNCHANGED", message: "동일 등급" }, { status: 400 }),
+        ),
+      )
+      await expect(changeMemberTier(1, { tier: "FM" })).rejects.toMatchObject({
+        status: 400, errorCode: "TIER_UNCHANGED",
+      })
+    })
+  })
+
+  describe("withdrawMember", () => {
+    it("POST /admin/members/:id/withdraw and unwraps", async () => {
+      server.use(
+        http.post("*/api/v1/admin/members/1/withdraw", () =>
+          HttpResponse.json({
+            data: { memberId: 1, userAccountId: 100, withdrawnAt: "2026-04-29T10:00:00", alreadyWithdrawn: false },
+          }),
+        ),
+      )
+      const res = await withdrawMember(1)
+      expect(res.alreadyWithdrawn).toBe(false)
+      expect(res.withdrawnAt).toBe("2026-04-29T10:00:00")
+    })
+
+    it("returns alreadyWithdrawn=true on idempotent re-call", async () => {
+      server.use(
+        http.post("*/api/v1/admin/members/1/withdraw", () =>
+          HttpResponse.json({
+            data: { memberId: 1, userAccountId: 100, withdrawnAt: "2026-04-20T12:00:00", alreadyWithdrawn: true },
+          }),
+        ),
+      )
+      const res = await withdrawMember(1)
+      expect(res.alreadyWithdrawn).toBe(true)
     })
   })
 })
