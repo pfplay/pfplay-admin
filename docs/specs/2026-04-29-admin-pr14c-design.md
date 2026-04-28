@@ -35,13 +35,15 @@
 | 권한 가드 | `@adminAuth.isAdmin()` |
 | Request body | `AdminMemberTierChangeRequest { tier: AuthorityTier }` (FM/AM/GT) |
 | Response envelope | `ApiCommonResponse<AdminMemberTierChangeResponse>` |
+| Response payload | `AdminMemberTierChangeResponse { memberId: Long, oldTier: AuthorityTier, newTier: AuthorityTier }` |
 | 도메인 예외 | `AdminMemberException.TIER_UNCHANGED` 400 / `MEMBER_NOT_FOUND` 404 |
 | 부수 효과 | `MemberTierChangedEvent` publish |
 | **A-4 withdraw** | `POST /api/v1/admin/members/{memberId}/withdraw` (`AdminMemberWithdrawCommandController`) |
 | 권한 가드 | `@adminAuth.isAdmin()` |
 | Request body | (없음) |
-| Response envelope | `ApiCommonResponse<AdminMemberWithdrawResponse { alreadyWithdrawn: boolean, ... }>` |
-| **Idempotent** | 이미 탈퇴된 member 재호출 시 200 + `alreadyWithdrawn=true` (4xx 아님) |
+| Response envelope | `ApiCommonResponse<AdminMemberWithdrawResponse>` |
+| Response payload | `AdminMemberWithdrawResponse { memberId: Long, userAccountId: Long, withdrawnAt: LocalDateTime, alreadyWithdrawn: boolean }` |
+| **Idempotent** | 이미 탈퇴된 member 재호출 시 200 + `alreadyWithdrawn=true` (4xx 아님). 정상 탈퇴는 `alreadyWithdrawn=false` + 새 `withdrawnAt`. |
 | 도메인 예외 | `MEMBER_NOT_FOUND` 404 |
 | 부수 효과 | email PII erase, lastLoginAt 보존, `UserAccountWithdrawnEvent` publish |
 
@@ -61,7 +63,8 @@
 | **B-4 재개** | `POST /api/v1/admin/partyrooms/{partyroomId}/restore` |
 | Request | (없음) |
 | **B-5 메타 수정** | `PATCH /api/v1/admin/partyrooms/{partyroomId}` |
-| Request | `UpdatePartyroomMetaRequest { title?, introduction?, playbackTimeLimit? }` (G2/G4 chunk에서 backend validator 그대로 zod로 mirror) |
+| Request | `UpdatePartyroomMetaRequest { title?: String, introduction?: String, playbackTimeLimit?: Integer }` |
+| Validators | `title @Size(max=100)`, `introduction @Size(max=500)`, `playbackTimeLimit @Min(1) @Max(60)`, `@AssertTrue isAtLeastOnePresent("최소 1개 필드는 변경 필요")` |
 | **B-6 display-flag 변경** | `PATCH /api/v1/admin/partyrooms/{partyroomId}/display-flag` |
 | Request | `UpdateDisplayFlagRequest { flag: DisplayFlag }` (`NORMAL` / `FEATURED` / `HIDDEN`) |
 
@@ -220,7 +223,21 @@ export async function withdrawMember(
 }
 ```
 
-`AdminMemberTierChangeResponse` / `AdminMemberWithdrawResponse` 타입은 `entities/member/model/types.ts`에 추가 (정확한 필드는 G2 chunk에서 backend DTO grep 후 확정 → §14에 reality 박음).
+`entities/member/model/types.ts`에 추가:
+```ts
+export interface AdminMemberTierChangeResponse {
+  memberId: number
+  oldTier: AuthorityTier
+  newTier: AuthorityTier
+}
+export interface AdminMemberWithdrawResponse {
+  memberId: number
+  userAccountId: number
+  withdrawnAt: string  // LocalDateTime ISO (KST 가정 — 14b §11 footer)
+  alreadyWithdrawn: boolean
+}
+```
+필드 형태는 §2.1 backend DTO ground-truth와 1:1 mirror. 14a/14b의 `LocalDateTime` → ISO string 변환 정책 일관 (`OffsetDateTime` 일괄 교체는 14b §15.2 future polish).
 
 ### 5.2 zod schema (`features/members/model/mutation-schema.ts`)
 
@@ -287,7 +304,7 @@ export async function updatePartyroomDisplayFlag(
 ): Promise<void> { ... }
 ```
 
-`http.ts`의 응답 처리는 14a에서 정의된 동작 그대로 — 204의 경우 body 없이 resolve. 신규 작업 0 (G3 chunk에서 검증, 필요 시 §14에 reality 박음).
+`http.ts`의 응답 처리는 14a 그대로 — `http.ts:54` `if (res.status === 204) return undefined as T`로 204를 `undefined`로 resolve. 신규 작업 0. 테스트는 mutation hook이 `undefined`로 resolve되는 것만 assert.
 
 ### 6.2 zod schema (`features/partyrooms/model/mutation-schema.ts`)
 
@@ -297,13 +314,15 @@ export const TerminateReasonSchema = z.object({
 })
 export const SuspendReasonSchema = TerminateReasonSchema   // 동일 형태
 
+// backend §2.2 ground-truth mirror
 export const UpdatePartyroomMetaSchema = z.object({
-  title: z.string().min(1).max(/* G4 backend validator grep 후 확정 */).optional(),
-  introduction: z.string().max(/* G4 */).optional(),
-  playbackTimeLimit: z.coerce.number().int().min(/* G4 */).max(/* G4 */).optional(),
-}).refine(v => v.title || v.introduction || v.playbackTimeLimit !== undefined, {
-  message: "변경할 필드를 1개 이상 입력해주세요",
-})
+  title: z.string().min(1).max(100).optional(),
+  introduction: z.string().max(500).optional(),
+  playbackTimeLimit: z.coerce.number().int().min(1).max(60).optional(),
+}).refine(
+  v => v.title !== undefined || v.introduction !== undefined || v.playbackTimeLimit !== undefined,
+  { message: "최소 1개 필드는 변경 필요" },  // backend @AssertTrue isAtLeastOnePresent와 동일 메시지
+)
 
 export const DisplayFlagEnum = z.enum(["NORMAL", "FEATURED", "HIDDEN"])
 export const UpdateDisplayFlagSchema = z.object({ flag: DisplayFlagEnum })
@@ -327,13 +346,13 @@ export const UpdateDisplayFlagSchema = z.object({ flag: DisplayFlagEnum })
 
 `DropdownMenu` 트리거 → 5 항목. **status-aware disabled**:
 
-| 항목 | 활성 조건 | disabled tooltip |
-|---|---|---|
-| "메타 수정" | status ∈ {ACTIVE, SUSPENDED} | "종료된 룸은 수정할 수 없습니다" |
-| "표시 변경" | status ∈ {ACTIVE, SUSPENDED} | "종료된 룸은 표시를 변경할 수 없습니다" |
-| "일시 정지" | status = ACTIVE | (현재 상태 안내) |
-| "재개" | status = SUSPENDED | (현재 상태 안내) |
-| "강제 종료" | status ∈ {ACTIVE, SUSPENDED} | "이미 종료됨" |
+| 항목 | 활성 조건 | disabled tooltip | 클라 차단 못한 시 백엔드 응답 |
+|---|---|---|---|
+| "메타 수정" | status ∈ {ACTIVE, SUSPENDED} | "종료된 룸은 수정할 수 없습니다" | (backend 별도 가드 미확인 — G4에서 검증) |
+| "표시 변경" | status ∈ {ACTIVE, SUSPENDED} | "종료된 룸은 표시를 변경할 수 없습니다" | (G5에서 검증) |
+| "일시 정지" | status = ACTIVE | "이미 일시정지된 룸입니다" / "종료된 룸은 정지할 수 없습니다" | 409 `ILLEGAL_STATE_TRANSITION` |
+| "재개" | status = SUSPENDED | "정상 운영 중입니다" / "종료된 룸은 재개할 수 없습니다" | 409 `ILLEGAL_STATE_TRANSITION` |
+| "강제 종료" | status ∈ {ACTIVE, SUSPENDED} | "이미 종료됨" | 403 `ALREADY_TERMINATED` (이미 TERMINATED 상태일 때만, 다른 status는 정상 처리) |
 
 활성 dialog id state (`null | "terminate" | "suspend" | "restore" | "update-meta" | "display-flag"`) 보유.
 
@@ -343,12 +362,14 @@ export const UpdateDisplayFlagSchema = z.object({ flag: DisplayFlagEnum })
 
 | Endpoint | errorCode | HTTP | UI |
 |---|---|---|---|
-| change-tier | `TIER_UNCHANGED` | 400 | toast.error("동일한 등급입니다") + 모달 유지 (zod 1차 차단되어 정상 운용엔 미도달) |
+| change-tier | `TIER_UNCHANGED` | 400 | toast.error("동일한 등급입니다") + 모달 유지 (현재 tier 비교 disable로 정상 운용엔 미도달) |
 | change-tier | `MEMBER_NOT_FOUND` | 404 | toast + 모달 닫기 + `["member", id]` invalidate (UI ↔ backend 동기화) |
 | withdraw | `MEMBER_NOT_FOUND` | 404 | 동일 |
 | terminate | `NOT_FOUND_ROOM` | 404 | toast + 모달 닫기 + `["partyroom", id]` invalidate |
-| terminate | `ALREADY_TERMINATED` | 403 | toast.error("이미 종료된 룸입니다") + 모달 닫기 + invalidate |
-| terminate / suspend / restore | `ILLEGAL_STATE_TRANSITION` | 409 | toast.error("현재 상태에서 불가") + invalidate |
+| **terminate** | `ALREADY_TERMINATED` | **403** | toast.error("이미 종료된 룸입니다") + 모달 닫기 + invalidate. **terminate 전용** — `ILLEGAL_STATE_TRANSITION` 발생 안 함 |
+| **suspend / restore** | `ILLEGAL_STATE_TRANSITION` | **409** | toast.error("현재 상태에서 불가") + 모달 닫기 + invalidate. **suspend/restore 전용** — `ALREADY_TERMINATED` 발생 안 함 |
+| suspend / restore | `NOT_FOUND_ROOM` | 404 | toast + 모달 닫기 + invalidate |
+| updateMeta / displayFlag | (G4/G5에서 backend 가드 검증) | — | 정상 운용엔 클라 disable로 미도달. 도달 시 `mutationErrorToast` generic 처리 + invalidate |
 | 모든 mutation | 그 외 (5xx, 네트워크) | — | `mutationErrorToast`가 generic 처리 |
 
 ### 7.2 일관 정책
@@ -450,15 +471,15 @@ mutation 후 invalidate `["members"]` / `["partyrooms"]` prefix → 14b list 페
 **대응**: withdraw 메뉴 always 활성. 클릭 → confirm → idempotent 응답 `alreadyWithdrawn=true`면 toast로 분기 안내. backend DTO 확장은 §12 future polish.
 **잔존 위험**: 어드민이 이미 탈퇴된 회원에게 withdraw 클릭 가능 → idempotent toast 안내로 mitigate. 첫 클릭 후엔 detail invalidate가 활동 로그 등에서 withdrawn 흔적을 보여줌.
 
-### R2 — partyroom mutation 응답 204 처리 검증
+### R2 — partyroom mutation 응답 204 처리 (해소됨)
 
-**위험**: 14a `http.ts`가 204 (body 없음)를 어떻게 처리하는지 14c 시점에 처음 사용. JSON parse 실패 분기 등 검증 필요.
-**대응**: G3 chunk 진입 시 `http.ts` 코드 read + 204 분기 확인. 미흡하면 `http.ts` 패치 (메모리 §13.2 forward-evolution 패턴) — 14a §14에 reality 박음.
+**상태**: `pfplay-admin/src/shared/api/http.ts:54` `if (res.status === 204) return undefined as T`로 14a 단계에서 이미 처리. 14c 신규 작업 0.
+**테스트**: mutation hook이 `undefined`로 resolve되는 것만 assert.
 
-### R3 — `UpdatePartyroomMetaRequest` validator 미확정
+### R3 — `UpdatePartyroomMetaRequest` validator (해소됨)
 
-**위험**: spec §6.2의 zod refine은 backend validator를 mirror해야 정합. 현재 backend 정확 값 미확인.
-**대응**: G4 chunk 진입 직전 backend `UpdatePartyroomMetaRequest.java` grep + validator (`@Size`, `@Min`/`@Max` 등) 추출. zod에 mirror하고 §14에 SHA 기록.
+**상태**: backend ground-truth 확정 — `title @Size(max=100)`, `introduction @Size(max=500)`, `playbackTimeLimit @Min(1) @Max(60)`, `@AssertTrue isAtLeastOnePresent("최소 1개 필드는 변경 필요")`. spec §2.2 + §6.2 zod에 mirror 완료.
+**잔존**: G4 chunk에서 backend가 변경됐는지 sanity grep 1회 (정확도 보장). 변경 시 §11에 reality 박음.
 
 ### R4 — bulk-action 14d 분리
 
