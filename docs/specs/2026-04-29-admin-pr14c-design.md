@@ -565,7 +565,7 @@ G1~G5 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impac
 
 16. **[G5.4 SHA `a9dc2d3`]** dropdown wire 시 `safeDisplayFlag` fallback 패턴 — `DISPLAY_FLAG_VALUES.includes(partyroom.displayFlag) ? cast : "NORMAL"`. 14b §9.1 forward-compat 정책 일관. Plan §6.4 sample을 inline IIFE 대신 명시적 const로 정리.
 
-17. **[R12 미해결]** G4.1 / G5 chunk에서 backend `AdminPartyroomCommandService.updateMeta`/`setDisplayFlag` status 가드 grep 미실행. 클라이언트 disable 정책으로 사실상 차단되나 backend 강제 가드는 미검증. §13.2에 backend 보강 future polish 항목으로 박힘.
+17. **[R12 미해결 → closed by 14d G1.1]** G4.1 / G5 chunk에서 backend `AdminPartyroomCommandService.updateMeta`/`setDisplayFlag` status 가드 grep 미실행. 클라이언트 disable 정책으로 사실상 차단되나 backend 강제 가드는 미검증. ~§13.2에 backend 보강 future polish 항목으로 박힘~. **2026-04-29 14d G1.1 backend grep으로 cover (`b22588c` reality entry 3)**: `updateMeta` line 112 service-level `if (isTerminated) throw ALREADY_TERMINATED`, `setDisplayFlag`은 service에 가드 없으나 `PartyroomData.setDisplayFlagX()` 도메인 메소드에 entity-level strict guard (`PartyroomData.java:227`), lifecycle (terminate/suspend/restore)도 entity-level strict guard. 모든 mutation 가드 있음 — backend 보강 불필요. **closed**.
 
 18. **[14b §15.2 backfill]** 14b가 14c에서 처리 약속한 mutation chunk:
     - **tier 변경**: G2.6 SHA `cb08dfb`
@@ -599,5 +599,5 @@ G1~G5 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impac
 - **mutation 진행 중 detail 카드 stale 표시** — `isFetching && lastMutation` 조합으로 detail 카드 우상단 inline spinner
 - **Dialog 안 radix Select interaction 테스트 회복** — DisplayFlagDialog(§14 entry 14)에서 jsdom hang으로 click-through 테스트 drop. e2e Playwright(14b §15.1 상속)에서 cover. Vitest browser mode 도입 또는 `jest-environment-jsdom-sixteen` 등 환경 변경 시 plan 명세 4 테스트 복구 검토
 - **mutation dialog reset 정책 일관화** — `ChangeTierDialog`(§14 entry 4)는 `mutation.reset()` 미호출, `DisplayFlagDialog`(§14 entry 15)는 호출. 다른 mutation dialog도 R11 폴리시 적용 + shared `useDialogResetEffect` 추출 검토
-- **`AdminPartyroomCommandService.updateMeta` / `setDisplayFlag` status 가드 검증** — R12 잔존 (§14 entry 17). 클라이언트 disable로 사실상 차단되지만 backend 강제 가드 grep + 부재 시 보강
+- ~`AdminPartyroomCommandService.updateMeta` / `setDisplayFlag` status 가드 검증 — R12 잔존 (§14 entry 17). 클라이언트 disable로 사실상 차단되지만 backend 강제 가드 grep + 부재 시 보강~ — **closed by 14d G1.1 (`b22588c`, 14c §12 entry 17 / 14d §12 entry 3)**: 모든 mutation에 service 또는 entity 어느 한 층에서 가드 있음, 보강 불필요
 - **`zodResolver` `.refine()` 에러 위치** — RHF v7는 top-level refine 에러를 `errors[""]`에 매핑(§14 entry 8). 다음 form-dialog 추가 시 shared `useRefineError(errors)` helper 추출 검토
