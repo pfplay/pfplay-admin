@@ -9,6 +9,7 @@ import { usePartyroomsList } from "@/features/partyrooms/api/use-partyrooms-list
 import { PartyroomsFilterForm } from "@/features/partyrooms/ui/partyrooms-filter-form"
 import { PartyroomsTable } from "@/features/partyrooms/ui/partyrooms-table"
 import { BulkActionToolbar } from "@/features/partyrooms/ui/bulk-action-toolbar"
+import { BulkActionDialog } from "@/features/partyrooms/ui/mutation-dialogs/bulk-action-dialog"
 import {
   parseSearchParams,
   stripInvalidParams,
@@ -46,6 +47,8 @@ function PartyroomsListContent({ query, setParams }: ContentProps) {
   const { data, isLoading, error } = usePartyroomsList(query)
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkOpen, setBulkOpen] = useState(false)
+  // bulkResults state는 G6 (BulkActionResultDialog) 진입 시점에 추가
 
   // query 변경 시 selection reset (filter / sort / page / size 모두) — spec §5.2 α
   useEffect(() => {
@@ -110,8 +113,15 @@ function PartyroomsListContent({ query, setParams }: ContentProps) {
       <BulkActionToolbar
         selectionSize={selectedIds.size}
         onClearSelection={onClearSelection}
-        onOpenDialog={() => {
-          // G5에서 BulkActionDialog wire
+        onOpenDialog={() => setBulkOpen(true)}
+      />
+      <BulkActionDialog
+        selectedIds={Array.from(selectedIds)}
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        onResults={() => {
+          // spec §4.3 — selection clear 즉시 (성공/실패 모두). 결과 dialog open 분기는 G6에서 추가.
+          setSelectedIds(new Set())
         }}
       />
       <PartyroomsTable
