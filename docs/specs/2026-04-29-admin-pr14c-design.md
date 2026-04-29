@@ -529,9 +529,52 @@ mutation 후 invalidate `["members"]` / `["partyrooms"]` prefix → 14b list 페
 **위험**: §6.4 disabled matrix는 status=TERMINATED 시 클라에서 두 mutation을 disable하지만, backend가 동일 가드를 강제하는지(403/409 vs 200) 미검증. 클라 disable이 모종의 이유로 우회되면 backend가 막아주는지 확인 필요.
 **대응**: G4(updateMeta) / G5(displayFlag) chunk 진입 시 backend 서비스 코드 grep — `AdminPartyroomCommandService.updateMeta`/`setDisplayFlag` 안에 status 체크 있는지 확인. 가드 부재 시 §12에 reality 박음 + §13.2에 backend 보강 future polish 추가.
 
+## 12. Open Items / Implementation Reality (post-build catch-up)
+
 G1~G5 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impact로 G6에서 backfill. 14b §14 패턴 그대로.
 
-(G6 chunk에서 채움)
+1. **[G1.1 SHA `804c013`]** shadcn dropdown-menu/tooltip/dialog `@radix-ui` 의존 추가. spec §9 명시 패키지 그대로. peer-dep 충돌 0.
+
+2. **[G1.2~G1.4 SHA `2b5a184`/`8e06676`/`17c33d9`]** `mutation-toast.ts` shared helper 신설. `mutationSuccessToast(label)` + `mutationErrorToast(err)` (ApiError 분기 + generic fallback). spec §4.2 sample 그대로.
+
+3. **[G2 chain SHA `019fa0f`~`bf85a73`]** members mutation 6 commits — types(G2.1) → schema(G2.2) → API(G2.3) → hooks(G2.4/G2.5) → dialogs(G2.6/G2.7) → wire(G2.8/G2.9) → msw(G2.10). Spec §5 그대로.
+
+4. **[G2.6 SHA `cb08dfb`]** `ChangeTierDialog`의 `useEffect`는 `[open, currentTier]` 의존성만 가지며 `mutation.reset()` 미호출. R11 폴리시(모달 close 시 reset)와 부분 불일치 — 다음 open 시 stale isError가 잠시 표시될 수 있음. 영향 미미하나 future polish로 일관 정리 후보 (§13.2).
+
+5. **[G2.7 SHA `2a2a514`]** `WithdrawDialog` idempotent 분기는 hook(`useWithdrawMember`)이 처리, dialog는 confirm + onSuccess close만 수행. R1 α 결정대로 14c 시점 `withdrawn` 필드 부재 우회.
+
+6. **[G3 chain SHA `8270b19`~`daccaaf`]** partyroom lifecycle 3종(terminate/suspend/restore) — schema(G3.1) → API(G3.2) → hooks(G3.3) → dialogs(G3.4) → dropdown skeleton(G3.5) → wire(G3.6) → msw(G3.7). Spec §6.3 lifecycle 3개 + dropdown 패턴.
+
+7. **[G4 chain SHA `484869c`~`28ea2ce`]** updatePartyroomMeta — schema(G4.2) → API(G4.3) → hook(G4.4) → dialog(G4.5) → wire(G4.6). G4.1 backend validator sanity grep은 chunk 진입 시 의무였으나 명시적 실행 미기록 — backend ground-truth는 §2.2/§6.2 spec 시점 확정값 그대로 사용. 변경 가능성은 §13.2 future polish.
+
+8. **[G4.5 SHA `6b3748d`]** RHF v7 + zodResolver: top-level `.refine()` 에러는 `errors[""]` (빈 키)에 매핑. plan 명세 `errors.root` 와 다름. `UpdateMetaDialog`는 `(errors as Record<string, ...>)[""]`로 추출. shared helper 추출 후보 (§13.2).
+
+9. **[G4.5 polish SHA `99772c8`]** `UpdateMetaDialog` `FormShape` 중간 타입 제거 — `z.coerce.number().int().min(1).max(60).optional()`이 `number | undefined`로 정확히 추론되므로 RHF 직접 사용. plan G4.5 sample은 별도 FormShape 도입했으나 redundant.
+
+10. **[G4.6 SHA `28ea2ce`]** `partyrooms-actions-dropdown.tsx`에 `UpdateMetaDialog` wire 시 `currentIntroduction={null}` + `currentPlaybackTimeLimit={null}` 하드코딩 — 14b `AdminPartyroomDetail`에 두 필드 부재 (entities/partyroom/model/types.ts verified). placeholder는 `currentTitle`만 채워짐. backend DTO 확장은 §13.2 future polish (14b 상속).
+
+11. **[G4.7]** chunk sanity 별도 commit 없이 G5.1 직접 진입. G5.5 chunk sanity가 G4+G5 일괄 검증 (151/151 PASS, tsc 0 error, build OK). 별 단계로 분리하지 않은 운영 단순화.
+
+12. **[G5.1 SHA `b66d4bc`]** `UpdateDisplayFlagSchema` + `DisplayFlagEnum` zod export. Plan 명세 그대로 + 추가 negative test "rejects missing flag" (3 tests). DisplayFlag 좁은 union을 frontend 측에서 zod로 enforce — 14b §15.2 partyroom enum 좁히기 entry 일부 충족.
+
+13. **[G5.2 SHA `cc53296`]** API fn + hook 한 commit. `updatePartyroomDisplayFlag(partyroomId, body)` + `useUpdatePartyroomDisplayFlag()`. invalidate `["partyrooms"]` prefix + toast `"표시 변경 완료"` (mutation-toast helper 사용).
+
+14. **[G5.3 SHA `ccd847f`]** `DisplayFlagDialog` jsdom 환경 한계로 plan 4 테스트 → 실제 3 테스트. Plan Step 1의 "submits when different flag selected" (Dialog 안 Select user.click + findByRole option) 테스트는 radix Dialog FocusScope/Portal과 radix Select Portal 상호작용으로 jsdom에서 hang. ChangeTierDialog 패턴(Dialog 안 Select interaction 미실행) 따라 simplify. 실제 Select 동작은 `partyrooms-filter-form.test.tsx`(non-Dialog context)에서 검증 + 수동 검증 cover. e2e Playwright는 §13.2.
+
+15. **[G5.3 SHA `ccd847f`]** `DisplayFlagDialog`는 R11 폴리시(모달 close 시 mutation.reset) 적용 — `useEffect(() => { if (open) setSelected(currentFlag); else mutation.reset() }, [open, currentFlag])`. ChangeTierDialog(entry 4)와 다름.
+
+16. **[G5.4 SHA `a9dc2d3`]** dropdown wire 시 `safeDisplayFlag` fallback 패턴 — `DISPLAY_FLAG_VALUES.includes(partyroom.displayFlag) ? cast : "NORMAL"`. 14b §9.1 forward-compat 정책 일관. Plan §6.4 sample을 inline IIFE 대신 명시적 const로 정리.
+
+17. **[R12 미해결]** G4.1 / G5 chunk에서 backend `AdminPartyroomCommandService.updateMeta`/`setDisplayFlag` status 가드 grep 미실행. 클라이언트 disable 정책으로 사실상 차단되나 backend 강제 가드는 미검증. §13.2에 backend 보강 future polish 항목으로 박힘.
+
+18. **[14b §15.2 backfill]** 14b가 14c에서 처리 약속한 mutation chunk:
+    - **tier 변경**: G2.6 SHA `cb08dfb`
+    - **withdraw**: G2.7 SHA `2a2a514`
+    - **partyroom 강제 종료**: G3.4 SHA `4e6fba7`
+    - **일시 정지 / 재개**: G3.4 SHA `4e6fba7`
+    - **메타 수정**: G4.5 SHA `6b3748d`, wire `28ea2ce`
+    - **표시 변경**: G5.3 SHA `ccd847f`, wire `a9dc2d3`
+    - **penalty / admin action / avatar publish-retire**: 14c 범위 외 (R5 / §13.2). 14d+ 별 패키지.
 
 ## 13. Future Polish (14a/14b 상속 + 14c 신규)
 
@@ -554,3 +597,7 @@ G1~G5 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impac
 - **avatar publish/retire UI** — backend 별 도메인 PR 후 frontend 추가
 - **mutation 결과 audit-log 카드 자동 강조** — 14b 8/8 카드의 `recentAdminActions`에 직전 mutation 결과 row 1초 highlight 등 (마이크로 UX)
 - **mutation 진행 중 detail 카드 stale 표시** — `isFetching && lastMutation` 조합으로 detail 카드 우상단 inline spinner
+- **Dialog 안 radix Select interaction 테스트 회복** — DisplayFlagDialog(§14 entry 14)에서 jsdom hang으로 click-through 테스트 drop. e2e Playwright(14b §15.1 상속)에서 cover. Vitest browser mode 도입 또는 `jest-environment-jsdom-sixteen` 등 환경 변경 시 plan 명세 4 테스트 복구 검토
+- **mutation dialog reset 정책 일관화** — `ChangeTierDialog`(§14 entry 4)는 `mutation.reset()` 미호출, `DisplayFlagDialog`(§14 entry 15)는 호출. 다른 mutation dialog도 R11 폴리시 적용 + shared `useDialogResetEffect` 추출 검토
+- **`AdminPartyroomCommandService.updateMeta` / `setDisplayFlag` status 가드 검증** — R12 잔존 (§14 entry 17). 클라이언트 disable로 사실상 차단되지만 backend 강제 가드 grep + 부재 시 보강
+- **`zodResolver` `.refine()` 에러 위치** — RHF v7는 top-level refine 에러를 `errors[""]`에 매핑(§14 entry 8). 다음 form-dialog 추가 시 shared `useRefineError(errors)` helper 추출 검토
