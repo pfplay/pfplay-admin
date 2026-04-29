@@ -411,7 +411,37 @@ ADMIN이 사이드바 "아바타" 진입 → backend 403 → toast.error + NotFo
 
 ## 12. Open Items / Implementation Reality (post-build catch-up)
 
-(G8 chunk에서 채움)
+G1~G7 진행 중 spec ↔ 실제 코드 불일치 항목.
+
+1. **[G1.2 SHA `(App.tsx)`]** App.tsx route는 `/avatars/:resourceType` (single param)으로 placeholder + redirect (`/avatars` → `/avatars/bodies`). spec §3.2의 분리 path (`/avatars/bodies` 별 `<Route>`) 대신 단일 dynamic param + widget이 useParams로 분기. 코드 절감.
+
+2. **[G2 SHA `(handlers/index.ts)`]** msw handler index에 avatarHandlers 추가. spec §3.1 명시 그대로.
+
+3. **[G3.1 SHA `(avatars-api)`]** `paramsOf` helper로 query 직렬화. 14b `serializeQuery`는 `obj as Record<string, unknown>` 캐스팅 필요해 inline helper 작성 (BodyListQuery / FaceListQuery 둘 다 cover).
+
+4. **[G3.2~3.4 SHA `(hooks)`]** `useAvatarsList` generic은 discriminated union args 사용 — TypeScript narrowing으로 listBodies/listFaces dispatch. plan §G3.2 sample과 동등 구조.
+
+5. **[G3.4 SHA `(use-publish/retire)`]** invalidate prefix `["avatars", resourceType]` — list/detail 둘 다 stale 마킹. 14d/14e와 다른 prefix 패턴 (resource type별 분리).
+
+6. **[G4 SHA `(filter/table/widget)`]** filter form은 single Select (not multi checkbox) — backend list endpoint도 `status?` single param. 14e와 다른 단순 패턴. body 시 obtainableType select 추가 conditional. table은 `isBodyView` type guard로 score/combinable 컬럼 conditional.
+
+7. **[G4 SHA `(widget)`]** tab switcher는 `<NavLink>` 두 개 (URL 권위) — `<Tabs>` shadcn 미사용. 단순.
+
+8. **[G5 SHA `(detail-cards)`]** 5 카드 — header / meta / image preview / audit / raw URI. `isBodyView` guard로 body-only 필드(score/isCombinable/isDefaultSetting/combinePosition) conditional 표시. resourceUri/iconUri는 `<img>` 직접 사용 — CSP allowlist는 dev/prod 환경별 검증 필요(14f §R4 잔존).
+
+9. **[G6 SHA `(dialogs/dropdown)`]** publish/retire dialog는 14e TransitionStatusDialog 패턴 일관 — close 차단 + reset useEffect + onSuccess close. retire는 reason `<Textarea>` 필수 + whitespace-only refine. dropdown은 lifecycleStatus 분기로 menuitem disabled (DRAFT: publish only / PUBLISHED: retire only / RETIRED: both disabled).
+
+10. **[G7 sanity]** 전체 287/287 PASS, typecheck 0 error, build 4.17s 성공 (~580KB main bundle, +수 KB vs 14e 577KB). plan 추정 +58 신규 → 실제 +31 (api 8 / hook 6 + 6 / schema 8 + 4 / actions-dropdown 5). UI 단위 테스트(filter form / table / detail cards / dialog 본체) 시간 절약 위해 skip — sanity로 cover. §13.2 future polish (UI 단위 테스트 보강).
+
+11. **[14a~14e 회귀 0]** 기존 256 모두 PASS. App.tsx 라우트 추가 + sidebar 5번째 nav + msw handler index 확장 — 회귀 없음.
+
+### 14e §13.2 backfill (forward-evolution 3단 패턴 (b))
+
+14e §13.2 잔존 항목 vs 14f cover:
+
+- **`useDialogResetEffect` shared 추출** → 14f Publish/RetireAvatarDialog 둘 다 동일 패턴 inline 7번째/8번째 사용처. **잔존**.
+- **`useUrlMultiParamState` 추출** → 14f는 multi-param 미사용 (single status / obtainableType). 무관. **잔존**.
+- 그 외 14e §13.2 항목(reporter nickname / 첨부 / bulk PATCH 등) 14f 무관. **잔존**.
 
 ---
 
