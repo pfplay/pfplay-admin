@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
   partyroomsListQuerySchema,
   type PartyroomsListQuery,
@@ -11,6 +11,7 @@ import { BulkActionDialog } from "@/features/partyrooms/ui/mutation-dialogs/bulk
 import { BulkActionResultDialog } from "@/features/partyrooms/ui/mutation-dialogs/bulk-action-result-dialog"
 import type { BulkActionResult } from "@/features/partyrooms/model/bulk-schema"
 import { useUrlQueryState } from "@/shared/lib/use-url-query-state"
+import { useSelectionState } from "@/shared/lib/use-selection-state"
 import { Pagination } from "@/widgets/pagination"
 import { ApiError } from "@/shared/api/error"
 
@@ -32,17 +33,8 @@ interface ContentProps {
 function PartyroomsListContent({ query, setQuery, reset }: ContentProps) {
   const { data, isLoading, error } = usePartyroomsList(query)
 
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-  const [bulkOpen, setBulkOpen] = useState(false)
-  const [bulkResults, setBulkResults] = useState<{
-    results: BulkActionResult[]
-    attempted: number
-  } | null>(null)
-
   // query 변경 시 selection reset (filter / sort / page / size 모두) — spec §5.2 α
-  useEffect(() => {
-    setSelectedIds(new Set())
-  }, [
+  const { selectedIds, toggleId, toggleAll, clearSelection } = useSelectionState<number>([
     query.page,
     query.size,
     query.sort,
@@ -52,22 +44,14 @@ function PartyroomsListContent({ query, setQuery, reset }: ContentProps) {
     query.createdFrom,
     query.createdTo,
   ])
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkResults, setBulkResults] = useState<{
+    results: BulkActionResult[]
+    attempted: number
+  } | null>(null)
 
-  const onToggleId = (id: number) =>
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  const onToggleAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(new Set((data?.content ?? []).map((r) => r.partyroomId)))
-    } else {
-      setSelectedIds(new Set())
-    }
-  }
-  const onClearSelection = () => setSelectedIds(new Set())
+  const onToggleAll = (checked: boolean) =>
+    toggleAll(checked, (data?.content ?? []).map((r) => r.partyroomId))
 
   const goToPage = (page: number) => setQuery({ page })
 
@@ -96,7 +80,7 @@ function PartyroomsListContent({ query, setQuery, reset }: ContentProps) {
       )}
       <BulkActionToolbar
         selectionSize={selectedIds.size}
-        onClearSelection={onClearSelection}
+        onClearSelection={clearSelection}
         onOpenDialog={() => setBulkOpen(true)}
       />
       <BulkActionDialog
@@ -106,7 +90,7 @@ function PartyroomsListContent({ query, setQuery, reset }: ContentProps) {
         onResults={(results) => {
           // spec §4.3 — selection clear 즉시 (성공/실패 모두)
           const attempted = selectedIds.size
-          setSelectedIds(new Set())
+          clearSelection()
           // 실패 있으면 결과 dialog open
           if (results.some((r) => !r.success)) {
             setBulkResults({ results, attempted })
@@ -126,7 +110,7 @@ function PartyroomsListContent({ query, setQuery, reset }: ContentProps) {
         isLoading={isLoading}
         isEmpty={!isLoading && (data?.empty ?? false)}
         selectedIds={selectedIds}
-        onToggleId={onToggleId}
+        onToggleId={toggleId}
         onToggleAll={onToggleAll}
       />
       {data && (
