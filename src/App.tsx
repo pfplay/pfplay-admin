@@ -7,6 +7,8 @@ import { MembersPage } from "@/pages/members-page"
 import { MemberDetailPage } from "@/pages/member-detail-page"
 import { PartyroomsPage } from "@/pages/partyrooms-page"
 import { PartyroomDetailPage } from "@/pages/partyroom-detail-page"
+import { ReportsPage } from "@/pages/reports-page"
+import { ReportDetailPage } from "@/pages/report-detail-page"
 import { ProtectedRoute } from "@/widgets/protected-route"
 
 export function App() {
@@ -20,6 +22,8 @@ export function App() {
         <Route path="/members/:memberId" element={<MemberDetailPage />} />
         <Route path="/partyrooms" element={<PartyroomsPage />} />
         <Route path="/partyrooms/:partyroomId" element={<PartyroomDetailPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/reports/:reportId" element={<ReportDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
