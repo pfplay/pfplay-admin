@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,7 @@ interface Props {
 export function RestoreDialog({ partyroomId, open, onOpenChange }: Props) {
   const mutation = useRestorePartyroom()
 
-  useEffect(() => {
-    if (!open) mutation.reset()
-  }, [open])
+  useDialogResetEffect(open, () => mutation.reset())
 
   const handleSubmit = () =>
     mutation.mutate({ partyroomId }, { onSuccess: () => onOpenChange(false) })

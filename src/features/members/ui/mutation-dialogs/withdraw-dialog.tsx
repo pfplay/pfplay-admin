@@ -1,4 +1,3 @@
-import { useEffect } from "react"
 import {
   Dialog,
   DialogContent,
@@ -9,6 +8,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { useWithdrawMember } from "@/features/members/api/use-withdraw-member"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 
 interface Props {
   memberId: number
@@ -20,9 +20,7 @@ interface Props {
 export function WithdrawDialog({ memberId, displayName, open, onOpenChange }: Props) {
   const mutation = useWithdrawMember()
 
-  useEffect(() => {
-    if (!open) mutation.reset()
-  }, [open])
+  useDialogResetEffect(open, () => mutation.reset())
 
   const handleSubmit = () => {
     mutation.mutate(

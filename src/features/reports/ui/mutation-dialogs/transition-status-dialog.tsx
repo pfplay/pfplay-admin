@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 import {
   Dialog,
   DialogContent,
@@ -43,12 +44,10 @@ export function TransitionStatusDialog({
   const noteRequired = isTerminal
   const noteValid = !noteRequired || note.trim().length >= 1
 
-  useEffect(() => {
-    if (!open) {
-      setNote("")
-      mutation.reset()
-    }
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  useDialogResetEffect(open, () => {
+    setNote("")
+    mutation.reset()
+  })
 
   const handleOpenChange = (next: boolean) => {
     if (mutation.isPending && !next) return

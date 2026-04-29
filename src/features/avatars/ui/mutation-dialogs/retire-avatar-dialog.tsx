@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 import {
   Dialog,
   DialogContent,
@@ -32,12 +33,10 @@ export function RetireAvatarDialog({
   const mutation = useRetireAvatar(resourceType)
   const reasonValid = reason.trim().length >= 1
 
-  useEffect(() => {
-    if (!open) {
-      setReason("")
-      mutation.reset()
-    }
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  useDialogResetEffect(open, () => {
+    setReason("")
+    mutation.reset()
+  })
 
   const handleOpenChange = (next: boolean) => {
     if (mutation.isPending && !next) return

@@ -1,6 +1,6 @@
-import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 import {
   Dialog,
   DialogContent,
@@ -47,12 +47,10 @@ export function UpdateMetaDialog({
     defaultValues: { title: undefined, introduction: undefined, playbackTimeLimit: undefined },
   })
 
-  useEffect(() => {
-    if (!open) {
-      mutation.reset()
-      reset()
-    }
-  }, [open])
+  useDialogResetEffect(open, () => {
+    mutation.reset()
+    reset()
+  })
 
   const onSubmit = (data: UpdatePartyroomMetaRequest) => {
     const body: UpdatePartyroomMetaRequest = {

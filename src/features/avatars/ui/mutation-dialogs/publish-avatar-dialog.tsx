@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 import {
   Dialog,
   DialogContent,
@@ -28,9 +28,7 @@ export function PublishAvatarDialog({
 }: Props) {
   const mutation = usePublishAvatar(resourceType)
 
-  useEffect(() => {
-    if (!open) mutation.reset()
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  useDialogResetEffect(open, () => mutation.reset())
 
   const handleOpenChange = (next: boolean) => {
     if (mutation.isPending && !next) return

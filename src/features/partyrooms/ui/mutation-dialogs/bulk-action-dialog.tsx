@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 import {
   Dialog,
   DialogContent,
@@ -53,14 +54,12 @@ export function BulkActionDialog({
   const mutation = useBulkPartyroomAction()
 
   // 모달 close 시 form reset (R11 폴리시)
-  useEffect(() => {
-    if (!open) {
-      setAction("TERMINATE")
-      setReason("")
-      setSkipErrors(true)
-      mutation.reset()
-    }
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  useDialogResetEffect(open, () => {
+    setAction("TERMINATE")
+    setReason("")
+    setSkipErrors(true)
+    mutation.reset()
+  })
 
   const submitDisabled = reason.trim().length === 0 || mutation.isPending
 

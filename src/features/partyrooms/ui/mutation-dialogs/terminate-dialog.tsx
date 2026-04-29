@@ -1,6 +1,6 @@
-import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 import {
   Dialog,
   DialogContent,
@@ -36,12 +36,10 @@ export function TerminateDialog({ partyroomId, open, onOpenChange }: Props) {
     defaultValues: { reason: "" },
   })
 
-  useEffect(() => {
-    if (!open) {
-      mutation.reset()
-      reset()
-    }
-  }, [open])
+  useDialogResetEffect(open, () => {
+    mutation.reset()
+    reset()
+  })
 
   const onSubmit = (data: TerminateRequest) =>
     mutation.mutate(

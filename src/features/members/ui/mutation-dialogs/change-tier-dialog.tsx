@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,9 @@ export function ChangeTierDialog({ memberId, currentTier, open, onOpenChange }: 
   useEffect(() => {
     if (open) setSelected(currentTier)
   }, [open, currentTier])
+
+  // R11 폴리시: open=false 시 mutation 에러 상태 정리 (G2.1 통합)
+  useDialogResetEffect(open, () => mutation.reset())
 
   const unchanged = selected === currentTier
   const submitDisabled = unchanged || mutation.isPending

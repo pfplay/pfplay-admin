@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
 import {
   Dialog,
   DialogContent,
@@ -37,12 +38,10 @@ export function DisplayFlagDialog({ partyroomId, currentFlag, open, onOpenChange
   const mutation = useUpdatePartyroomDisplayFlag()
 
   useEffect(() => {
-    if (open) {
-      setSelected(currentFlag)
-    } else {
-      mutation.reset()
-    }
+    if (open) setSelected(currentFlag)
   }, [open, currentFlag])
+
+  useDialogResetEffect(open, () => mutation.reset())
 
   const unchanged = selected === currentFlag
   const submitDisabled = unchanged || mutation.isPending
