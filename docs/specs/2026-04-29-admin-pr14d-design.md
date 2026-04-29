@@ -55,7 +55,7 @@ record BulkPartyroomActionResponse(List<BulkActionResult> results) {
 ```
 
 - `results.length === request.partyroomIds.length` (skipErrors=true) 또는 첫 실패까지 (skipErrors=false)
-- 각 결과: `success=true` → `error=null`, `success=false` → `error=AbstractHTTPException.getMessage()` 또는 `"INTERNAL_ERROR"`
+- 각 결과: `success=true` → `error=null`, `success=false` → `error=AbstractHTTPException.getMessage()` 또는 `"INTERNAL_ERROR"` — **frontend zod는 `error: z.string().nullable()`로 enforce** (success 상관없이 nullable string)
 - HTTP status는 항상 200 — 부분 실패는 본문 `success: false` row로 표현 (전체 실패도 200)
 
 ### 2.4 behavior — per-item TX
@@ -91,16 +91,20 @@ bulk endpoint는 항목별 예외를 `error` string으로 노출. 단건 mutatio
 **신규 파일:**
 ```
 src/features/partyrooms/
-  model/bulk-schema.ts                  # zod BulkPartyroomActionSchema
-  api/bulk-partyrooms-api.ts            # bulkPartyroomAction(body): Promise<BulkPartyroomActionResponse>
-  api/use-bulk-partyroom-action.ts      # useMutation hook
-  ui/bulk-action-toolbar.tsx            # selection toolbar (count + action button)
-  ui/bulk-action-dialog.tsx             # action select + reason + skipErrors + submit
-  ui/bulk-action-result-dialog.tsx      # success/fail count + 실패 list with error
-  ui/__tests__/{bulk-action-toolbar,bulk-action-dialog,bulk-action-result-dialog}.test.tsx
+  model/bulk-schema.ts                                      # zod BulkPartyroomActionSchema + BulkActionResultSchema (error: z.string().nullable())
+  api/bulk-partyrooms-api.ts                                # bulkPartyroomAction(body): Promise<BulkPartyroomActionResponse>
+  api/use-bulk-partyroom-action.ts                          # useMutation hook
+  ui/bulk-action-toolbar.tsx                                # selection toolbar (count + action button) — ui/ 직속 (modal 아님)
+  ui/mutation-dialogs/bulk-action-dialog.tsx                # action select + reason + skipErrors + submit
+  ui/mutation-dialogs/bulk-action-result-dialog.tsx         # success/fail count + 실패 list with error
+  ui/__tests__/bulk-action-toolbar.test.tsx
+  ui/mutation-dialogs/__tests__/bulk-action-dialog.test.tsx
+  ui/mutation-dialogs/__tests__/bulk-action-result-dialog.test.tsx
   api/__tests__/{bulk-partyrooms-api,use-bulk-partyroom-action}.test.{ts,tsx}
   model/__tests__/bulk-schema.test.ts
 ```
+
+**파일 위치 정책**: 14c `mutation-dialogs/` 디렉토리(`change-tier-dialog.tsx` 등)와 일관. modal 컴포넌트는 `mutation-dialogs/` 직속, modal이 아닌 toolbar/list selection helper는 `ui/` 직속. test도 컴포넌트와 같은 레벨에 `__tests__`.
 
 **수정 파일:**
 ```
@@ -130,10 +134,12 @@ bulk 성공 (부분 성공 포함) 시 `["partyrooms"]` prefix 일괄 invalidate
 - 전체 실패 (`results.every(r => !r.success)`): `mutationErrorToast(new ApiError({ message: "일괄 처리 전건 실패" }))` 또는 toast.error
 - HTTP 4xx/5xx (요청 자체 실패): 14c `mutationErrorToast` 그대로
 
-### 4.3 결과 모달 분기
+### 4.3 결과 모달 분기 + selection clear race
 
 - 전체 성공: toast만, 결과 모달 미표시 (UX 단순화)
-- 부분/전체 실패: 결과 모달 자동 open (실패 항목 list + 사유 + 닫기 후 selection clear)
+- 부분/전체 실패: 결과 모달 자동 open (실패 항목 list + 사유)
+- **selection clear 타이밍 정책**: bulk `mutation.onSuccess` 진입 즉시 `selection.clear()` 호출 (성공/실패 항목 모두). 이후 `["partyrooms"]` invalidate가 list refetch를 trigger하지만 selection이 이미 비어있어 stale visibleIds intersect 로직 불필요. 결과 dialog는 mutation response의 `results` 배열을 props로 받아 자체 state로 보유 — selection state와 완전히 decoupled.
+- **dialog close 차단**: BulkActionDialog `onOpenChange`는 `mutation.isPending` 동안만 무시 (close 차단). `onSuccess` 완료 후엔 close 가능. 사용자가 BulkActionResultDialog를 닫으면 결과 dialog state만 clear, selection은 이미 onSuccess 시점에 비어있음.
 
 ---
 
@@ -158,9 +164,10 @@ table 행 페이지(50건 default) 안에서만 유지. 100건 max는 한 페이
 
 ### 5.5 disabled 항목
 
-- TERMINATED 상태 row: 이미 종료된 룸은 SUSPEND/TERMINATE 불가 (개별 mutation과 일관). checkbox 비활성 (`disabled`).
+- TERMINATED 상태 row: 이미 종료된 룸은 SUSPEND/TERMINATE 불가 (개별 mutation과 일관).
 - 단, SET_HIDDEN은 TERMINATED여도 가능 (display flag은 status 무관). 따라서 row checkbox는 enabled, dialog 단계에서 action별로 backend가 per-item 처리 (TERMINATED + TERMINATE → ALREADY_TERMINATED 결과 row).
 - α 결정: row checkbox는 항상 enabled, dialog에서 action 선택 후 sample preview에 "예상 실패: X건"이라 보여주지 않음. backend 결과로 받음. 단순화 우선.
+- **운영 가정**: 14b list 기본 필터(`status=null`)는 backend에서 TERMINATED 자동 제외(14b ground-truth — `PartyroomStatus=null이면 TERMINATED 자동 제외`). 따라서 어드민이 명시적으로 `status=TERMINATED`를 선택하지 않는 한 TERMINATED row가 list에 보일 일이 적고, ALREADY_TERMINATED 결과 row 발생 빈도도 낮음. 명시적으로 status=TERMINATED 필터한 후 SUSPEND/TERMINATE 시도가 backend per-item 실패 + 결과 모달로 catch되는 운영 흐름.
 
 ### 5.6 header 전체 선택
 
@@ -202,8 +209,9 @@ form 필드:
 submit:
 - mutation.mutate({ partyroomIds, action, reason, skipErrors })
 - onSuccess(response):
-  - 전체 성공 → toast + dialog close + selection clear
-  - 부분/전체 실패 → 결과 모달로 전환 (state machine: action-dialog → result-dialog) + selection clear after close
+  - **즉시 `selection.clear()`** (성공/실패 모두 — §4.3 정책)
+  - 전체 성공 → toast + dialog close
+  - 부분/전체 실패 → state machine 전환: action-dialog close → result-dialog open with `results` props
 
 ### 6.3 `BulkActionResultDialog`
 
@@ -241,7 +249,8 @@ submit:
 ### 7.4 forward-compat
 
 - `BulkActionType` 추가 시 (RESTORE/SET_FEATURED 등) — 14d zod에 enum case 추가만으로 cover.
-- `BulkActionResult.error` 구조 변경 (errorCode 추가) — 14d frontend는 string `error` 그대로 사용, errorCode field는 `?:` optional zod로 여유 (§13.2).
+- `BulkActionResult.error` 구조 변경 (errorCode 추가) — 14d frontend는 string `error` 그대로 사용 (`z.string().nullable()`), errorCode field는 `?:` optional zod로 여유 (§13.2).
+- `BulkActionResult` zod schema는 backend record와 1:1: `z.object({ partyroomId: z.number(), success: z.boolean(), error: z.string().nullable() })`. response wrapper도 zod로 parse하면 backend 변경 시 즉시 catch.
 
 ### 7.5 권한
 
