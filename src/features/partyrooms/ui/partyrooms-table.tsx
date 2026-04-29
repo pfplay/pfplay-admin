@@ -9,12 +9,17 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { AdminPartyroomListItem } from "@/entities/partyroom"
 
 interface Props {
   rows: AdminPartyroomListItem[]
   isLoading: boolean
   isEmpty: boolean
+  /** selection mode props — 모두 함께 제공되어야 selection column 활성화 */
+  selectedIds?: Set<number>
+  onToggleId?: (id: number) => void
+  onToggleAll?: (checked: boolean) => void
 }
 
 const STATUS_VARIANT: Record<
@@ -33,8 +38,24 @@ function formatKst(iso: string | null): string {
   return d.toLocaleString("ko-KR", { hour12: false })
 }
 
-export function PartyroomsTable({ rows, isLoading, isEmpty }: Props) {
+export function PartyroomsTable({
+  rows,
+  isLoading,
+  isEmpty,
+  selectedIds,
+  onToggleId,
+  onToggleAll,
+}: Props) {
   const navigate = useNavigate()
+  const selectionEnabled =
+    selectedIds !== undefined && onToggleId !== undefined && onToggleAll !== undefined
+  const headerState: boolean | "indeterminate" = selectionEnabled
+    ? selectedIds.size === 0
+      ? false
+      : selectedIds.size === rows.length
+        ? true
+        : "indeterminate"
+    : false
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -55,6 +76,15 @@ export function PartyroomsTable({ rows, isLoading, isEmpty }: Props) {
     <Table>
       <TableHeader>
         <TableRow>
+          {selectionEnabled && (
+            <TableHead className="w-10">
+              <Checkbox
+                aria-label="전체 선택"
+                checked={headerState}
+                onCheckedChange={(c) => onToggleAll!(c === true)}
+              />
+            </TableHead>
+          )}
           <TableHead>ID</TableHead>
           <TableHead>제목</TableHead>
           <TableHead>스테이지</TableHead>
@@ -75,6 +105,18 @@ export function PartyroomsTable({ rows, isLoading, isEmpty }: Props) {
             className="cursor-pointer hover:bg-accent/50"
             onClick={() => navigate(`/partyrooms/${row.partyroomId}`)}
           >
+            {selectionEnabled && (
+              <TableCell
+                className="w-10"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Checkbox
+                  aria-label={`${row.title} 선택`}
+                  checked={selectedIds!.has(row.partyroomId)}
+                  onCheckedChange={() => onToggleId!(row.partyroomId)}
+                />
+              </TableCell>
+            )}
             <TableCell>{row.partyroomId}</TableCell>
             <TableCell>{row.title}</TableCell>
             <TableCell>{row.stageType}</TableCell>
