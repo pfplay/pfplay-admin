@@ -9,6 +9,8 @@ import { PartyroomsPage } from "@/pages/partyrooms-page"
 import { PartyroomDetailPage } from "@/pages/partyroom-detail-page"
 import { ReportsPage } from "@/pages/reports-page"
 import { ReportDetailPage } from "@/pages/report-detail-page"
+import { AvatarsPage } from "@/pages/avatars-page"
+import { AvatarDetailPage } from "@/pages/avatar-detail-page"
 import { ProtectedRoute } from "@/widgets/protected-route"
 
 export function App() {
@@ -24,6 +26,9 @@ export function App() {
         <Route path="/partyrooms/:partyroomId" element={<PartyroomDetailPage />} />
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/reports/:reportId" element={<ReportDetailPage />} />
+        <Route path="/avatars" element={<Navigate to="/avatars/bodies" replace />} />
+        <Route path="/avatars/:resourceType" element={<AvatarsPage />} />
+        <Route path="/avatars/:resourceType/:id" element={<AvatarDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
