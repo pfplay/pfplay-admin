@@ -17,9 +17,10 @@ interface Props {
   memberId: number
   currentTier: AuthorityTier
   displayName: string
+  withdrawn?: boolean
 }
 
-export function MembersActionsDropdown({ memberId, currentTier, displayName }: Props) {
+export function MembersActionsDropdown({ memberId, currentTier, displayName, withdrawn = false }: Props) {
   const [active, setActive] = useState<ActiveDialog>(null)
 
   return (
@@ -35,7 +36,11 @@ export function MembersActionsDropdown({ memberId, currentTier, displayName }: P
             등급 변경
           </DropdownMenuItem>
           <DropdownMenuItem
-            onSelect={() => setActive("withdraw")}
+            onSelect={() => {
+              if (!withdrawn) setActive("withdraw")
+            }}
+            disabled={withdrawn}
+            title={withdrawn ? "이미 탈퇴됨" : undefined}
             className="text-destructive focus:text-destructive"
           >
             비식별화 탈퇴

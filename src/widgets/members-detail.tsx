@@ -44,6 +44,7 @@ export function MembersDetailWidget() {
           memberId={data.memberId}
           currentTier={data.authorityTier}
           displayName={data.profile.nickname ?? data.userAccount.email}
+          withdrawn={data.withdrawn}
         />
       </div>
       <MemberDetailCards detail={data} />

@@ -38,4 +38,22 @@ describe("MembersActionsDropdown", () => {
     await user.click(await screen.findByRole("menuitem", { name: /탈퇴/ }))
     expect(screen.getByText(/비식별화 탈퇴 처리/)).toBeInTheDocument()
   })
+
+  it("withdrawn=true → 탈퇴 menuitem disabled + tooltip + dialog 미오픈", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    renderWithClient(
+      <MembersActionsDropdown
+        memberId={1}
+        currentTier="AM"
+        displayName="alice"
+        withdrawn={true}
+      />,
+    )
+    await user.click(screen.getByRole("button", { name: /actions/i }))
+    const item = await screen.findByRole("menuitem", { name: /탈퇴/ })
+    expect(item).toHaveAttribute("aria-disabled", "true")
+    expect(item).toHaveAttribute("title", "이미 탈퇴됨")
+    await user.click(item)
+    expect(screen.queryByText(/비식별화 탈퇴 처리/)).not.toBeInTheDocument()
+  })
 })
