@@ -129,4 +129,34 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     await user.click(await screen.findByRole("menuitem", { name: /메타 수정/ }))
     expect(screen.getByText(/파티룸 메타 수정/)).toBeInTheDocument()
   })
+
+  it("ACTIVE: 표시 변경 enabled, TERMINATED: disabled", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    const { unmount } = renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: /actions/i }))
+    expect(await screen.findByRole("menuitem", { name: /표시 변경/ })).not.toHaveAttribute(
+      "data-disabled",
+    )
+    unmount()
+
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "TERMINATED" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: /actions/i }))
+    expect(await screen.findByRole("menuitem", { name: /표시 변경/ })).toHaveAttribute(
+      "data-disabled",
+    )
+  })
+
+  it("clicking 표시 변경 opens display-flag dialog", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(await screen.findByRole("menuitem", { name: /표시 변경/ }))
+    expect(screen.getByText(/파티룸 표시 변경/)).toBeInTheDocument()
+  })
 })

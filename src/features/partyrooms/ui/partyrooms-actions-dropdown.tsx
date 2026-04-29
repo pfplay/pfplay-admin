@@ -11,10 +11,13 @@ import { TerminateDialog } from "./mutation-dialogs/terminate-dialog"
 import { SuspendDialog } from "./mutation-dialogs/suspend-dialog"
 import { RestoreDialog } from "./mutation-dialogs/restore-dialog"
 import { UpdateMetaDialog } from "./mutation-dialogs/update-meta-dialog"
+import { DisplayFlagDialog } from "./mutation-dialogs/display-flag-dialog"
 import type { AdminPartyroomDetail } from "@/entities/partyroom/model/types"
 
 type ActiveDialog = null | "terminate" | "suspend" | "restore" | "update-meta" | "display-flag"
-// G4: update-meta, G5: display-flag — 후속 chunk에서 추가
+
+const DISPLAY_FLAG_VALUES = ["NORMAL", "FEATURED", "HIDDEN"] as const
+type DisplayFlag = (typeof DISPLAY_FLAG_VALUES)[number]
 
 interface Props {
   partyroom: AdminPartyroomDetail
@@ -28,6 +31,14 @@ export function PartyroomsActionsDropdown({ partyroom }: Props) {
   const canSuspend = status === "ACTIVE"
   const canRestore = status === "SUSPENDED"
   const canUpdateMeta = status === "ACTIVE" || status === "SUSPENDED"
+  const canUpdateDisplayFlag = status === "ACTIVE" || status === "SUSPENDED"
+
+  // 14b §9.1 forward-compat 정책: 알 수 없는 displayFlag 값은 NORMAL로 fallback
+  const safeDisplayFlag: DisplayFlag = (DISPLAY_FLAG_VALUES as readonly string[]).includes(
+    partyroom.displayFlag,
+  )
+    ? (partyroom.displayFlag as DisplayFlag)
+    : "NORMAL"
 
   return (
     <>
@@ -57,13 +68,18 @@ export function PartyroomsActionsDropdown({ partyroom }: Props) {
             메타 수정
           </DropdownMenuItem>
           <DropdownMenuItem
+            disabled={!canUpdateDisplayFlag}
+            onSelect={() => canUpdateDisplayFlag && setActive("display-flag")}
+          >
+            표시 변경
+          </DropdownMenuItem>
+          <DropdownMenuItem
             disabled={!canTerminate}
             onSelect={() => canTerminate && setActive("terminate")}
             className="text-destructive focus:text-destructive"
           >
             강제 종료
           </DropdownMenuItem>
-          {/* G5: 표시 변경 — 후속 chunk에서 추가 */}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -93,6 +109,12 @@ export function PartyroomsActionsDropdown({ partyroom }: Props) {
         currentIntroduction={null}
         currentPlaybackTimeLimit={null}
         open={active === "update-meta"}
+        onOpenChange={(o) => !o && setActive(null)}
+      />
+      <DisplayFlagDialog
+        partyroomId={partyroom.partyroomId}
+        currentFlag={safeDisplayFlag}
+        open={active === "display-flag"}
         onOpenChange={(o) => !o && setActive(null)}
       />
     </>
