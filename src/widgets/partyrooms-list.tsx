@@ -10,6 +10,8 @@ import { PartyroomsFilterForm } from "@/features/partyrooms/ui/partyrooms-filter
 import { PartyroomsTable } from "@/features/partyrooms/ui/partyrooms-table"
 import { BulkActionToolbar } from "@/features/partyrooms/ui/bulk-action-toolbar"
 import { BulkActionDialog } from "@/features/partyrooms/ui/mutation-dialogs/bulk-action-dialog"
+import { BulkActionResultDialog } from "@/features/partyrooms/ui/mutation-dialogs/bulk-action-result-dialog"
+import type { BulkActionResult } from "@/features/partyrooms/model/bulk-schema"
 import {
   parseSearchParams,
   stripInvalidParams,
@@ -48,7 +50,10 @@ function PartyroomsListContent({ query, setParams }: ContentProps) {
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkOpen, setBulkOpen] = useState(false)
-  // bulkResults state는 G6 (BulkActionResultDialog) 진입 시점에 추가
+  const [bulkResults, setBulkResults] = useState<{
+    results: BulkActionResult[]
+    attempted: number
+  } | null>(null)
 
   // query 변경 시 selection reset (filter / sort / page / size 모두) — spec §5.2 α
   useEffect(() => {
@@ -119,9 +124,22 @@ function PartyroomsListContent({ query, setParams }: ContentProps) {
         selectedIds={Array.from(selectedIds)}
         open={bulkOpen}
         onOpenChange={setBulkOpen}
-        onResults={() => {
-          // spec §4.3 — selection clear 즉시 (성공/실패 모두). 결과 dialog open 분기는 G6에서 추가.
+        onResults={(results) => {
+          // spec §4.3 — selection clear 즉시 (성공/실패 모두)
+          const attempted = selectedIds.size
           setSelectedIds(new Set())
+          // 실패 있으면 결과 dialog open
+          if (results.some((r) => !r.success)) {
+            setBulkResults({ results, attempted })
+          }
+        }}
+      />
+      <BulkActionResultDialog
+        results={bulkResults?.results ?? []}
+        attemptedCount={bulkResults?.attempted ?? 0}
+        open={bulkResults !== null}
+        onOpenChange={(o) => {
+          if (!o) setBulkResults(null)
         }}
       />
       <PartyroomsTable
