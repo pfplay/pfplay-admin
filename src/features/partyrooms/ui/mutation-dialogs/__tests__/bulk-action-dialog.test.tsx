@@ -55,7 +55,7 @@ describe("BulkActionDialog", () => {
     expect(screen.queryByText(/일괄 처리.*3건/)).not.toBeInTheDocument()
   })
 
-  it("전체 성공 → onOpenChange(false) 호출 + onResults 미호출 + toast.success", async () => {
+  it("전체 성공 → onResults(results) + onOpenChange(false) + toast.success (spec §4.3 always-call)", async () => {
     const onOpenChange = vi.fn()
     const onResults = vi.fn()
     const successSpy = vi.spyOn(toast, "success").mockImplementation(() => "")
@@ -83,8 +83,9 @@ describe("BulkActionDialog", () => {
     })
     fireEvent.click(screen.getByRole("button", { name: "일괄 처리" }))
 
-    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
-    expect(onResults).not.toHaveBeenCalled()
+    await waitFor(() => expect(onResults).toHaveBeenCalledOnce())
+    expect(onResults.mock.calls[0][0]).toHaveLength(3)
+    expect(onOpenChange).toHaveBeenCalledWith(false)
     expect(successSpy).toHaveBeenCalled()
   })
 

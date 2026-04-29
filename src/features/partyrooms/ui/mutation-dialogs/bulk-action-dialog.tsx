@@ -34,7 +34,10 @@ interface Props {
   selectedIds: number[]
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** partial/all-fail 결과를 widget에 전달 — widget에서 result dialog open */
+  /**
+   * mutation 성공 시 results 전달 — widget이 selection clear + (실패 있으면 result dialog open)
+   * 분기. spec §4.3: selection clear는 onSuccess 즉시, result dialog는 widget이 자체 state로 분기.
+   */
   onResults: (results: BulkActionResult[]) => void
 }
 
@@ -78,10 +81,8 @@ export function BulkActionDialog({
       },
       {
         onSuccess: (response) => {
-          const ng = response.results.filter((r) => !r.success).length
-          if (ng > 0) {
-            onResults(response.results)
-          }
+          // 항상 호출 — widget이 selection clear + 실패 분기 결정 (spec §4.3)
+          onResults(response.results)
           onOpenChange(false)
         },
       },
