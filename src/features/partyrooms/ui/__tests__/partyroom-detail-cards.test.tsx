@@ -41,6 +41,43 @@ describe("PartyroomDetailCards (G8 — 8/8 카드)", () => {
     expect(screen.getByText("TERMINATED")).toBeInTheDocument()
   })
 
+  it("introduction / playbackTimeLimit 행 표시 (G4.4)", () => {
+    render(
+      <MemoryRouter>
+        <PartyroomDetailCards detail={partyroomDetailFixture} />
+      </MemoryRouter>,
+    )
+    expect(screen.getByText("소개")).toBeInTheDocument()
+    expect(screen.getByText("테스트 룸 소개")).toBeInTheDocument()
+    expect(screen.getByText("재생 시간 제한")).toBeInTheDocument()
+    expect(screen.getByText("30분")).toBeInTheDocument()
+  })
+
+  it("playbackTimeLimit=0 → '무제한', null → '-'", () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <PartyroomDetailCards
+          detail={{ ...partyroomDetailFixture, playbackTimeLimit: 0 }}
+        />
+      </MemoryRouter>,
+    )
+    expect(screen.getByText("무제한")).toBeInTheDocument()
+    rerender(
+      <MemoryRouter>
+        <PartyroomDetailCards
+          detail={{
+            ...partyroomDetailFixture,
+            playbackTimeLimit: null,
+            introduction: null,
+          }}
+        />
+      </MemoryRouter>,
+    )
+    // limit "-" + introduction "-" 둘 다 fallback. label로 좁혀 검증.
+    const limitLabel = screen.getByText("재생 시간 제한")
+    expect(limitLabel.nextElementSibling).toHaveTextContent("-")
+  })
+
   it("recentPenalties / recentReports / recentAdminActions 모두 빈 → 각 빈 상태 메시지", () => {
     render(
       <MemoryRouter>

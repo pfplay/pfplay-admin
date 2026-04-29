@@ -98,16 +98,11 @@ export function PartyroomsActionsDropdown({ partyroom }: Props) {
         open={active === "restore"}
         onOpenChange={(o) => !o && setActive(null)}
       />
-      {/*
-        14b AdminPartyroomDetail에 introduction/playbackTimeLimit 부재 (verified
-        entities/partyroom/model/types.ts). placeholder 사용 안 함, 빈 form으로 시작.
-        백엔드 DTO 확장은 spec §13.2 future polish.
-      */}
       <UpdateMetaDialog
         partyroomId={partyroom.partyroomId}
         currentTitle={partyroom.title}
-        currentIntroduction={null}
-        currentPlaybackTimeLimit={null}
+        currentIntroduction={partyroom.introduction}
+        currentPlaybackTimeLimit={partyroom.playbackTimeLimit}
         open={active === "update-meta"}
         onOpenChange={(o) => !o && setActive(null)}
       />

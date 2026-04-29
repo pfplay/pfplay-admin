@@ -26,6 +26,12 @@ const STATUS_VARIANT: Record<
   TERMINATED: "destructive",
 }
 
+function formatPlaybackTimeLimit(minutes: number | null): string {
+  if (minutes === null) return "-"
+  if (minutes <= 0) return "무제한"
+  return `${minutes}분`
+}
+
 interface Props {
   detail: AdminPartyroomDetail
 }
@@ -74,6 +80,16 @@ export function PartyroomDetailCards({ detail }: Props) {
           <div>
             <span className="text-muted-foreground">마지막 활동</span>
             <div>{formatKst(detail.lastActivityAt)}</div>
+          </div>
+          <div className="col-span-2">
+            <span className="text-muted-foreground">소개</span>
+            <div className="whitespace-pre-line">
+              {detail.introduction ?? "-"}
+            </div>
+          </div>
+          <div>
+            <span className="text-muted-foreground">재생 시간 제한</span>
+            <div>{formatPlaybackTimeLimit(detail.playbackTimeLimit)}</div>
           </div>
         </CardContent>
       </Card>
