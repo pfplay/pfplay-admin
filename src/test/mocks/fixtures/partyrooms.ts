@@ -18,6 +18,7 @@ export const partyroomListItemFixture: AdminPartyroomListItem = {
 export const partyroomDetailFixture: AdminPartyroomDetail = {
   partyroomId: 1,
   title: "테스트 파티룸",
+  introduction: "테스트 룸 소개",
   status: "ACTIVE",
   displayFlag: "PUBLIC",
   hostUserAccountId: 100,
@@ -26,6 +27,7 @@ export const partyroomDetailFixture: AdminPartyroomDetail = {
   crewCount: 5,
   lastActivityAt: "2026-04-28T11:00:00",
   stageType: "GENERAL",
+  playbackTimeLimit: 30,
   playback: { activated: true, currentTrackName: null, currentDjCrewId: 10 },
   crews: [
     { crewId: 10, memberId: 1, gradeType: "DJ", nickname: "alice", enteredAt: "2026-04-25T10:00:00" },

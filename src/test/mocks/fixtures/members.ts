@@ -36,9 +36,24 @@ export const memberDetailFixture: AdminMemberDetail = {
   },
   authorityTier: "AM",
   createdAt: "2026-01-15T09:00:00",
+  withdrawn: false,
+  withdrawnAt: null,
   recentActivityLog: [
     { occurredAt: "2026-04-28T10:00:00", type: "LOGIN", summary: "로그인" },
   ],
+}
+
+export const memberDetailWithdrawnFixture: AdminMemberDetail = {
+  ...memberDetailFixture,
+  memberId: 2,
+  userAccount: {
+    ...memberDetailFixture.userAccount,
+    userAccountId: 200,
+    email: "bob@example.com",
+  },
+  profile: { nickname: "bob", introduction: null },
+  withdrawn: true,
+  withdrawnAt: "2026-04-20T12:00:00",
 }
 
 // 14c mutation error fixtures (per-test server.use 시 사용)

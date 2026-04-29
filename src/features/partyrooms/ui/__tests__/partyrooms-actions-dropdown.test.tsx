@@ -8,6 +8,7 @@ import type { AdminPartyroomDetail } from "@/entities/partyroom/model/types"
 const baseDetail: AdminPartyroomDetail = {
   partyroomId: 1,
   title: "테스트",
+  introduction: null,
   status: "ACTIVE",
   displayFlag: "NORMAL",
   hostUserAccountId: 100,
@@ -16,6 +17,7 @@ const baseDetail: AdminPartyroomDetail = {
   crewCount: 5,
   lastActivityAt: null,
   stageType: "GENERAL",
+  playbackTimeLimit: null,
   playback: { activated: false, currentTrackName: null, currentDjCrewId: null },
   crews: [],
   djQueue: [],

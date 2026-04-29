@@ -40,6 +40,8 @@ export interface AdminMemberDetail {
   profile: MemberProfileSummary
   authorityTier: AuthorityTier
   createdAt: string
+  withdrawn: boolean
+  withdrawnAt: string | null
   recentActivityLog: RecentActivityLogItem[]
 }
 

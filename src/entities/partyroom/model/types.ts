@@ -71,6 +71,7 @@ export interface AdminPartyroomListItem {
 export interface AdminPartyroomDetail {
   partyroomId: number
   title: string
+  introduction: string | null
   status: PartyroomStatus
   displayFlag: DisplayFlag
   hostUserAccountId: number
@@ -79,6 +80,7 @@ export interface AdminPartyroomDetail {
   crewCount: number
   lastActivityAt: string | null
   stageType: StageType
+  playbackTimeLimit: number | null
   playback: PlaybackSummary
   crews: CrewSummary[]
   djQueue: DjSummary[]
