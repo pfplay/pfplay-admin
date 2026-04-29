@@ -365,7 +365,61 @@ submit:
 
 ## 12. Open Items / Implementation Reality (post-build catch-up)
 
-(G8 chunk에서 채움 — G1~G7 진행 중 spec ↔ 실제 코드 불일치 항목 SHA + 사유 + impact)
+G1~G7 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impact로 G8에서 backfill. 14b §14 / 14c §12 패턴 그대로.
+
+1. **[G1.1 backend grep]** spec §2 1:1 정합 검증 완료 — `BulkPartyroomActionRequest{partyroomIds[1-100], action, reason, skipErrors?}`, `BulkActionType{TERMINATE, SUSPEND, SET_HIDDEN}`, `AdminBulkPartyroomActionService.execute` (non-transactional outer + per-item TX), `AdminPartyroomTransactionalUnit#executeOne` (`@Transactional` switch 3가지). spec §2.4 단언과 코드 정확 일치.
+
+2. **[G1.1 backend grep — §2.6 메시지 정확화]** 실제 backend 도메인 예외 메시지가 spec 매트릭스와 일부 차이:
+   - `ALREADY_TERMINATED`: spec "이미 종료된 룸입니다" → 실제 **"이미 종료된 파티룸입니다"** (`PartyroomException` line 10)
+   - `ILLEGAL_STATE_TRANSITION`: spec "전이 불가" → 실제 **"허용되지 않은 파티룸 상태 전이입니다"** (line 15)
+   - `NOT_FOUND_ROOM`: 실제 "파티룸을 찾을 수 없습니다" — 일치 ✓
+   - 모두 한국어 i18n 적용. `BulkActionResult.error`에 그대로 들어감. UI에서는 backend message 그대로 표시 (custom 변환 안 함).
+
+3. **[G1.1 backend grep — 14c R12 해소]** mutation status 가드 grep 결과:
+   - `AdminPartyroomCommandService.updateMeta` (line 112): `if (partyroom.isTerminated()) throw ALREADY_TERMINATED` — 명시적 service-level 가드 ✓
+   - `setDisplayFlag` (line 86-102): service 자체엔 없으나 `PartyroomData.setDisplayFlagX()` 도메인 메소드에 strict guard (`PartyroomData.java:206` 주석 + `227` throw `ILLEGAL_STATE_TRANSITION`) — entity-level 가드 ✓
+   - `terminate`/`suspend`/`restore`: `PartyroomData` strict guard (lifecycle invariants) ✓
+   - **결론**: 모든 mutation에 status 가드 있음 (service 또는 entity 어느 한 층에서). 14c R12 미해결 항목 → **closed**. 14c §13.2의 해당 항목은 14d G1.1 SHA로 backfill (`d7b9c03` 후속 polish).
+
+4. **[G1.2 SHA `ee26b6e`]** shadcn `@radix-ui/react-checkbox` 1.1.3 의존 + `src/components/ui/checkbox.tsx` 컴포넌트는 14b demo subsystem 일괄 삭제 시점에도 잔존 — `pnpm dlx shadcn add checkbox` 불필요. 단 indeterminate 시각 표시(MinusIcon vs CheckIcon)가 누락돼 있어 props.checked 분기 추가. plan §G1.2 의존 추가 단계 자체는 skip.
+
+5. **[G1 polyfill grep]** `src/test/setup.ts`의 4-method polyfill(hasPointerCapture/setPointerCapture/releasePointerCapture/scrollIntoView, 14b §14 entry 8)이 radix Checkbox에도 충분 — 추가 polyfill 불필요. partyrooms-table 7 selection tests + toolbar 6 + dialog 7 + result-dialog 6 모두 PASS로 확인.
+
+6. **[G2.1 SHA `91c9111`]** `partyrooms-table.tsx` selection props 전부 optional — `selectedIds` / `onToggleId` / `onToggleAll`. 셋 다 제공된 경우만 checkbox column 활성화 (`selectionEnabled` 변수). 14b 기존 사용처(`PartyroomsListWidget`)는 props 미제공이라 회귀 0. row click navigate 충돌 회피는 checkbox cell `onClick={(e) => e.stopPropagation()}`. 14d 패턴 — 14e+ members bulk(미지원이지만 future) 시 동일 적용.
+
+7. **[G2.1 test pattern]** Radix Checkbox에서 `data-state` attribute 검증 — `unchecked` / `checked` / `indeterminate`. `toBeChecked()`는 radix Checkbox에 직접 안 됨 (input[type=checkbox]가 아님). spec §5.6 테스트 가정 일관.
+
+8. **[G3.2 SHA `7ae8a74`]** `PartyroomsListContent`에 `useState<Set<number>>` + `useEffect`로 query 변경 시 reset (8 dep — page/size/sort/status/stageType/host/createdFrom/createdTo). plan §G3.2 별 hook(`useSelectionState`) 추출 안 함 — 14d 단일 사용처라 trigger 약함. §13.2 future polish.
+
+9. **[G3.2 plan deviation — widget integration 테스트 부재]** plan §G3.2 Step 1의 5개 widget integration 테스트(filter 변경 selection reset 등)는 QueryClientProvider + MemoryRouter + msw 통합 부담으로 작성 미실시. selection logic 자체는 partyrooms-table(7) + toolbar(6) + dialog(7) + result-dialog(6) 단위 테스트로 충분히 cover됐다고 판단. e2e Playwright(§13.1 상속)에서 진정한 통합 시나리오 검증.
+
+10. **[G4.3 SHA `cc...`(use-bulk-partyroom-action)]** `useBulkPartyroomAction` hook은 toast 분기를 inline `toast.success/warning/error` 직접 호출 — `mutationSuccessToast` helper 미사용 (helper는 단일 message만 받아서 분기 패턴 부적합). `mutationErrorToast`는 onError에 그대로 사용. spec §4.2 매트릭스대로.
+
+11. **[G5.1 SHA `06ef68a`-polish 포함]** Plan §G5.1 Step 1 명시 회피 — Dialog 내부 Action Select user.click jsdom hang(14c §14 entry 14). default action="TERMINATE"로 시작해 Action 변경 흐름은 e2e 미룸. 7 테스트 모두 PASS.
+
+12. **[G5.1.1 SHA `06ef68a`]** plan §G5.1 Step 2 sample은 "전체 성공 시 onResults 미호출" 패턴이었으나, spec §4.3 "selection clear 즉시 (성공/실패 모두)" 일관성 위해 **`onResults` always-call**로 polish. widget이 onResults 진입 시점에 selection clear + (실패 시 result dialog state set) 분기. dialog는 결과 dialog open 여부와 무관.
+
+13. **[G5.2 SHA `ac27674`]** widget integration 시 `bulkResults` state를 G5.2에서는 typecheck unused warning으로 제거, G6.2에서 다시 추가. 분할 commit 전략으로 typecheck 위반 회피.
+
+14. **[G6.1 SHA `b365234`(이전 commit) / 실제 dialog SHA]** `useTitleLookup` hook은 `useQueryClient().getQueriesData({ queryKey: ["partyrooms"] })`로 prefix 매칭 — 모든 page/filter 캐시 순회. 14b list 캐시 key 패턴(`["partyrooms", { page, size, sort, ...filter }]`)에 의존. 다른 캐시 entry에 동일 partyroomId 다른 title이 있으면 첫 hit 사용. 운영상 빈도 낮음.
+
+15. **[G6.1 missed Z건 표시]** `Math.max(0, attemptedCount - results.length)` — skipErrors=false break 시나리오만 양수. spec §R6 / §6.3 정책 그대로 구현.
+
+16. **[G7.1 SHA `35a330e`]** `bulkResultBreak(ids, breakAt)` fixture만 G7.1에 추가 — G4.4가 이미 allSuccess/partial/allFail 3 fixture를 추가했으므로 break 시나리오만 별 chunk. plan §G7.1 4 fixture 명시와 일관.
+
+17. **[G7 sanity]** 전체 198/198 PASS, typecheck 0 error, build 6.50s 성공 (552KB → 563KB main bundle, +11KB radix Checkbox + bulk dialog 추가). plan 예상 +30 신규 테스트 → 실제 +47 (table 7 + toolbar 6 + schema 14 + api 3 + hook 4 + dialog 7 + result-dialog 6).
+
+18. **[14b/14c 회귀 0]** 기존 151 테스트 모두 PASS. partyrooms-table selection props가 모두 optional + 기본값 부재로 14b 사용처(`PartyroomsListWidget`은 14d에서 변경됐지만 표시는 14b 그대로) 회귀 없음.
+
+### 14c §13.2 backfill (forward-evolution 3단 패턴 (b))
+
+14c §13.2의 항목 중 14d에서 cover된 것:
+
+- **`AdminPartyroomCommandService.updateMeta` / `setDisplayFlag` status 가드 grep + 부재 시 보강** → 14d G1.1에서 grep 완료. 모든 mutation에 service/entity 어느 한 층에서 가드 있음 — 보강 불필요. **closed**. (별 commit으로 14c spec §13.2 backfill 예정 — G8.2)
+- **Dialog 안 radix Select interaction 테스트 회복** → 14d 14e entry 11에서도 동일 deferred. e2e Playwright로 cover. **잔존**.
+- **mutation dialog reset 정책 일관화 (`useDialogResetEffect` 추출)** → 14d BulkActionDialog가 inline `useEffect(() => { if (!open) { ...reset; mutation.reset() } }, [open])` 패턴 적용 (R11 폴리시). ChangeTierDialog(14c §14 entry 4) 미적용 잔존. 추출 trigger는 더 강해졌으나 14d에서도 inline 유지. **잔존**.
+- **`AdminMember/PartyroomDetailResponse` DTO 확장** → 14d 무관 (members 도메인 + detail card 영역). **잔존**.
+- **RHF v7 `.refine()` 에러 helper** → 14d BulkActionDialog는 react-hook-form 미사용 (수동 useState) — refine 에러 자체 부재. 추출 trigger 약함. **잔존**.
 
 ---
 
@@ -398,6 +452,10 @@ submit:
 - **result dialog "재시도" 버튼** — 실패 항목만 자동 selection 복원 + dialog 재open. 운영 효율 향상.
 - **`useDialogResetEffect` shared helper 추출** — 14c §13.2 상속 항목 중 "mutation dialog reset 정책 일관화"의 자연스러운 추출 시점. 14d가 BulkActionDialog/BulkActionResultDialog 2개 추가하므로 R11 폴리시 inline 코드가 4 이상 dialog에 중복 발생. 14d 진행 중 inline 유지하되 G8 catch-up 시점에 shared 추출 reality + ChangeTierDialog 일관 적용 cover 가능 (cost: 1 commit, impact: 14c §13.2 잔존 1건 해소).
 - **R12 status 가드 backend grep opportunity** — 14c R12(updateMeta/setDisplayFlag backend status 가드 미검증) 잔존. 14d G4/G5 chunk가 same `AdminPartyroomCommandService` 영역의 backend grep을 동반하므로 `updateMeta`/`setDisplayFlag` status 체크 동시 grep으로 14c R12 해소 opportunity. cost: grep 1회 + §12 reality 1 entry, impact: 14c R12 close.
+  - **14d 결과 (G1.1)**: grep 완료, 모든 mutation에 service/entity 어느 한 층에서 가드 있음. 14c R12 → **closed**.
+- **`useSelectionState` shared hook 추출** — 14d G3.2가 widget에 `useState<Set<number>>` + 8-dep useEffect를 inline. 본 PR은 단일 사용처라 trigger 약했으나, 14e+ members bulk(미지원이지만 future) 또는 다른 list page에서 재사용 시점에 추출. 추출 신호: 두 번째 사용처 등장.
+- **`useDialogResetEffect` shared hook 추출 — 14c §13.2 상속, 14d에서도 inline 유지** — 14d `BulkActionDialog`가 R11 폴리시 inline `useEffect(() => { if (!open) { ...form reset; mutation.reset() } }, [open])` 5번째 사용처. ChangeTierDialog(14c)는 `mutation.reset()` 미적용 잔존. helper 추출 시 ChangeTierDialog 일관 적용 + 14d dialog 들이 더 짧아짐. cost: helper + 5 dialog refactor, impact: 14c §14 entry 4 deviation 해소.
+- **bulk action 통합 e2e Playwright** — 14d §11 R3 / §13.1 e2e 상속의 핵심 trigger. selection → bulk dialog Action select 변경 → submit → result dialog → 닫기 → list refetch 시나리오. jsdom hang 한계가 가장 큰 영역. 14c §14 entry 14와 동일 future polish.
 
 ---
 
