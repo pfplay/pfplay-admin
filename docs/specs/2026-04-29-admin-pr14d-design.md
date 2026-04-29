@@ -82,6 +82,8 @@ bulk endpoint는 항목별 예외를 `error` string으로 노출. 단건 mutatio
 
 §13.2: backend가 errorCode도 결과에 포함 노출하면 클라가 일관 매핑 가능 (future polish).
 
+**G4/G5 진입 시 sanity grep 의무**: 위 매트릭스의 한국어 메시지 가정은 GlobalExceptionHandler + 각 도메인 exception(`AbstractHTTPException`, `NotFoundRoomException` 등)의 message 출처가 한국어인지 영문/내부 포맷인지 backend grep 1회 확인 필요. 영문/내부 포맷이면 매트릭스 표시 텍스트를 클라 기준으로 매핑 (errorCode 부재라 best-effort) — §12 reality에 박음.
+
 ---
 
 ## 3. 아키텍처
@@ -279,7 +281,7 @@ submit:
 - `partyrooms-table.test.tsx` 확장: row checkbox / header 전체 선택 / disabled (해당 시) — 3~4 tests
 - `partyrooms-list.test.tsx` 통합: selection persist 단일 페이지 / 페이지 이동 시 reset — 2 tests
 
-총 신규 ~30 tests. 14c 151 → 14d 약 180.
+총 신규 ~30 tests. **baseline 151 + 신규 ~30 = 약 181** (14c 종료 시점 baseline).
 
 ### 8.2 수동 검증 (staging)
 
@@ -306,14 +308,16 @@ submit:
 | Chunk | 범위 | commits 예상 |
 |---|---|---|
 | G0 ~ G0.x | spec / plan 작성 + reviewer polish | 3~5 |
-| G1 | shadcn Checkbox 의존 추가 + 컴포넌트 + sanity test | 1~2 |
+| G1 | shadcn Checkbox 의존 추가 + 컴포넌트 + jsdom polyfill grep + sanity test | 1~2 |
 | G2 | partyrooms-table row checkbox + header 전체 선택 + 14b 회귀 0 | 2~3 |
 | G3 | partyrooms-list widget selection state + toolbar 통합 | 2~3 |
-| G4 | bulk schema + API fn + hook (TDD) | 3~4 |
+| G4 | bulk schema + API fn + hook + **msw mutation handler 동시** (TDD) | 4~5 |
 | G5 | bulk-action-dialog (form + submit + state machine) | 2~3 |
 | G6 | bulk-action-result-dialog + dialog 전환 통합 | 2~3 |
-| G7 | msw handler + chunk sanity | 1~2 |
+| G7 | msw fixture 시나리오 확장 (전체성공/부분/전체실패) + chunk sanity | 1~2 |
 | G8 | spec §12 catch-up + §13.2 + 14c §13.2 backfill | 1~2 |
+
+**chunk 분할 정책**: 14c G2/G3 패턴 일관 — hook commit과 같은 chunk 안에 msw mutation handler 동시 추가(G4). 그래야 G5/G6 dialog 통합 테스트가 hook 거쳐 실제 mutation 실행 가능. G7은 fixture 시나리오 확장(success/partial/all-fail)만 담당.
 
 총 commits 예상 ~25 (14c 42보다 작음 — 14d 도메인 좁음).
 
@@ -328,8 +332,8 @@ submit:
 
 ### R2 — header indeterminate checkbox
 
-**상태**: shadcn Checkbox는 `checked: boolean | "indeterminate"` 지원. radix Checkbox 1.x. polyfill 불필요.
-**대응**: G1에서 컴포넌트 source 확인 + jsdom 호환성 sanity test 1개.
+**상태**: shadcn Checkbox는 `checked: boolean | "indeterminate"` 지원. radix Checkbox 1.x. polyfill 불필요(추정).
+**대응**: G1 진입 시 **jsdom polyfill 필요 여부 grep 1회 의무화** — `src/test/setup.ts` 현재 4 메소드(hasPointerCapture/setPointerCapture/releasePointerCapture/scrollIntoView, 14b §14 entry 8) 외에 radix Checkbox가 요구하는 추가 polyfill이 있는지 확인. 추가 polyfill 필요 시 setup.ts 확장 + sanity test 1개. 패턴은 14c G1 dropdown-menu/dialog/tooltip 추가 시점과 일관 (§3.1에 명시).
 
 ### R3 — Dialog 안 Select interaction 테스트 회피
 
@@ -350,6 +354,7 @@ submit:
 
 **상태**: backend behavior — skipErrors=false여도 break 전 성공 항목은 commit됨. 결과 results 배열에 그 항목까지 포함.
 **대응**: result dialog "총 N건 시도 / 성공 X건 / 실패 Y건 / 미시도 Z건" 표시. Z = request.partyroomIds.length - results.length.
+**G4 진입 시 sanity**: `AdminPartyroomTransactionalUnit#executeOne` 본문 read 1회 — per-item TX boundary가 진짜 commit per item을 보장하는지 + audit listener가 같은 TX 안에서 INSERT하는지 확인. spec §2.4 단언이 코드와 1:1인지 검증. 변동 시 §12 reality.
 
 ### R7 — bulk 후 detail 페이지 stale
 
@@ -373,7 +378,7 @@ submit:
 - Storybook + 시각적 회귀 (toolbar / dialogs)
 - a11y axe (Checkbox + 결과 dialog list)
 - i18n (한국어 하드코딩)
-- guest 어드민 라우트 (별 묶음)
+- guest admin route (별 묶음)
 - penalty UI / admin action audit / avatar publish-retire UI (별 PR)
 - mutation dialog reset 정책 일관화 (`useDialogResetEffect` 추출 — 14c §13.2 상속)
 - RHF v7 `.refine()` 에러 위치 helper (14c §13.2 상속)
@@ -391,12 +396,14 @@ submit:
 - **size=100까지 list page 확장** — 현재 size=50 기본. 한 페이지에 100건 cover하려면 size=100 옵션 추가 (14b filter-form sort/page select에 이미 size 옵션 있음 — 검증 필요).
 - **filter+selection re-apply** — 100건 select 후 filter 좁힐 때 invalid id (filtered out) selection 자동 정리.
 - **result dialog "재시도" 버튼** — 실패 항목만 자동 selection 복원 + dialog 재open. 운영 효율 향상.
+- **`useDialogResetEffect` shared helper 추출** — 14c §13.2 상속 항목 중 "mutation dialog reset 정책 일관화"의 자연스러운 추출 시점. 14d가 BulkActionDialog/BulkActionResultDialog 2개 추가하므로 R11 폴리시 inline 코드가 4 이상 dialog에 중복 발생. 14d 진행 중 inline 유지하되 G8 catch-up 시점에 shared 추출 reality + ChangeTierDialog 일관 적용 cover 가능 (cost: 1 commit, impact: 14c §13.2 잔존 1건 해소).
+- **R12 status 가드 backend grep opportunity** — 14c R12(updateMeta/setDisplayFlag backend status 가드 미검증) 잔존. 14d G4/G5 chunk가 same `AdminPartyroomCommandService` 영역의 backend grep을 동반하므로 `updateMeta`/`setDisplayFlag` status 체크 동시 grep으로 14c R12 해소 opportunity. cost: grep 1회 + §12 reality 1 entry, impact: 14c R12 close.
 
 ---
 
 ## 참고 자료
 
-- 14c spec: `docs/specs/2026-04-29-admin-pr14c-design.md` (HEAD `d7b9c03`)
+- 14c spec: `docs/specs/2026-04-29-admin-pr14c-design.md` (post-backfill HEAD `8fac84a`)
 - 14c plan: `docs/plans/2026-04-29-admin-pr14c.md`
 - 14b spec: `docs/specs/2026-04-29-admin-pr14b-design.md` (HEAD `8fac84a` post-backfill)
 - 14a spec: `docs/specs/2026-04-28-admin-pr14a-design.md`
