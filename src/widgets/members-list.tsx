@@ -1,6 +1,3 @@
-import { useEffect } from "react"
-import { useSearchParams } from "react-router-dom"
-import { toast } from "sonner"
 import {
   membersListQuerySchema,
   type MembersListQuery,
@@ -8,48 +5,28 @@ import {
 import { useMembersList } from "@/features/members/api/use-members-list"
 import { MembersFilterForm } from "@/features/members/ui/members-filter-form"
 import { MembersTable } from "@/features/members/ui/members-table"
-import {
-  parseSearchParams,
-  stripInvalidParams,
-  serializeQuery,
-} from "@/shared/lib/url-state"
+import { useUrlQueryState } from "@/shared/lib/use-url-query-state"
 import { Pagination } from "@/widgets/pagination"
 import { ApiError } from "@/shared/api/error"
 
 export function MembersListWidget() {
-  const [params, setParams] = useSearchParams()
-  const parsed = parseSearchParams(membersListQuerySchema, params)
+  const { query, setQuery, reset } = useUrlQueryState(membersListQuerySchema)
 
-  // invalid query → drop invalid params + toast (effect — render 중 setParams 금지)
-  useEffect(() => {
-    if (!parsed.success) {
-      const cleaned = stripInvalidParams(params, parsed.error)
-      setParams(cleaned, { replace: true })
-      toast.error("필터 일부가 잘못돼 무시했어요")
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsed.success])
-
-  if (!parsed.success) return null
-
-  const query: MembersListQuery = parsed.data
-  return <MembersListContent query={query} setParams={setParams} />
+  if (query === null) return null
+  return (
+    <MembersListContent query={query} setQuery={setQuery} reset={reset} />
+  )
 }
 
 interface ContentProps {
   query: MembersListQuery
-  setParams: ReturnType<typeof useSearchParams>[1]
+  setQuery: (next: Partial<MembersListQuery>) => void
+  reset: () => void
 }
 
-function MembersListContent({ query, setParams }: ContentProps) {
+function MembersListContent({ query, setQuery, reset }: ContentProps) {
   const { data, isLoading, error } = useMembersList(query)
-
-  const updateQuery = (next: Partial<MembersListQuery>) => {
-    const merged = { ...query, ...next }
-    setParams(serializeQuery(merged as Record<string, unknown>))
-  }
-  const reset = () => setParams(new URLSearchParams())
-  const goToPage = (page: number) => updateQuery({ page })
+  const goToPage = (page: number) => setQuery({ page })
 
   return (
     <div className="p-6 lg:p-8">
@@ -61,7 +38,7 @@ function MembersListContent({ query, setParams }: ContentProps) {
           </p>
         )}
       </div>
-      <MembersFilterForm query={query} onChange={updateQuery} onReset={reset} />
+      <MembersFilterForm query={query} onChange={setQuery} onReset={reset} />
       {error instanceof ApiError && error.status === 403 && (
         <p className="text-destructive text-sm mb-2">
           이 화면을 볼 권한이 없습니다

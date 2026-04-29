@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react"
-import { useSearchParams } from "react-router-dom"
-import { toast } from "sonner"
 import {
   partyroomsListQuerySchema,
   type PartyroomsListQuery,
@@ -12,40 +10,26 @@ import { BulkActionToolbar } from "@/features/partyrooms/ui/bulk-action-toolbar"
 import { BulkActionDialog } from "@/features/partyrooms/ui/mutation-dialogs/bulk-action-dialog"
 import { BulkActionResultDialog } from "@/features/partyrooms/ui/mutation-dialogs/bulk-action-result-dialog"
 import type { BulkActionResult } from "@/features/partyrooms/model/bulk-schema"
-import {
-  parseSearchParams,
-  stripInvalidParams,
-  serializeQuery,
-} from "@/shared/lib/url-state"
+import { useUrlQueryState } from "@/shared/lib/use-url-query-state"
 import { Pagination } from "@/widgets/pagination"
 import { ApiError } from "@/shared/api/error"
 
 export function PartyroomsListWidget() {
-  const [params, setParams] = useSearchParams()
-  const parsed = parseSearchParams(partyroomsListQuerySchema, params)
+  const { query, setQuery, reset } = useUrlQueryState(partyroomsListQuerySchema)
 
-  // invalid query → drop invalid params + toast (effect — render 중 setParams 금지, G3 패턴)
-  useEffect(() => {
-    if (!parsed.success) {
-      const cleaned = stripInvalidParams(params, parsed.error)
-      setParams(cleaned, { replace: true })
-      toast.error("필터 일부가 잘못돼 무시했어요")
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsed.success])
-
-  if (!parsed.success) return null
-
-  const query: PartyroomsListQuery = parsed.data
-  return <PartyroomsListContent query={query} setParams={setParams} />
+  if (query === null) return null
+  return (
+    <PartyroomsListContent query={query} setQuery={setQuery} reset={reset} />
+  )
 }
 
 interface ContentProps {
   query: PartyroomsListQuery
-  setParams: ReturnType<typeof useSearchParams>[1]
+  setQuery: (next: Partial<PartyroomsListQuery>) => void
+  reset: () => void
 }
 
-function PartyroomsListContent({ query, setParams }: ContentProps) {
+function PartyroomsListContent({ query, setQuery, reset }: ContentProps) {
   const { data, isLoading, error } = usePartyroomsList(query)
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
@@ -85,12 +69,7 @@ function PartyroomsListContent({ query, setParams }: ContentProps) {
   }
   const onClearSelection = () => setSelectedIds(new Set())
 
-  const updateQuery = (next: Partial<PartyroomsListQuery>) => {
-    const merged = { ...query, ...next }
-    setParams(serializeQuery(merged as Record<string, unknown>))
-  }
-  const reset = () => setParams(new URLSearchParams())
-  const goToPage = (page: number) => updateQuery({ page })
+  const goToPage = (page: number) => setQuery({ page })
 
   return (
     <div className="p-6 lg:p-8">
@@ -104,7 +83,7 @@ function PartyroomsListContent({ query, setParams }: ContentProps) {
       </div>
       <PartyroomsFilterForm
         query={query}
-        onChange={updateQuery}
+        onChange={setQuery}
         onReset={reset}
       />
       {error instanceof ApiError && error.status === 403 && (
