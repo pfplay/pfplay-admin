@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useDialogResetEffect } from "@/shared/lib/use-dialog-reset-effect"
+import { useRefineError } from "@/shared/lib/use-refine-error"
 import {
   Dialog,
   DialogContent,
@@ -64,8 +65,7 @@ export function UpdateMetaDialog({
     )
   }
 
-  // RHF v7 + zodResolver: top-level .refine() 에러는 errors[""] (빈 키)로 매핑됨
-  const refineError = (errors as Record<string, { message?: string } | undefined>)[""]
+  const refineError = useRefineError(errors)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
