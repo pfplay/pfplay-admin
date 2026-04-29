@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { renderHook, act } from "@testing-library/react"
+import { renderHook } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom"
 import { z } from "zod"
 import { toast } from "sonner"
@@ -34,14 +34,15 @@ describe("useUrlQueryState", () => {
     expect(result.current.query).toEqual({ page: 2, size: 25, sort: "asc" })
   })
 
-  it("invalid params → toast + null query", () => {
+  it("invalid params → toast + cleaned to defaults", () => {
     const errorSpy = vi.spyOn(toast, "error").mockImplementation(() => "")
     const { result } = renderHook(() => useUrlQueryState(schema), {
       wrapper: wrapper(["/?sort=BOGUS"]),
     })
-    // initial render parsed.success false → null, useEffect 후 setParams cleaned
-    expect(result.current.query).toBeNull()
+    // useEffect가 invalid drop + setParams(replace) → 재렌더 후 defaults 복귀.
+    // null window는 microtask-thin이라 RTL renderHook으로는 관측 불가 (구현 세부, UX 영향 0).
     expect(errorSpy).toHaveBeenCalled()
+    expect(result.current.query).toEqual({ page: 0, size: 50, sort: "desc" })
   })
 
   it("setQuery / reset 함수 노출 (행위 검증은 widget integration에서)", () => {
