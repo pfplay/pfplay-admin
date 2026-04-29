@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom"
 import { useReportDetail } from "@/features/reports/api/use-report-detail"
 import { ReportDetailCards } from "@/features/reports/ui/report-detail-cards"
+import { ReportsActionsDropdown } from "@/features/reports/ui/reports-actions-dropdown"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { ApiError } from "@/shared/api/error"
@@ -33,7 +34,7 @@ export function ReportsDetailWidget() {
         <Link to="/reports" className="text-sm text-muted-foreground inline-block">
           ← 목록으로
         </Link>
-        {/* G6에서 ReportsActionsDropdown wire */}
+        <ReportsActionsDropdown reportId={data.reportId} currentStatus={data.status} />
       </div>
       <ReportDetailCards detail={data} />
     </div>
