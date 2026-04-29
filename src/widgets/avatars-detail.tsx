@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom"
 import { useAvatarDetail } from "@/features/avatars/api/use-avatar-detail"
 import { AvatarDetailCards } from "@/features/avatars/ui/avatar-detail-cards"
+import { AvatarsActionsDropdown } from "@/features/avatars/ui/avatars-actions-dropdown"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { ApiError } from "@/shared/api/error"
@@ -46,7 +47,7 @@ export function AvatarsDetailWidget() {
         >
           ← 목록으로
         </Link>
-        {/* G6에서 AvatarsActionsDropdown wire */}
+        <AvatarsActionsDropdown resource={data} resourceType={resourceType} />
       </div>
       <AvatarDetailCards detail={data} />
     </div>
