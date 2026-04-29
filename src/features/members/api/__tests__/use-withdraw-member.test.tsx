@@ -35,9 +35,10 @@ describe("useWithdrawMember", () => {
     expect(successSpy).toHaveBeenCalledWith("탈퇴 처리 완료")
   })
 
-  it("on idempotent re-call (alreadyWithdrawn=true): toast '이미 탈퇴된 회원입니다'", async () => {
+  it("on idempotent re-call (alreadyWithdrawn=true): toast.info '이미 탈퇴된 회원입니다' (G5.2)", async () => {
     const { wrapper } = makeWrapper()
     const successSpy = vi.spyOn(toast, "success").mockImplementation(() => "")
+    const infoSpy = vi.spyOn(toast, "info").mockImplementation(() => "")
     server.use(
       http.post("*/api/v1/admin/members/1/withdraw", () =>
         HttpResponse.json({
@@ -48,7 +49,8 @@ describe("useWithdrawMember", () => {
     const { result } = renderHook(() => useWithdrawMember(), { wrapper })
     result.current.mutate({ memberId: 1 })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(successSpy).toHaveBeenCalledWith("이미 탈퇴된 회원입니다")
+    expect(infoSpy).toHaveBeenCalledWith("이미 탈퇴된 회원입니다")
+    expect(successSpy).not.toHaveBeenCalled()
   })
 
   it("on success: invalidates ['members'] prefix", async () => {
