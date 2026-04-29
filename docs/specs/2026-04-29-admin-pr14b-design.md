@@ -605,6 +605,7 @@ G1~G8 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impac
 - virtual scroll (size>200 필요 시)
 - backend playlist 모듈 query port 추가 후 `currentTrackName`/`playlistName` 채움 (R6)
 - mutation chunk (14c 이후): tier 변경, withdraw, partyroom 강제 종료/penalty/admin action
+  - **14c backfill**: tier 변경 `cb08dfb`(G2.6) / withdraw `2a2a514`(G2.7) / 강제 종료 `4e6fba7`(G3.4) / 일시 정지·재개 `4e6fba7`(G3.4) / 메타 수정 `6b3748d`(G4.5) wire `28ea2ce`(G4.6) / 표시 변경 `ccd847f`(G5.3) wire `a9dc2d3`(G5.4). penalty / admin action / avatar publish-retire는 14d+ 별 패키지 (R5 / 14c §13.2 잔존)
 - guest 어드민: backend `AdminGuestQueryController` + frontend `/guests` 라우트 (14c 이후 별 묶음)
 - **react-query 버전 통일** (`^5.100.5`로 bump) — `react-query-devtools` peer-dep mismatch 해소 (§14 entry 3)
 - **partyroom enum 4개** (`DisplayFlag` / `GradeType` / `PenaltyType` / `PartyroomAdminActionType`) frontend zod enum으로 좁히기 — 현재 `string` (forward-compat). backend 실제 값은 §14 entry 19 참조
