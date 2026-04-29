@@ -35,4 +35,12 @@ export const partyroomHandlers = [
   http.post(`${API}/:partyroomId/terminate`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${API}/:partyroomId/suspend`, () => new HttpResponse(null, { status: 204 })),
   http.post(`${API}/:partyroomId/restore`, () => new HttpResponse(null, { status: 204 })),
+
+  // 14d bulk-action — default all-success. partial / all-fail 시나리오는 per-test server.use.
+  http.post(`${API}/bulk-action`, async ({ request }) => {
+    const body = (await request.json()) as { partyroomIds: number[] }
+    return HttpResponse.json({
+      results: body.partyroomIds.map((id) => ({ partyroomId: id, success: true, error: null })),
+    })
+  }),
 ]

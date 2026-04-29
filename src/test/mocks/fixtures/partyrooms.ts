@@ -56,3 +56,24 @@ export const partyroomNotFoundErrorFixture = {
   errorCode: "NOT_FOUND_ROOM",
   message: "존재하지 않는 룸",
 }
+
+// 14d bulk-action result fixtures (per-test server.use override 시 사용)
+export const bulkResultAllSuccess = (ids: number[]) => ({
+  results: ids.map((id) => ({ partyroomId: id, success: true, error: null })),
+})
+
+export const bulkResultPartial = (ids: number[]) => ({
+  results: ids.map((id, i) => ({
+    partyroomId: id,
+    success: i % 2 === 0,
+    error: i % 2 === 0 ? null : "이미 종료된 파티룸입니다",
+  })),
+})
+
+export const bulkResultAllFail = (ids: number[]) => ({
+  results: ids.map((id) => ({
+    partyroomId: id,
+    success: false,
+    error: "INTERNAL_ERROR",
+  })),
+})
