@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 import {
@@ -8,6 +8,7 @@ import {
 import { usePartyroomsList } from "@/features/partyrooms/api/use-partyrooms-list"
 import { PartyroomsFilterForm } from "@/features/partyrooms/ui/partyrooms-filter-form"
 import { PartyroomsTable } from "@/features/partyrooms/ui/partyrooms-table"
+import { BulkActionToolbar } from "@/features/partyrooms/ui/bulk-action-toolbar"
 import {
   parseSearchParams,
   stripInvalidParams,
@@ -44,6 +45,38 @@ interface ContentProps {
 function PartyroomsListContent({ query, setParams }: ContentProps) {
   const { data, isLoading, error } = usePartyroomsList(query)
 
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+
+  // query 변경 시 selection reset (filter / sort / page / size 모두) — spec §5.2 α
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [
+    query.page,
+    query.size,
+    query.sort,
+    query.status,
+    query.stageType,
+    query.host,
+    query.createdFrom,
+    query.createdTo,
+  ])
+
+  const onToggleId = (id: number) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  const onToggleAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set((data?.content ?? []).map((r) => r.partyroomId)))
+    } else {
+      setSelectedIds(new Set())
+    }
+  }
+  const onClearSelection = () => setSelectedIds(new Set())
+
   const updateQuery = (next: Partial<PartyroomsListQuery>) => {
     const merged = { ...query, ...next }
     setParams(serializeQuery(merged as Record<string, unknown>))
@@ -74,10 +107,20 @@ function PartyroomsListContent({ query, setParams }: ContentProps) {
       {error instanceof ApiError && error.status === 400 && (
         <p className="text-destructive text-sm mb-2">{error.message}</p>
       )}
+      <BulkActionToolbar
+        selectionSize={selectedIds.size}
+        onClearSelection={onClearSelection}
+        onOpenDialog={() => {
+          // G5에서 BulkActionDialog wire
+        }}
+      />
       <PartyroomsTable
         rows={data?.content ?? []}
         isLoading={isLoading}
         isEmpty={!isLoading && (data?.empty ?? false)}
+        selectedIds={selectedIds}
+        onToggleId={onToggleId}
+        onToggleAll={onToggleAll}
       />
       {data && (
         <Pagination
