@@ -18,11 +18,14 @@ import { formatKst } from "@/shared/lib/format-kst"
 
 interface Props {
   detail: AdminMemberDetail
-  withdrawn?: boolean
-  withdrawnAt?: string | null
 }
 
-export function MemberDetailCards({ detail, withdrawn, withdrawnAt }: Props) {
+export function MemberDetailCards({ detail }: Props) {
+  // PR 14g G4.3: detail 자체가 withdrawn/withdrawnAt를 보유 (G3.2 backend root-level).
+  // 별도 prop drilling 제거하고 detail 단일 source 사용.
+  const withdrawnTooltip = detail.withdrawnAt
+    ? `탈퇴 처리: ${formatKst(detail.withdrawnAt)}`
+    : ""
   return (
     <div className="space-y-4">
       {/* 1. Header */}
@@ -30,8 +33,8 @@ export function MemberDetailCards({ detail, withdrawn, withdrawnAt }: Props) {
         <h2 className="text-2xl font-bold">
           #{detail.memberId} {detail.profile.nickname ?? "-"}
         </h2>
-        {withdrawn && (
-          <Badge variant="secondary" title={withdrawnAt ?? ""}>
+        {detail.withdrawn && (
+          <Badge variant="secondary" title={withdrawnTooltip}>
             탈퇴 회원
           </Badge>
         )}

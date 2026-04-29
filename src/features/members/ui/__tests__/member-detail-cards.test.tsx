@@ -1,18 +1,22 @@
 import { describe, it, expect } from "vitest"
 import { render, screen } from "@testing-library/react"
 import { MemberDetailCards } from "../member-detail-cards"
-import { memberDetailFixture } from "@/test/mocks/fixtures/members"
+import {
+  memberDetailFixture,
+  memberDetailWithdrawnFixture,
+} from "@/test/mocks/fixtures/members"
 
 describe("MemberDetailCards", () => {
-  it("withdrawn=true → 탈퇴 badge", () => {
-    render(
-      <MemberDetailCards
-        detail={memberDetailFixture}
-        withdrawn={true}
-        withdrawnAt="2026-04-20T10:00:00"
-      />,
-    )
-    expect(screen.getByText(/탈퇴 회원/)).toBeInTheDocument()
+  it("detail.withdrawn=true → 탈퇴 badge + withdrawnAt tooltip", () => {
+    render(<MemberDetailCards detail={memberDetailWithdrawnFixture} />)
+    const badge = screen.getByText(/탈퇴 회원/)
+    expect(badge).toBeInTheDocument()
+    expect(badge).toHaveAttribute("title", expect.stringContaining("탈퇴 처리:"))
+  })
+
+  it("detail.withdrawn=false → badge 미렌더", () => {
+    render(<MemberDetailCards detail={memberDetailFixture} />)
+    expect(screen.queryByText(/탈퇴 회원/)).not.toBeInTheDocument()
   })
 
   it("recentActivityLog 빈 배열 → '최근 활동 없음'", () => {
