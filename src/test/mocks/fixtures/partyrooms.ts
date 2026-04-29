@@ -77,3 +77,15 @@ export const bulkResultAllFail = (ids: number[]) => ({
     error: "INTERNAL_ERROR",
   })),
 })
+
+/**
+ * skipErrors=false 시 첫 실패에서 break — breakAt index부터 results 배열 미포함.
+ * 호출자가 "미시도 Z건 = ids.length - results.length"로 계산.
+ */
+export const bulkResultBreak = (ids: number[], breakAt: number) => ({
+  results: ids.slice(0, breakAt).map((id, i) => ({
+    partyroomId: id,
+    success: i < breakAt - 1,
+    error: i < breakAt - 1 ? null : "이미 종료된 파티룸입니다",
+  })),
+})
