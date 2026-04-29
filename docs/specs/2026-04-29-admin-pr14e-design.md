@@ -428,7 +428,43 @@ PATCH 응답이 detail shape이라 setQueryData로 즉시 반영. list invalidat
 
 ## 12. Open Items / Implementation Reality (post-build catch-up)
 
-(G8 chunk에서 채움 — G1~G7 진행 중 spec ↔ 실제 코드 불일치 항목 SHA + 사유 + impact)
+G1~G7 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impact로 G8에서 backfill. 14b §14 / 14c §12 / 14d §12 패턴 그대로.
+
+1. **[G1.2 SHA `c8...` (App.tsx + sidebar)]** page를 G1.2 단계에서는 placeholder div로 두고 widget을 G4/G5에서 채울 때 import 교체. typecheck unused warning 회피 + chunk 분리 명확. 14b/14c/14d에는 없던 패턴 — 14e가 신규 entity/feature/widget 전체를 처음부터 만드는 도메인이라 도입.
+
+2. **[G2.3 SHA `(msw)`]** msw `parseSearchParams` 14b util은 `Object.fromEntries(params.entries())`로 multi-value 미지원 (같은 key 두 번 있으면 마지막 값만). reports widget이 `URLSearchParams.getAll/append` 직접 사용. URL ↔ query state 동기화 helper로 `urlToQueryObj` / `queryToUrl` 인라인. §13.2 `useUrlMultiParamState` 추출 후보.
+
+3. **[G3.1 SHA `(reports-api)`]** `serializeQuery` 14b util도 array 미지원 — `URLSearchParams.append` 직접 사용. `created_from` / `created_to` snake_case 변환은 reports-api 안에서 처리 (URL과 backend convention 분리).
+
+4. **[G3.4 SHA `(use-update-report-status)`]** PATCH 응답이 detail shape이라 `qc.setQueryData(["reports", "detail", id], newDetail)` + `qc.invalidateQueries({ queryKey: ["reports", "list"] })` 분리 패턴. 14b/14c/14d의 prefix-only invalidate (`["partyrooms"]`)와 다름. setQueryData가 즉시 cache 갱신 → detail page 렌더 즉시 반영, list는 stale 마킹으로 다음 진입 시 refetch.
+
+5. **[G4.1 SHA `(filter-form)`]** spec §5.1의 inline cross-field guard (createdFrom > createdTo → 즉시 toast.error + form 차단)는 미구현. zod schema `.superRefine`만 적용 — 사용자 input 후 query update 시점에 schema 검증 fail → toast가 widget의 "필터 일부가 잘못돼 무시했어요"로 표시 + URL drop. UX 충분 (즉시 reject보다 부드러움). 인라인 guard는 §13.2 future polish.
+
+6. **[G4.1 SHA `(filter-form)`]** filter form의 multi-select는 `Checkbox` group + helper `toggle<T>(arr, v)` (in-place toggle returns new array). 14b/14c는 single-Select with "ALL" + enum value. 14e는 backend가 multi 지원하므로 checkbox group 적합. 추출 helper는 본 file 안 inline (재사용 시점에 shared).
+
+7. **[G4.2 SHA `91c9111`-style table]** Skeleton 컴포넌트가 14b shadcn 버전이라 `data-slot` 미적용 — test에서 `.animate-pulse` 클래스로 5개 검증.
+
+8. **[G5.1 SHA `(detail-cards)`]** orphan tolerance 정책 — `reporter.email === null && reporter.nickname === null` (둘 다 null) → "(삭제된 회원)" 메시지. 부분 orphan(예: email 있고 nickname null)은 cell별 "(N/A)" fallback. partyroom도 동일. 14e R2 명세 그대로 구현.
+
+9. **[G5.2 SHA `bd7f83c`]** widget의 `useReportDetail` 호출은 `idValid ? id : 0`로 idValid false 시 0 — `useReportDetail`은 `enabled: id > 0`로 fetch 자체 차단. 14b `useMemberDetail` 패턴(NaN 전달)과 약간 다르나 동등 동작.
+
+10. **[G6.1 SHA `(transition-dialog)`]** Plan §G6.1의 zodResolver 통합은 미구현 — 단순 useState로 note 관리. zod refine은 hook이 받은 body에 미리 적용되지 않고 backend RPT-003에 의존. frontend는 button disabled (`!noteValid`)로 UX-level 차단 + 정상 운영에선 backend 도달 0. RHF 없이 단순 useState로 충분.
+
+11. **[G6.2 SHA `(actions-dropdown)`]** ReportsActionsDropdown은 `target` prop을 menuitem이 직접 결정 — `<TransitionStatusDialog>`에 target 전달. dialog 내부 status select 부재 → 14c §14 entry 14 jsdom hang 회피 자연스러움. 14d BulkActionDialog는 default action prop으로 회피했지만 14e는 menuitem 직접 결정 — 더 깔끔.
+
+12. **[G7 sanity]** 전체 256/256 PASS, typecheck 0 error, build 3.90s 성공 (577KB main bundle, +14KB vs 14d 563KB). plan 추정 +42 신규 → 실제 +58 (filter-schema 8 / transition-schema 12 / api 7 / hook 4 / table 5 / filter-form 6 / detail-cards 6 / transition-dialog 6 / actions-dropdown 4).
+
+13. **[14a~14d 회귀 0]** 기존 198 모두 PASS. App.tsx 라우트 추가 + sidebar 4번째 nav + msw handler index.ts 확장 — 회귀 없음.
+
+### 14d §13.2 backfill (forward-evolution 3단 패턴 (b))
+
+14d §13.2 잔존 항목 vs 14e cover:
+
+- **`useDialogResetEffect` shared 추출** → 14e TransitionStatusDialog가 동일 패턴 inline 6번째 사용처. 14e에서도 inline 유지. **잔존**.
+- **selection cross-page persist (β)** → 14e는 selection 인프라 미사용 (단건 mutation). 무관. **잔존**.
+- **`BulkActionType` 확장 / `BulkActionResult.errorCode` 노출 / progress bar / 비동기 큐** → 14e bulk 미사용. 무관. **잔존**.
+- **`useSelectionState` 추출** → 14e selection 미사용. 무관. **잔존**.
+- **`AdminPartyroomCommandService` status 가드** → 14d G1.1 / 14c R12 closed. **closed**.
 
 ---
 
