@@ -40,7 +40,12 @@ export const partyroomHandlers = [
   http.post(`${API}/bulk-action`, async ({ request }) => {
     const body = (await request.json()) as { partyroomIds: number[] }
     return HttpResponse.json({
-      results: body.partyroomIds.map((id) => ({ partyroomId: id, success: true, error: null })),
+      results: body.partyroomIds.map((id) => ({
+        partyroomId: id,
+        success: true,
+        error: null,
+        errorCode: null,
+      })),
     })
   }),
 ]
