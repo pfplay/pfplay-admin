@@ -15,7 +15,7 @@ import { ApiError } from "@/shared/api/error"
 
 describe("partyrooms-api", () => {
   describe("listPartyrooms", () => {
-    it("raw Page<T> 반환 (unwrap 안 함 — backend wrap 비대칭)", async () => {
+    it("ApiCommonResponse<Page<T>> unwrap 후 Page 반환", async () => {
       const r = await listPartyrooms({ page: 0, size: 50, sort: "createdAt,desc" })
       expect(r.content[0].partyroomId).toBe(partyroomListItemFixture.partyroomId)
       expect(r.totalElements).toBeGreaterThanOrEqual(1)
@@ -27,15 +27,17 @@ describe("partyrooms-api", () => {
         http.get("*/api/v1/admin/partyrooms", ({ request }) => {
           capturedUrl = new URL(request.url)
           return HttpResponse.json({
-            content: [],
-            totalElements: 0,
-            totalPages: 0,
-            number: 0,
-            size: 50,
-            first: true,
-            last: true,
-            empty: true,
-            numberOfElements: 0,
+            data: {
+              content: [],
+              totalElements: 0,
+              totalPages: 0,
+              number: 0,
+              size: 50,
+              first: true,
+              last: true,
+              empty: true,
+              numberOfElements: 0,
+            },
           })
         }),
       )
@@ -79,7 +81,7 @@ describe("partyrooms-api", () => {
   })
 
   describe("getPartyroomDetail", () => {
-    it("raw detail 반환 (unwrap 안 함)", async () => {
+    it("ApiCommonResponse<Detail> unwrap 후 detail 반환", async () => {
       const r = await getPartyroomDetail(1)
       expect(r.title).toBeTruthy()
       expect(r.partyroomId).toBe(1)
