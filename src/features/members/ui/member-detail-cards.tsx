@@ -114,16 +114,22 @@ export function MemberDetailCards({ detail }: Props) {
               <TableHeader>
                 <TableRow>
                   <TableHead>시각</TableHead>
-                  <TableHead>유형</TableHead>
-                  <TableHead>요약</TableHead>
+                  <TableHead>이벤트</TableHead>
+                  <TableHead>파티룸</TableHead>
+                  <TableHead>메타</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {detail.recentActivityLog.map((row, i) => (
                   <TableRow key={i}>
                     <TableCell>{formatKst(row.occurredAt)}</TableCell>
-                    <TableCell>{row.type}</TableCell>
-                    <TableCell>{row.summary}</TableCell>
+                    <TableCell>{row.eventType}</TableCell>
+                    <TableCell>{row.partyroomId ?? "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {row.metadata && Object.keys(row.metadata).length > 0
+                        ? JSON.stringify(row.metadata)
+                        : "—"}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -29,9 +29,10 @@ export interface MemberProfileSummary {
 }
 
 export interface RecentActivityLogItem {
+  eventType: string
+  partyroomId: number | null
+  metadata: Record<string, unknown> | null
   occurredAt: string
-  type: string
-  summary: string
 }
 
 export interface AdminMemberDetail {

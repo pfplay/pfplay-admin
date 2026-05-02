@@ -39,7 +39,12 @@ export const memberDetailFixture: AdminMemberDetail = {
   withdrawn: false,
   withdrawnAt: null,
   recentActivityLog: [
-    { occurredAt: "2026-04-28T10:00:00", type: "LOGIN", summary: "로그인" },
+    {
+      eventType: "SIGNED_IN",
+      partyroomId: null,
+      metadata: null,
+      occurredAt: "2026-04-28T10:00:00",
+    },
   ],
 }
 
