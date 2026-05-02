@@ -28,7 +28,8 @@ export const memberDetailFixture: AdminMemberDetail = {
     userAccountId: 100,
     email: "alice@example.com",
     providerType: "GOOGLE",
-    createdAt: "2026-01-15T09:00:00",
+    lastLoginAt: "2026-04-28T10:00:00",
+    withdrawnAt: null,
   },
   profile: {
     nickname: "alice",
@@ -55,6 +56,8 @@ export const memberDetailWithdrawnFixture: AdminMemberDetail = {
     ...memberDetailFixture.userAccount,
     userAccountId: 200,
     email: "bob@example.com",
+    lastLoginAt: "2026-04-19T10:00:00",
+    withdrawnAt: "2026-04-20T12:00:00",
   },
   profile: { nickname: "bob", introduction: null },
   withdrawn: true,

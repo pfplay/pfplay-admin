@@ -20,7 +20,8 @@ export interface UserAccountSummary {
   userAccountId: number
   email: string
   providerType: ProviderType
-  createdAt: string
+  lastLoginAt: string | null
+  withdrawnAt: string | null
 }
 
 export interface MemberProfileSummary {

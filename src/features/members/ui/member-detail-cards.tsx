@@ -59,8 +59,12 @@ export function MemberDetailCards({ detail }: Props) {
             <div>{detail.userAccount.userAccountId}</div>
           </div>
           <div>
-            <span className="text-muted-foreground">계정 생성일</span>
-            <div>{formatKst(detail.userAccount.createdAt)}</div>
+            <span className="text-muted-foreground">최근 로그인</span>
+            <div>
+              {detail.userAccount.lastLoginAt
+                ? formatKst(detail.userAccount.lastLoginAt)
+                : "—"}
+            </div>
           </div>
         </CardContent>
       </Card>
