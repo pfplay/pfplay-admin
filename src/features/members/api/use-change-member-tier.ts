@@ -7,7 +7,7 @@ export function useChangeMemberTier() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (vars: { memberId: number; tier: AuthorityTier }) =>
-      changeMemberTier(vars.memberId, { tier: vars.tier }),
+      changeMemberTier(vars.memberId, { targetTier: vars.tier }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["members"] })
       mutationSuccessToast("등급 변경 완료")

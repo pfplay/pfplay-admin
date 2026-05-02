@@ -67,15 +67,15 @@ describe("members-api", () => {
   })
 
   describe("changeMemberTier", () => {
-    it("PATCH /admin/members/:id/tier with body and unwraps response", async () => {
+    it("PATCH /admin/members/:id/tier with targetTier body and unwraps response", async () => {
       server.use(
         http.patch("*/api/v1/admin/members/1/tier", async ({ request }) => {
           const body = await request.json()
-          expect(body).toEqual({ tier: "FM" })
+          expect(body).toEqual({ targetTier: "FM" })
           return HttpResponse.json({ data: { memberId: 1, oldTier: "AM", newTier: "FM" } })
         }),
       )
-      const res = await changeMemberTier(1, { tier: "FM" })
+      const res = await changeMemberTier(1, { targetTier: "FM" })
       expect(res).toEqual({ memberId: 1, oldTier: "AM", newTier: "FM" })
     })
 
@@ -85,7 +85,7 @@ describe("members-api", () => {
           HttpResponse.json({ status: 400, errorCode: "TIER_UNCHANGED", message: "동일 등급" }, { status: 400 }),
         ),
       )
-      await expect(changeMemberTier(1, { tier: "FM" })).rejects.toMatchObject({
+      await expect(changeMemberTier(1, { targetTier: "FM" })).rejects.toMatchObject({
         status: 400, errorCode: "TIER_UNCHANGED",
       })
     })
