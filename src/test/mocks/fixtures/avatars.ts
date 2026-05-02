@@ -39,12 +39,20 @@ export const bodyRetiredFixture: AdminAvatarBodyView = {
   lifecycleStatus: "RETIRED",
 }
 
+export const bodyNullIconFixture: AdminAvatarBodyView = {
+  ...bodyDraftFixture,
+  id: 6,
+  name: "Body 6 (no icon)",
+  iconUri: null,
+}
+
 export const bodyListFixture: AdminAvatarBodyView[] = [
   bodyDraftFixture,
   bodyPublishedFixture,
   bodyRetiredFixture,
   { ...bodyDraftFixture, id: 4, name: "Body 4 (default)", obtainableType: "BASIC", isDefaultSetting: true, lifecycleStatus: "PUBLISHED" },
   { ...bodyDraftFixture, id: 5, name: "Body 5", obtainableType: "ROOM_ACT", obtainableScore: 200, lifecycleStatus: "DRAFT" },
+  bodyNullIconFixture,
 ]
 
 export const faceDraftFixture: AdminAvatarFaceView = {
@@ -68,10 +76,18 @@ export const facePublishedFixture: AdminAvatarFaceView = {
   lifecycleStatus: "PUBLISHED",
 }
 
+export const faceNullIconFixture: AdminAvatarFaceView = {
+  ...faceDraftFixture,
+  id: 4,
+  name: "Face 4 (no icon)",
+  iconUri: null,
+}
+
 export const faceListFixture: AdminAvatarFaceView[] = [
   faceDraftFixture,
   facePublishedFixture,
   { ...faceDraftFixture, id: 3, name: "Face 3 (RETIRED)", lifecycleStatus: "RETIRED" },
+  faceNullIconFixture,
 ]
 
 export const avatarNotFoundErrorFixture = {

@@ -17,7 +17,8 @@ export interface AdminAvatarBodyView {
   id: number
   name: string
   resourceUri: string
-  iconUri: string
+  // backend `iconUri` VARCHAR(500) NULL — 어드민 설계 §3 "NULL이면 placeholder 표시"
+  iconUri: string | null
   obtainableType: ObtainmentType
   obtainableScore: number
   isCombinable: boolean
@@ -36,7 +37,7 @@ export interface AdminAvatarFaceView {
   id: number
   name: string
   resourceUri: string
-  iconUri: string
+  iconUri: string | null
   obtainableType: ObtainmentType
   lifecycleStatus: LifecycleStatus
   createdAt: string

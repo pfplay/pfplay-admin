@@ -75,12 +75,21 @@ export function AvatarsTable({ resourceType, rows, isLoading, isEmpty }: Props) 
           >
             <TableCell>{row.id}</TableCell>
             <TableCell>
-              <img
-                src={row.iconUri}
-                alt={row.name}
-                className="w-12 h-12 object-contain rounded border"
-                loading="lazy"
-              />
+              {row.iconUri ? (
+                <img
+                  src={row.iconUri}
+                  alt={row.name}
+                  className="w-12 h-12 object-contain rounded border"
+                  loading="lazy"
+                />
+              ) : (
+                <span
+                  aria-label="아이콘 없음"
+                  className="text-muted-foreground"
+                >
+                  —
+                </span>
+              )}
             </TableCell>
             <TableCell>{row.name}</TableCell>
             <TableCell>{row.obtainableType}</TableCell>

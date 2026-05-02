@@ -407,9 +407,9 @@
 
 **Response** ↔ list와 동일 view 타입.
 
-**`AdminAvatarBodyView` ↔ openapi** — 15 필드 모두 정렬 (id / name / resourceUri / iconUri / obtainableType / obtainableScore / isCombinable / isDefaultSetting / combinePositionX/Y / lifecycleStatus / createdAt/By / updatedAt/By). ✓
+**`AdminAvatarBodyView` ↔ openapi** — 15 필드 정렬. **단 `iconUri` nullability drift (C5-D1)**: openapi schema는 nullable (backend `iconUri VARCHAR(500) NULL`, 어드민 설계 §3 "NULL이면 placeholder 표시") 인데 frontend type은 `iconUri: string` (non-null) 으로 박혀 운영 시 null 행 렌더 깨짐 위험.
 
-**`AdminAvatarFaceView`** — 10 필드 모두 정렬 (face는 score/combinable 등 body-only 필드 없음). ✓
+**`AdminAvatarFaceView`** — 10 필드 정렬. body와 동일한 `iconUri` nullability drift (C5-D1과 동일).
 
 ### C5.5–C5.6 `POST /{id}/publish` (body/face)
 
@@ -427,11 +427,11 @@
 
 | 분류 | 건수 |
 |---|---|
-| ✓ 정렬됨 | 모든 필드 + 모든 op |
+| ✓ 정렬됨 | endpoint shape / enum / lifecycle / retire reason 등 |
 | △ 의도적 강화 | retire reason non-blank refine |
-| ✗ drift | **0** |
+| ✗ drift | **1** (C5-D1: iconUri nullability) |
 
-`AdminAvatarBodyView`/`FaceView` 양쪽 view가 backend record와 1:1 정확 mirror. 본 시리즈 audit 중 가장 깨끗한 도메인.
+> **2026-05-02 sm 테스트 결과 정정**: 본 audit 1차에서 `iconUri` nullability를 놓침 — openapi schema 검사 시 type 매칭만 봤을 뿐 nullable 플래그 미확인. 실제 backend 응답에 `iconUri=null` 행 존재 시 `<img src={null}>` 렌더 깨짐. 14f §13.2 "NULL이면 placeholder 표시" 명시 누락도 함께 보강. 본 챕터 결론 (이전: drift=0, "본 시리즈 가장 깨끗한 도메인") 무효화.
 
 ---
 
@@ -443,10 +443,12 @@
 | C2 | 회원 | 4 | 3 | 0 |
 | C3 | 파티룸 | 8 | 2 | 1 (C3-MF2 PlaybackSummary 이름 충돌) |
 | C4 | 신고 | 3 | 0 | 0 |
-| C5 | 아바타 lifecycle | 8 | 0 | 0 |
-| **합계** | | **26 ops** | **5** | **1** |
+| C5 | 아바타 lifecycle | 8 | 1 | 0 |
+| **합계** | | **26 ops** | **6** | **1** |
 
-### Frontend 수정 5건 (모두 ① 분류)
+> **2026-05-02 sm 테스트 정정**: C5-D1 (iconUri nullability) 추가 — 본 audit 1차가 놓쳤던 drift. 합계 5 → 6.
+
+### Frontend 수정 6건 (모두 ① 분류)
 
 | ID | 항목 | 우선순위 | 근거 |
 |---|---|---|---|
@@ -455,6 +457,7 @@
 | **C2-D2** | `RecentActivityLogItem` 구조 정정 (`type` → `eventType`, `summary` 제거, `partyroomId`/`metadata` 추가) | 높음 | 회원 상세 "최근 활동" 표 빈 셀 가능 |
 | **C2-D1** | `UserAccountSummary` 갭 (`lastLoginAt`/`withdrawnAt` 추가, phantom `createdAt` 제거) | 낮음 | 사용처 0이지만 14g §13.2에 cleanup으로 박힘 |
 | **C3-D2** | `BulkActionResultSchema`에 `errorCode` optional 추가 | 낮음 | 14d §11 spec과 실제 zod 일치화 |
+| **C5-D1** | `AdminAvatarBodyView`/`FaceView` `iconUri: string` → `string \| null` + 테이블/상세 placeholder 렌더 | **즉시** | 운영 시 `iconUri=null` 행에서 broken `<img>` (audit 1차 누락, sm 테스트로 발견) |
 
 ### 신규 backend ask 0건
 

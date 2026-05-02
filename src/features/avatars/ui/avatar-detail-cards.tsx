@@ -65,11 +65,20 @@ export function AvatarDetailCards({ detail }: Props) {
         <CardContent className="flex gap-6 items-start">
           <div>
             <p className="text-xs text-muted-foreground mb-1">아이콘</p>
-            <img
-              src={detail.iconUri}
-              alt={`${detail.name} icon`}
-              className="w-24 h-24 object-contain rounded border bg-muted"
-            />
+            {detail.iconUri ? (
+              <img
+                src={detail.iconUri}
+                alt={`${detail.name} icon`}
+                className="w-24 h-24 object-contain rounded border bg-muted"
+              />
+            ) : (
+              <div
+                aria-label="아이콘 없음"
+                className="w-24 h-24 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground"
+              >
+                아이콘 없음
+              </div>
+            )}
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">리소스</p>
@@ -107,7 +116,11 @@ export function AvatarDetailCards({ detail }: Props) {
           </p>
           <p>
             <span className="text-muted-foreground">iconUri: </span>
-            <code className="text-xs">{detail.iconUri}</code>
+            {detail.iconUri ? (
+              <code className="text-xs">{detail.iconUri}</code>
+            ) : (
+              <span className="text-xs italic text-muted-foreground">null</span>
+            )}
           </p>
         </CardContent>
       </Card>

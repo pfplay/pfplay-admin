@@ -460,7 +460,7 @@ G1~G7 진행 중 spec ↔ 실제 코드 불일치 항목.
 
 - **Avatar upload UI (PR 14g 또는 future)** — POST /bodies, /faces (multipart) — image picker + meta form + AVT-001/002/003 error 매트릭스
 - **Avatar update meta UI** — PATCH /bodies/{id}, /faces/{id}
-- **Icon 변경 UI** — POST .../{id}/icon
+- **Icon 변경 UI** — POST .../{id}/icon — body 한정 `isCombinable=true` 행에서는 액션 hide/disable (사용자 혼동 방지). DRAFT 상태에서만 enabled, AVATAR_STORAGE_UPLOAD_FAILED 에러 핸들링 필요.
 - **default setting toggle UI** — body 도메인 (BASIC + PUBLISHED + score=0 조건, AVT-008)
 - **face obtainableType filter** — backend 추가 후 frontend mirror (R5)
 - **search by name** — backend list endpoint에 `name` 검색 파라미터 추가
