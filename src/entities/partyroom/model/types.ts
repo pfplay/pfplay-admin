@@ -8,7 +8,7 @@ export type GradeType = string
 export type PenaltyType = string
 export type PartyroomAdminActionType = string
 
-export interface PlaybackSummary {
+export interface AdminPartyroomPlaybackSummary {
   activated: boolean
   currentTrackName: string | null
   currentDjCrewId: number | null
@@ -81,7 +81,7 @@ export interface AdminPartyroomDetail {
   lastActivityAt: string | null
   stageType: StageType
   playbackTimeLimit: number | null
-  playback: PlaybackSummary
+  playback: AdminPartyroomPlaybackSummary
   crews: CrewSummary[]
   djQueue: DjSummary[]
   recentPenalties: PenaltySummary[]

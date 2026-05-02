@@ -1,7 +1,7 @@
 export type {
   AdminPartyroomListItem,
   AdminPartyroomDetail,
-  PlaybackSummary,
+  AdminPartyroomPlaybackSummary,
   CrewSummary,
   DjSummary,
   PenaltySummary,
