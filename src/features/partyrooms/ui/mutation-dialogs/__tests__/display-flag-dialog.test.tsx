@@ -24,7 +24,8 @@ describe("DisplayFlagDialog", () => {
       />,
     )
     expect(screen.getByText(/파티룸 표시 변경/)).toBeInTheDocument()
-    expect(screen.getByText("NORMAL")).toBeInTheDocument()
+    // 현재 flag가 한글 라벨로 표시 (G20.1) — strong 태그로 강조
+    expect(screen.getByText("일반", { selector: "strong" })).toBeInTheDocument()
   })
 
   it("disables submit when current flag selected (initial state)", () => {

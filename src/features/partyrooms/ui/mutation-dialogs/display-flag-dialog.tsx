@@ -17,13 +17,14 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { useUpdatePartyroomDisplayFlag } from "@/features/partyrooms/api/use-update-partyroom-display-flag"
+import { DISPLAY_FLAG_LABEL } from "@/shared/lib/labels"
 
 type DisplayFlag = "NORMAL" | "FEATURED" | "HIDDEN"
 
 const FLAG_OPTIONS: { value: DisplayFlag; label: string }[] = [
-  { value: "NORMAL", label: "NORMAL (일반)" },
-  { value: "FEATURED", label: "FEATURED (추천)" },
-  { value: "HIDDEN", label: "HIDDEN (숨김)" },
+  { value: "NORMAL", label: "일반" },
+  { value: "FEATURED", label: "추천" },
+  { value: "HIDDEN", label: "숨김 처리" },
 ]
 
 interface Props {
@@ -60,7 +61,7 @@ export function DisplayFlagDialog({ partyroomId, currentFlag, open, onOpenChange
         <DialogHeader>
           <DialogTitle>파티룸 표시 변경</DialogTitle>
           <DialogDescription>
-            현재: <strong>{currentFlag}</strong>
+            현재: <strong>{DISPLAY_FLAG_LABEL[currentFlag] ?? currentFlag}</strong>
           </DialogDescription>
         </DialogHeader>
         <div className="py-2">
