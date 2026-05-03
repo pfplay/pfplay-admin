@@ -12,6 +12,7 @@ import { ReportDetailPage } from "@/pages/report-detail-page"
 import { AvatarsPage } from "@/pages/avatars-page"
 import { AvatarDetailPage } from "@/pages/avatar-detail-page"
 import { AnnouncementsPage } from "@/pages/announcements-page"
+import { AdministratorsPage } from "@/pages/administrators-page"
 import { ProtectedRoute } from "@/widgets/protected-route"
 
 export function App() {
@@ -31,6 +32,7 @@ export function App() {
         <Route path="/avatars/:resourceType" element={<AvatarsPage />} />
         <Route path="/avatars/:resourceType/:id" element={<AvatarDetailPage />} />
         <Route path="/announcements" element={<AnnouncementsPage />} />
+        <Route path="/administrators" element={<AdministratorsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

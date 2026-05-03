@@ -7,6 +7,7 @@ import {
   Flag,
   Image,
   Megaphone,
+  ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { useSessionStore } from "@/entities/session"
@@ -31,6 +32,12 @@ export default function AppLayout() {
     { to: "/members", icon: Users, label: "회원" },
     { to: "/partyrooms", icon: DoorOpen, label: "파티룸" },
     { to: "/reports", icon: Flag, label: "신고" },
+    {
+      to: "/administrators",
+      icon: ShieldCheck,
+      label: "어드민 관리",
+      role: "SUPER_ADMIN",
+    },
     {
       to: "/announcements",
       icon: Megaphone,

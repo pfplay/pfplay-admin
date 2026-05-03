@@ -16,6 +16,7 @@ import type {
   ReportCategory,
 } from "@/entities/report"
 import type { AuthorityTier } from "@/entities/member"
+import type { AdminRole } from "@/entities/administrator"
 import type { BulkActionType } from "@/features/partyrooms/model/bulk-schema"
 
 type StatusVariant =
@@ -117,6 +118,17 @@ export const TIER: Mapping<AuthorityTier> = {
     FM: "default",
     AM: "secondary",
     GT: "destructive",
+  },
+}
+
+export const ADMIN_ROLE: Mapping<AdminRole> = {
+  label: {
+    SUPER_ADMIN: "슈퍼어드민",
+    ADMIN: "어드민",
+  },
+  variant: {
+    SUPER_ADMIN: "destructive",
+    ADMIN: "default",
   },
 }
 
