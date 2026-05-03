@@ -136,8 +136,8 @@ export function PartyroomDetailCards({ detail }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>crewId</TableHead>
-                  <TableHead>memberId</TableHead>
+                  <TableHead>크루 ID</TableHead>
+                  <TableHead>회원 ID</TableHead>
                   <TableHead>등급</TableHead>
                   <TableHead>닉네임</TableHead>
                   <TableHead>입장 시각</TableHead>
@@ -171,8 +171,8 @@ export function PartyroomDetailCards({ detail }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>djId</TableHead>
-                  <TableHead>crewId</TableHead>
+                  <TableHead>DJ ID</TableHead>
+                  <TableHead>크루 ID</TableHead>
                   <TableHead>플레이리스트</TableHead>
                   <TableHead>순서</TableHead>
                 </TableRow>
@@ -204,8 +204,8 @@ export function PartyroomDetailCards({ detail }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>id</TableHead>
-                  <TableHead>crewId</TableHead>
+                  <TableHead>ID</TableHead>
+                  <TableHead>크루 ID</TableHead>
                   <TableHead>유형</TableHead>
                   <TableHead>가한 주체</TableHead>
                   <TableHead>사유</TableHead>
@@ -243,7 +243,7 @@ export function PartyroomDetailCards({ detail }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>id</TableHead>
+                  <TableHead>ID</TableHead>
                   <TableHead>분류</TableHead>
                   <TableHead>상태</TableHead>
                   <TableHead>신고자</TableHead>
@@ -292,7 +292,7 @@ export function PartyroomDetailCards({ detail }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>actionId</TableHead>
+                  <TableHead>액션 ID</TableHead>
                   <TableHead>유형</TableHead>
                   <TableHead>관리자</TableHead>
                   <TableHead>일시</TableHead>

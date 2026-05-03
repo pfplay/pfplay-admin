@@ -39,7 +39,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
 
     expect(await screen.findByRole("menuitem", { name: /일시 정지/ })).not.toHaveAttribute(
       "data-disabled",
@@ -55,7 +55,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "SUSPENDED" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
 
     expect(await screen.findByRole("menuitem", { name: /일시 정지/ })).toHaveAttribute(
       "data-disabled",
@@ -71,7 +71,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "TERMINATED" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
 
     expect(await screen.findByRole("menuitem", { name: /일시 정지/ })).toHaveAttribute(
       "data-disabled",
@@ -87,7 +87,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     await user.click(await screen.findByRole("menuitem", { name: /강제 종료/ }))
     expect(screen.getByText(/파티룸 강제 종료/)).toBeInTheDocument()
   })
@@ -97,7 +97,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "SUSPENDED" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     await user.click(await screen.findByRole("menuitem", { name: /재개/ }))
     expect(screen.getByText(/파티룸 재개/)).toBeInTheDocument()
   })
@@ -107,7 +107,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     const { unmount } = renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     expect(await screen.findByRole("menuitem", { name: /메타 수정/ })).not.toHaveAttribute(
       "data-disabled",
     )
@@ -116,7 +116,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "TERMINATED" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     expect(await screen.findByRole("menuitem", { name: /메타 수정/ })).toHaveAttribute(
       "data-disabled",
     )
@@ -127,7 +127,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     await user.click(await screen.findByRole("menuitem", { name: /메타 수정/ }))
     expect(screen.getByText(/파티룸 메타 수정/)).toBeInTheDocument()
   })
@@ -137,7 +137,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     const { unmount } = renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     expect(await screen.findByRole("menuitem", { name: /표시 변경/ })).not.toHaveAttribute(
       "data-disabled",
     )
@@ -146,7 +146,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "TERMINATED" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     expect(await screen.findByRole("menuitem", { name: /표시 변경/ })).toHaveAttribute(
       "data-disabled",
     )
@@ -157,7 +157,7 @@ describe("PartyroomsActionsDropdown — status-aware disabled", () => {
     renderWithClient(
       <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     await user.click(await screen.findByRole("menuitem", { name: /표시 변경/ }))
     expect(screen.getByText(/파티룸 표시 변경/)).toBeInTheDocument()
   })

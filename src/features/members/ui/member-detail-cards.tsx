@@ -52,7 +52,7 @@ export function MemberDetailCards({ detail }: Props) {
             <div>{detail.userAccount.email}</div>
           </div>
           <div>
-            <span className="text-muted-foreground">provider</span>
+            <span className="text-muted-foreground">가입 경로</span>
             <div>{detail.userAccount.providerType}</div>
           </div>
           <div>

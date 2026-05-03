@@ -27,8 +27,8 @@ export function MembersActionsDropdown({ memberId, currentTier, displayName, wit
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" aria-label="Actions">
-            Actions <ChevronDown className="ml-2 h-4 w-4" />
+          <Button variant="outline" aria-label="작업">
+            작업 <ChevronDown className="ml-2 h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

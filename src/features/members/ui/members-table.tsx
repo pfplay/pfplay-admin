@@ -43,7 +43,7 @@ export function MembersTable({ rows, isLoading, isEmpty }: Props) {
         <TableRow>
           <TableHead>ID</TableHead>
           <TableHead>이메일</TableHead>
-          <TableHead>provider</TableHead>
+          <TableHead>가입 경로</TableHead>
           <TableHead>닉네임</TableHead>
           <TableHead>권한</TableHead>
           <TableHead>마지막 로그인</TableHead>

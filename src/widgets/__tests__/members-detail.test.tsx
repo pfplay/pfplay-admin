@@ -23,7 +23,7 @@ describe("MembersDetailWidget", () => {
   it("renders MembersActionsDropdown in header after detail loads", async () => {
     renderAt("/members/1")
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: /actions/i })).toBeInTheDocument(),
+      expect(screen.getByRole("button", { name: '작업' })).toBeInTheDocument(),
     )
   })
 })

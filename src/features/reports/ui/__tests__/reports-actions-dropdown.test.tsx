@@ -17,7 +17,7 @@ describe("ReportsActionsDropdown — status별 menuitem disabled", () => {
     renderWithClient(
       <ReportsActionsDropdown reportId={1} currentStatus="PENDING" />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     expect(await screen.findByRole("menuitem", { name: "검토 시작" })).not.toHaveAttribute(
       "data-disabled",
     )
@@ -37,7 +37,7 @@ describe("ReportsActionsDropdown — status별 menuitem disabled", () => {
     renderWithClient(
       <ReportsActionsDropdown reportId={1} currentStatus="REVIEWING" />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     expect(await screen.findByRole("menuitem", { name: "처리 완료" })).not.toHaveAttribute(
       "data-disabled",
     )
@@ -57,7 +57,7 @@ describe("ReportsActionsDropdown — status별 menuitem disabled", () => {
     renderWithClient(
       <ReportsActionsDropdown reportId={1} currentStatus="RESOLVED" />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     const items = await screen.findAllByRole("menuitem")
     items.forEach((item) => expect(item).toHaveAttribute("data-disabled"))
   })
@@ -67,7 +67,7 @@ describe("ReportsActionsDropdown — status별 menuitem disabled", () => {
     renderWithClient(
       <ReportsActionsDropdown reportId={1} currentStatus="PENDING" />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     await user.click(await screen.findByRole("menuitem", { name: "기각" }))
     expect(screen.getByText(/신고 처리.*기각/)).toBeInTheDocument()
   })

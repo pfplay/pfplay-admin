@@ -16,7 +16,7 @@ describe("MembersActionsDropdown", () => {
     renderWithClient(
       <MembersActionsDropdown memberId={1} currentTier="AM" displayName="alice" />,
     )
-    expect(screen.getByRole("button", { name: /actions/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: '작업' })).toBeInTheDocument()
   })
 
   it("opens menu and triggers change-tier dialog", async () => {
@@ -24,7 +24,7 @@ describe("MembersActionsDropdown", () => {
     renderWithClient(
       <MembersActionsDropdown memberId={1} currentTier="AM" displayName="alice" />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     await user.click(await screen.findByRole("menuitem", { name: /등급 변경/ }))
     expect(screen.getByText(/회원 등급 변경/)).toBeInTheDocument()
   })
@@ -34,7 +34,7 @@ describe("MembersActionsDropdown", () => {
     renderWithClient(
       <MembersActionsDropdown memberId={1} currentTier="AM" displayName="alice" />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     await user.click(await screen.findByRole("menuitem", { name: /탈퇴/ }))
     expect(screen.getByText(/비식별화 탈퇴 처리/)).toBeInTheDocument()
   })
@@ -49,7 +49,7 @@ describe("MembersActionsDropdown", () => {
         withdrawn={true}
       />,
     )
-    await user.click(screen.getByRole("button", { name: /actions/i }))
+    await user.click(screen.getByRole("button", { name: '작업' }))
     const item = await screen.findByRole("menuitem", { name: /탈퇴/ })
     expect(item).toHaveAttribute("aria-disabled", "true")
     expect(item).toHaveAttribute("title", "이미 탈퇴됨")
