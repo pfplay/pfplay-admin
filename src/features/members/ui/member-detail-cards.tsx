@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table"
 import type { AdminMemberDetail } from "@/entities/member"
 import { formatKst } from "@/shared/lib/format-kst"
-import { TIER, formatActivityEventLabel } from "@/shared/lib/labels"
+import { TIER, formatActivityEventLabel, formatActivityMetadata } from "@/shared/lib/labels"
 
 interface Props {
   detail: AdminMemberDetail
@@ -118,7 +118,7 @@ export function MemberDetailCards({ detail }: Props) {
                   <TableHead>시각</TableHead>
                   <TableHead>이벤트</TableHead>
                   <TableHead>파티룸</TableHead>
-                  <TableHead>메타</TableHead>
+                  <TableHead>내용</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -129,10 +129,14 @@ export function MemberDetailCards({ detail }: Props) {
                       {formatActivityEventLabel(row.eventType, row.metadata)}
                     </TableCell>
                     <TableCell>{row.partyroomId ?? "—"}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {row.metadata && Object.keys(row.metadata).length > 0
-                        ? JSON.stringify(row.metadata)
-                        : "—"}
+                    <TableCell
+                      title={
+                        row.metadata && Object.keys(row.metadata).length > 0
+                          ? JSON.stringify(row.metadata)
+                          : undefined
+                      }
+                    >
+                      {formatActivityMetadata(row.eventType, row.metadata)}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -151,8 +151,6 @@ const USER_ACTIVITY_EVENT_TYPE_LABEL: Record<string, string> = {
  * 특수 처리:
  * - SIGNED_IN + metadata.actor_type=ADMINISTRATOR → "로그인 (어드민 콘솔)"
  * - SIGNED_IN + metadata.actor_type=USER (또는 부재) → "로그인 (서비스)"
- *
- * 나머지 eventType은 metadata 사용 안 함 — 컬럼은 별도로 raw 노출.
  */
 export function formatActivityEventLabel(
   eventType: string,
@@ -165,4 +163,101 @@ export function formatActivityEventLabel(
     return `${base} (서비스)`
   }
   return base
+}
+
+// backend 도메인 enum 한글 라벨 — activity log metadata 풀어 표시 용
+const PROFILE_CHANGE_TYPE_LABEL: Record<string, string> = {
+  BIO: "자기소개",
+  AVATAR: "아바타",
+}
+
+const PENALTY_TYPE_LABEL: Record<string, string> = {
+  CHAT_MESSAGE_REMOVAL: "채팅 메시지 삭제",
+  CHAT_BAN_30_SECONDS: "30초 채팅 금지",
+  ONE_TIME_EXPULSION: "1회 강제 퇴장",
+  PERMANENT_EXPULSION: "영구 강제 퇴장",
+}
+
+// metadata.action_type (ADMIN_ACTED_ON / WITHDREW row의 by-admin 표시 용)
+const ADMIN_ACTION_LABEL: Record<string, string> = {
+  TIER_CHANGED: "등급 변경",
+  WITHDRAW: "탈퇴",
+}
+
+/**
+ * Activity log row의 metadata를 사람이 읽을 수 있는 한 줄로 변환.
+ * 알 수 없는 eventType은 raw JSON으로 fallback (debug 용).
+ *
+ * 정책:
+ * - SIGNED_IN/SIGNED_UP — actor_type/provider는 이벤트 라벨에 이미 포함되거나 단순. 여기선 provider만 짧게.
+ * - TIER_CHANGED — `정회원 → 게스트 (어드민 #N)` 형식
+ * - PARTYROOM_CREATED — `메인 스테이지` / `일반 스테이지`
+ * - PROFILE_UPDATED — `자기소개 / 아바타`
+ * - PENALIZED_IN_PARTYROOM — `30초 채팅 금지 (어드민 #N)` / `(크루)`
+ * - WITHDREW — `본인 탈퇴` / `어드민 #N 처리`
+ * - ADMIN_ACTED_ON — `등급 변경 (어드민 #N)` 형식
+ */
+export function formatActivityMetadata(
+  eventType: string,
+  metadata: Record<string, unknown> | null,
+): string {
+  if (!metadata || Object.keys(metadata).length === 0) return "—"
+
+  const provider = metadata["provider"]
+  const byAdmin = metadata["by_administrator_id"]
+
+  switch (eventType) {
+    case "SIGNED_IN":
+      // 라벨에 actor_type/provider 모두 흡수됨
+      return "—"
+    case "SIGNED_UP":
+      return provider ? String(provider) : "—"
+    case "WITHDREW":
+      return byAdmin ? `어드민 #${byAdmin} 처리` : "본인 탈퇴"
+    case "TIER_CHANGED": {
+      const oldTier = metadata["old_tier"]
+      const newTier = metadata["new_tier"]
+      if (typeof oldTier !== "string" || typeof newTier !== "string") {
+        return JSON.stringify(metadata)
+      }
+      const tierStr = `${TIER.label[oldTier as AuthorityTier] ?? oldTier} → ${TIER.label[newTier as AuthorityTier] ?? newTier}`
+      return byAdmin ? `${tierStr} (어드민 #${byAdmin})` : tierStr
+    }
+    case "PROFILE_UPDATED": {
+      const ct = metadata["change_type"]
+      return typeof ct === "string"
+        ? PROFILE_CHANGE_TYPE_LABEL[ct] ?? ct
+        : "—"
+    }
+    case "PARTYROOM_CREATED": {
+      const stage = metadata["stage_type"]
+      if (typeof stage !== "string") return "—"
+      const label = STAGE_TYPE.label[stage as StageType] ?? stage
+      return `${label} 스테이지`
+    }
+    case "PARTYROOM_ENTERED":
+    case "PARTYROOM_EXITED":
+      return "—"
+    case "PENALIZED_IN_PARTYROOM": {
+      const ptype = metadata["penalty_type"]
+      const by = metadata["by"]
+      const ptypeStr =
+        typeof ptype === "string"
+          ? PENALTY_TYPE_LABEL[ptype] ?? ptype
+          : "페널티"
+      const sourceStr =
+        by === "ADMIN" ? `어드민${byAdmin ? ` #${byAdmin}` : ""}` : "크루"
+      return `${ptypeStr} (${sourceStr})`
+    }
+    case "ADMIN_ACTED_ON": {
+      const action = metadata["action_type"]
+      const actionStr =
+        typeof action === "string"
+          ? ADMIN_ACTION_LABEL[action] ?? action
+          : "—"
+      return byAdmin ? `${actionStr} (어드민 #${byAdmin})` : actionStr
+    }
+    default:
+      return JSON.stringify(metadata)
+  }
 }
