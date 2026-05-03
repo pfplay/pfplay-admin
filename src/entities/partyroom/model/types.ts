@@ -51,6 +51,16 @@ export interface AdminActionSummary {
   actionType: PartyroomAdminActionType
   administratorId: number
   occurredAt: string
+  /**
+   * actionType별 metadata 형태 (backend `PartyroomAdminActionListener` 기준):
+   *  - SET_FEATURED/SET_HIDDEN/SET_NORMAL: `{ old_flag, new_flag }` (FEATURED/HIDDEN/NORMAL)
+   *  - UPDATE_PARTYROOM_META: `{ changes: { ... } }`
+   *  - PENALIZE_CREW: `{ penalty_type, crew_penalty_history_id? }`
+   *  - RELEASE_CREW_PENALTY: `{ crew_penalty_history_id }`
+   *  - SUSPEND/RESTORE/TERMINATE: 비어 있음 (reason은 backend가 별 컬럼에 저장)
+   *  - PUBLISH/RETIRE_AVATAR_RESOURCE: avatar listener 별도 (구조 미확인)
+   */
+  metadata: Record<string, unknown> | null
 }
 
 export interface AdminPartyroomListItem {

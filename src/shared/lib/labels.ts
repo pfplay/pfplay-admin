@@ -148,6 +148,68 @@ export const PARTYROOM_ADMIN_ACTION_TYPE_LABEL: Record<string, string> = {
   RETIRE_AVATAR_RESOURCE: "아바타 회수",
 }
 
+// DisplayFlag inline 표기 (action metadata old_flag/new_flag 풀이용 — 짧은 형식)
+const DISPLAY_FLAG_INLINE_LABEL: Record<string, string> = {
+  NORMAL: "일반",
+  FEATURED: "추천",
+  HIDDEN: "숨김",
+}
+
+/**
+ * 파티룸 admin action row의 metadata를 사람이 읽을 수 있는 한 줄로 변환.
+ * backend `PartyroomAdminActionListener`가 채우는 형태에 맞춰 actionType별 분기.
+ * 알 수 없는 actionType이면 raw JSON fallback (forward-compat).
+ */
+export function formatPartyroomAdminActionMetadata(
+  actionType: string,
+  metadata: Record<string, unknown> | null,
+): string {
+  if (!metadata || Object.keys(metadata).length === 0) return "—"
+
+  switch (actionType) {
+    case "SET_FEATURED":
+    case "SET_HIDDEN":
+    case "SET_NORMAL": {
+      const oldFlag = metadata["old_flag"]
+      const newFlag = metadata["new_flag"]
+      if (typeof oldFlag === "string" && typeof newFlag === "string") {
+        const oldL = DISPLAY_FLAG_INLINE_LABEL[oldFlag] ?? oldFlag
+        const newL = DISPLAY_FLAG_INLINE_LABEL[newFlag] ?? newFlag
+        return `${oldL} → ${newL}`
+      }
+      return JSON.stringify(metadata)
+    }
+    case "UPDATE_PARTYROOM_META": {
+      const changes = metadata["changes"]
+      if (changes && typeof changes === "object") {
+        const keys = Object.keys(changes as Record<string, unknown>)
+        return keys.length > 0 ? `변경 필드: ${keys.join(", ")}` : "—"
+      }
+      return JSON.stringify(metadata)
+    }
+    case "PENALIZE_CREW": {
+      const ptype = metadata["penalty_type"]
+      const historyId = metadata["crew_penalty_history_id"]
+      const ptypeL =
+        typeof ptype === "string"
+          ? PENALTY_TYPE_LABEL[ptype] ?? ptype
+          : "페널티"
+      return historyId ? `${ptypeL} (#${historyId})` : ptypeL
+    }
+    case "RELEASE_CREW_PENALTY": {
+      const historyId = metadata["crew_penalty_history_id"]
+      return historyId ? `페널티 #${historyId} 해제` : "—"
+    }
+    case "SUSPEND_PARTYROOM":
+    case "RESTORE_PARTYROOM":
+    case "TERMINATE_PARTYROOM":
+      // listener가 빈 metadata를 발행. 들어오는 일이 없을 텐데 안전장치.
+      return "—"
+    default:
+      return JSON.stringify(metadata)
+  }
+}
+
 export const BULK_ACTION_LABEL: Record<BulkActionType, string> = {
   TERMINATE: "강제 종료",
   SUSPEND: "일시 정지",

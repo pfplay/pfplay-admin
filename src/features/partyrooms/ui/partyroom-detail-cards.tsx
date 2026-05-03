@@ -26,6 +26,7 @@ import {
   PARTYROOM_ADMIN_ACTION_TYPE_LABEL,
   PENALTY_TYPE_LABEL,
   PUNISHER_TYPE_LABEL,
+  formatPartyroomAdminActionMetadata,
 } from "@/shared/lib/labels"
 import type { ReportStatus, ReportCategory } from "@/entities/report"
 
@@ -301,6 +302,7 @@ export function PartyroomDetailCards({ detail }: Props) {
                 <TableRow>
                   <TableHead>액션 ID</TableHead>
                   <TableHead>유형</TableHead>
+                  <TableHead>내용</TableHead>
                   <TableHead>관리자</TableHead>
                   <TableHead>일시</TableHead>
                 </TableRow>
@@ -311,6 +313,15 @@ export function PartyroomDetailCards({ detail }: Props) {
                     <TableCell>{a.actionId}</TableCell>
                     <TableCell title={a.actionType}>
                       {PARTYROOM_ADMIN_ACTION_TYPE_LABEL[a.actionType] ?? a.actionType}
+                    </TableCell>
+                    <TableCell
+                      title={
+                        a.metadata && Object.keys(a.metadata).length > 0
+                          ? JSON.stringify(a.metadata)
+                          : undefined
+                      }
+                    >
+                      {formatPartyroomAdminActionMetadata(a.actionType, a.metadata)}
                     </TableCell>
                     <TableCell>#{a.administratorId}</TableCell>
                     <TableCell>{formatKst(a.occurredAt)}</TableCell>
