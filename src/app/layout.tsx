@@ -1,5 +1,13 @@
 import { NavLink, Outlet } from "react-router-dom"
-import { Users, DoorOpen, LogOut, LayoutDashboard, Flag, Image } from "lucide-react"
+import {
+  Users,
+  DoorOpen,
+  LogOut,
+  LayoutDashboard,
+  Flag,
+  Image,
+  Megaphone,
+} from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { useSessionStore } from "@/entities/session"
 import type { AdminRole } from "@/entities/session"
@@ -23,6 +31,12 @@ export default function AppLayout() {
     { to: "/members", icon: Users, label: "회원" },
     { to: "/partyrooms", icon: DoorOpen, label: "파티룸" },
     { to: "/reports", icon: Flag, label: "신고" },
+    {
+      to: "/announcements",
+      icon: Megaphone,
+      label: "공지",
+      role: "SUPER_ADMIN",
+    },
     { to: "/avatars/bodies", icon: Image, label: "아바타", role: "SUPER_ADMIN" },
   ]
   const visibleNavItems = navItems.filter(
