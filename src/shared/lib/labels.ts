@@ -125,3 +125,44 @@ export const BULK_ACTION_LABEL: Record<BulkActionType, string> = {
   SUSPEND: "일시 정지",
   SET_HIDDEN: "표시 숨김",
 }
+
+// === user_activity_log eventType ===
+//
+// backend `UserActivityEventType` 10종 + SIGNED_IN은 metadata.actor_type으로 어드민 로그인 vs
+// 일반 사용자 로그인 구분 (같은 user_account_id가 양쪽 다 사용 가능 — admin이 본인 계정으로
+// pfplay-web에도 로그인 가능). admin UI는 이를 한 줄로 풀어 표시.
+
+const USER_ACTIVITY_EVENT_TYPE_LABEL: Record<string, string> = {
+  SIGNED_UP: "가입",
+  SIGNED_IN: "로그인",
+  WITHDREW: "탈퇴",
+  PROFILE_UPDATED: "프로필 변경",
+  TIER_CHANGED: "등급 변경",
+  PARTYROOM_CREATED: "파티룸 생성",
+  PARTYROOM_ENTERED: "파티룸 입장",
+  PARTYROOM_EXITED: "파티룸 퇴장",
+  PENALIZED_IN_PARTYROOM: "페널티 받음",
+  ADMIN_ACTED_ON: "어드민 처리 대상",
+}
+
+/**
+ * Activity log row의 event 라벨을 metadata 맥락 함께 풀어 사람이 읽을 수 있는 형태로 반환.
+ *
+ * 특수 처리:
+ * - SIGNED_IN + metadata.actor_type=ADMINISTRATOR → "로그인 (어드민 콘솔)"
+ * - SIGNED_IN + metadata.actor_type=USER (또는 부재) → "로그인 (서비스)"
+ *
+ * 나머지 eventType은 metadata 사용 안 함 — 컬럼은 별도로 raw 노출.
+ */
+export function formatActivityEventLabel(
+  eventType: string,
+  metadata: Record<string, unknown> | null,
+): string {
+  const base = USER_ACTIVITY_EVENT_TYPE_LABEL[eventType] ?? eventType
+  if (eventType === "SIGNED_IN") {
+    const actorType = metadata?.["actor_type"]
+    if (actorType === "ADMINISTRATOR") return `${base} (어드민 콘솔)`
+    return `${base} (서비스)`
+  }
+  return base
+}

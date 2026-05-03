@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table"
 import type { AdminMemberDetail } from "@/entities/member"
 import { formatKst } from "@/shared/lib/format-kst"
-import { TIER } from "@/shared/lib/labels"
+import { TIER, formatActivityEventLabel } from "@/shared/lib/labels"
 
 interface Props {
   detail: AdminMemberDetail
@@ -125,7 +125,9 @@ export function MemberDetailCards({ detail }: Props) {
                 {detail.recentActivityLog.map((row, i) => (
                   <TableRow key={i}>
                     <TableCell>{formatKst(row.occurredAt)}</TableCell>
-                    <TableCell>{row.eventType}</TableCell>
+                    <TableCell>
+                      {formatActivityEventLabel(row.eventType, row.metadata)}
+                    </TableCell>
                     <TableCell>{row.partyroomId ?? "—"}</TableCell>
                     <TableCell className="font-mono text-xs">
                       {row.metadata && Object.keys(row.metadata).length > 0
