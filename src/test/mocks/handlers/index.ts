@@ -3,6 +3,7 @@ import { memberHandlers } from "./members"
 import { partyroomHandlers } from "./partyrooms"
 import { reportHandlers } from "./reports"
 import { avatarHandlers } from "./avatars"
+import { administratorHandlers } from "./administrators"
 
 export const handlers = [
   ...authHandlers,
@@ -10,4 +11,5 @@ export const handlers = [
   ...partyroomHandlers,
   ...reportHandlers,
   ...avatarHandlers,
+  ...administratorHandlers,
 ]
