@@ -34,7 +34,7 @@ interface Mapping<K extends string> {
 
 export const PARTYROOM_STATUS: Mapping<PartyroomStatus> = {
   label: {
-    ACTIVE: "운영 중",
+    ACTIVE: "활성",
     SUSPENDED: "일시 정지됨",
     TERMINATED: "종료됨",
   },
