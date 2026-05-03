@@ -77,12 +77,12 @@ export function AvatarsTable({ resourceType, rows, isLoading, isEmpty }: Props) 
                   loading="lazy"
                 />
               ) : (
-                <span
+                <div
                   aria-label="아이콘 없음"
-                  className="text-muted-foreground"
+                  className="w-12 h-12 rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground"
                 >
-                  —
-                </span>
+                  N/A
+                </div>
               )}
             </TableCell>
             <TableCell>{row.name}</TableCell>
