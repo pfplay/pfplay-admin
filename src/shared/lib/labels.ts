@@ -132,6 +132,22 @@ export const ADMIN_ROLE: Mapping<AdminRole> = {
   },
 }
 
+// 파티룸 상세 "최근 관리자 액션" 표 actionType.
+// backend `PartyroomAdminActionType` enum 11종. 알 수 없는 값은 raw 표시 (forward-compat).
+export const PARTYROOM_ADMIN_ACTION_TYPE_LABEL: Record<string, string> = {
+  SUSPEND_PARTYROOM: "일시 정지",
+  RESTORE_PARTYROOM: "재개",
+  TERMINATE_PARTYROOM: "강제 종료",
+  SET_FEATURED: "추천 표시",
+  SET_HIDDEN: "숨김 처리",
+  SET_NORMAL: "일반 표시",
+  UPDATE_PARTYROOM_META: "메타 수정",
+  PENALIZE_CREW: "페널티 부여",
+  RELEASE_CREW_PENALTY: "페널티 해제",
+  PUBLISH_AVATAR_RESOURCE: "아바타 게시",
+  RETIRE_AVATAR_RESOURCE: "아바타 회수",
+}
+
 export const BULK_ACTION_LABEL: Record<BulkActionType, string> = {
   TERMINATE: "강제 종료",
   SUSPEND: "일시 정지",
@@ -177,17 +193,24 @@ export function formatActivityEventLabel(
   return base
 }
 
-// backend 도메인 enum 한글 라벨 — activity log metadata 풀어 표시 용
-const PROFILE_CHANGE_TYPE_LABEL: Record<string, string> = {
-  BIO: "자기소개",
-  AVATAR: "아바타",
-}
-
-const PENALTY_TYPE_LABEL: Record<string, string> = {
+// backend `PenaltyType` enum 한글 라벨 — activity log metadata + partyroom 상세 페널티 표 공용
+export const PENALTY_TYPE_LABEL: Record<string, string> = {
   CHAT_MESSAGE_REMOVAL: "채팅 메시지 삭제",
   CHAT_BAN_30_SECONDS: "30초 채팅 금지",
   ONE_TIME_EXPULSION: "1회 강제 퇴장",
   PERMANENT_EXPULSION: "영구 강제 퇴장",
+}
+
+// backend `PunisherType` enum (또는 metadata.by 값) 한글 라벨
+export const PUNISHER_TYPE_LABEL: Record<string, string> = {
+  ADMIN: "어드민",
+  CREW: "크루",
+}
+
+// backend 도메인 enum 한글 라벨 — activity log metadata 풀어 표시 용
+const PROFILE_CHANGE_TYPE_LABEL: Record<string, string> = {
+  BIO: "자기소개",
+  AVATAR: "아바타",
 }
 
 // metadata.action_type (ADMIN_ACTED_ON / WITHDREW row의 by-admin 표시 용)

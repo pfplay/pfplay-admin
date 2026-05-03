@@ -23,6 +23,9 @@ import {
   DISPLAY_FLAG_VARIANT,
   REPORT_STATUS,
   REPORT_CATEGORY_LABEL,
+  PARTYROOM_ADMIN_ACTION_TYPE_LABEL,
+  PENALTY_TYPE_LABEL,
+  PUNISHER_TYPE_LABEL,
 } from "@/shared/lib/labels"
 import type { ReportStatus, ReportCategory } from "@/entities/report"
 
@@ -217,8 +220,12 @@ export function PartyroomDetailCards({ detail }: Props) {
                   <TableRow key={p.id}>
                     <TableCell>{p.id}</TableCell>
                     <TableCell>{p.crewId}</TableCell>
-                    <TableCell>{p.penaltyType}</TableCell>
-                    <TableCell>{p.punisherType}</TableCell>
+                    <TableCell title={p.penaltyType}>
+                      {PENALTY_TYPE_LABEL[p.penaltyType] ?? p.penaltyType}
+                    </TableCell>
+                    <TableCell title={p.punisherType}>
+                      {PUNISHER_TYPE_LABEL[p.punisherType] ?? p.punisherType}
+                    </TableCell>
                     <TableCell className="max-w-xs truncate" title={p.reason}>
                       {p.reason}
                     </TableCell>
@@ -302,7 +309,9 @@ export function PartyroomDetailCards({ detail }: Props) {
                 {detail.recentAdminActions.map((a) => (
                   <TableRow key={a.actionId}>
                     <TableCell>{a.actionId}</TableCell>
-                    <TableCell>{a.actionType}</TableCell>
+                    <TableCell title={a.actionType}>
+                      {PARTYROOM_ADMIN_ACTION_TYPE_LABEL[a.actionType] ?? a.actionType}
+                    </TableCell>
                     <TableCell>#{a.administratorId}</TableCell>
                     <TableCell>{formatKst(a.occurredAt)}</TableCell>
                   </TableRow>
