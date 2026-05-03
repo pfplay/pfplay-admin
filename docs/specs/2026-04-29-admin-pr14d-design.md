@@ -1,0 +1,473 @@
+# PR 14d — 어드민 파티룸 일괄 액션 (bulk-action) Design
+
+**상태**: G0 초안
+**선행**: PR 14c (`8fac84a`) — 단건 mutation 7개 완료, 151/151 PASS
+**브랜치**: `feature/admin-platform-frontend` (PR 14a~14d 통합)
+**범위**: 14b list page에 row selection 인프라 + bulk-action 모달 + per-item 결과 표시. backend 변경 0 (`POST /api/v1/admin/partyrooms/bulk-action` 재사용).
+
+---
+
+## 1. 목적과 비목적
+
+### 1.1 목적
+
+- 어드민이 파티룸 list에서 N개(1~100)를 선택해 한 번에 **TERMINATE / SUSPEND / SET_HIDDEN** 적용
+- 부분 실패 허용(skipErrors=true 기본) — 결과 모달에서 실패 항목별 사유 표시
+- 14b list page의 filter / sort / pagination와 충돌 없이 selection 상태 유지 (페이지 이동 시 reset 또는 cross-page persist 정책 결정 필요 — §5에서)
+
+### 1.2 비목적 (14d 범위 외)
+
+- members bulk (backend 미지원)
+- bulk RESTORE / SET_FEATURED / SET_NORMAL / UPDATE_META — backend `BulkActionType` 미정의 (§13.2)
+- penalty / admin action / avatar publish-retire 단건 — 14c §13.2 그대로 잔존
+- e2e Playwright (§13.2 14b 상속)
+
+---
+
+## 2. 백엔드 ground-truth
+
+### 2.1 endpoint
+
+`POST /api/v1/admin/partyrooms/bulk-action` — `@PreAuthorize("@adminAuth.isAdmin()")`, 200 OK + body.
+
+### 2.2 request — `BulkPartyroomActionRequest`
+
+```java
+record BulkPartyroomActionRequest(
+    @NotEmpty @Size(min=1, max=100) List<Long> partyroomIds,
+    @NotNull BulkActionType action,           // TERMINATE | SUSPEND | SET_HIDDEN
+    @NotBlank @Size(max=500) String reason,
+    Boolean skipErrors                         // default true (skipErrorsOrDefault)
+)
+```
+
+- `partyroomIds`: 1~100 개. 0개는 `@NotEmpty` 위반 (400).
+- `action`: `BulkActionType{TERMINATE, SUSPEND, SET_HIDDEN}`. 다른 값 400.
+- `reason`: 필수, 1~500자. 빈 문자열 400.
+- `skipErrors`: null이면 true. true면 항목별 실패 무시하고 계속, false면 첫 실패에서 break.
+
+### 2.3 response — `BulkPartyroomActionResponse` (HTTP 200)
+
+```java
+record BulkPartyroomActionResponse(List<BulkActionResult> results) {
+    record BulkActionResult(Long partyroomId, boolean success, String error) {}
+}
+```
+
+- `results.length === request.partyroomIds.length` (skipErrors=true) 또는 첫 실패까지 (skipErrors=false)
+- 각 결과: `success=true` → `error=null`, `success=false` → `error=AbstractHTTPException.getMessage()` 또는 `"INTERNAL_ERROR"` — **frontend zod는 `error: z.string().nullable()`로 enforce** (success 상관없이 nullable string)
+- HTTP status는 항상 200 — 부분 실패는 본문 `success: false` row로 표현 (전체 실패도 200)
+
+### 2.4 behavior — per-item TX
+
+- 외부 서비스 `AdminBulkPartyroomActionService`는 non-transactional, per-item TX는 `AdminPartyroomTransactionalUnit#executeOne`이 소유.
+- 성공 항목은 자기 TX로 commit 즉시. 후속 break/실패에 영향받지 않음.
+- audit row는 per-item TX 안에서 listener가 INSERT — gap 없음.
+- 즉, **부분 성공이 진짜로 부분 commit됨**. 클라는 결과 row 1:1 처리 + 실패 항목만 retry/안내.
+
+### 2.5 인증/CSRF
+
+14a `http.ts`가 unsafe POST에 자동 처리. 14d 신규 작업 0.
+
+### 2.6 도메인 예외 mapping (per-item error string 후보)
+
+bulk endpoint는 항목별 예외를 `error` string으로 노출. 단건 mutation 시 GlobalExceptionHandler가 매핑한 status/errorCode/message 중 **`message`만** 결과에 들어감. 14c §7.1 매트릭스의 errorCode는 사용 불가 — message로 사용자 안내 + log 보존 정책.
+
+| 단건 errorCode | 메시지 예 | 14d UI |
+|---|---|---|
+| `NOT_FOUND_ROOM` | "파티룸을 찾을 수 없습니다" | 결과 row "찾을 수 없음" 표시 |
+| `ALREADY_TERMINATED` | "이미 종료된 룸입니다" | "이미 종료" |
+| `ILLEGAL_STATE_TRANSITION` | "전이 불가" | "전이 불가" + 안내 |
+| (기타) | message 그대로 또는 "INTERNAL_ERROR" | 그대로 + tooltip 전체 |
+
+§13.2: backend가 errorCode도 결과에 포함 노출하면 클라가 일관 매핑 가능 (future polish).
+
+**G4/G5 진입 시 sanity grep 의무**: 위 매트릭스의 한국어 메시지 가정은 GlobalExceptionHandler + 각 도메인 exception(`AbstractHTTPException`, `NotFoundRoomException` 등)의 message 출처가 한국어인지 영문/내부 포맷인지 backend grep 1회 확인 필요. 영문/내부 포맷이면 매트릭스 표시 텍스트를 클라 기준으로 매핑 (errorCode 부재라 best-effort) — §12 reality에 박음.
+
+---
+
+## 3. 아키텍처
+
+### 3.1 FSD 레이어 변경
+
+**신규 파일:**
+```
+src/features/partyrooms/
+  model/bulk-schema.ts                                      # zod BulkPartyroomActionSchema + BulkActionResultSchema (error: z.string().nullable())
+  api/bulk-partyrooms-api.ts                                # bulkPartyroomAction(body): Promise<BulkPartyroomActionResponse>
+  api/use-bulk-partyroom-action.ts                          # useMutation hook
+  ui/bulk-action-toolbar.tsx                                # selection toolbar (count + action button) — ui/ 직속 (modal 아님)
+  ui/mutation-dialogs/bulk-action-dialog.tsx                # action select + reason + skipErrors + submit
+  ui/mutation-dialogs/bulk-action-result-dialog.tsx         # success/fail count + 실패 list with error
+  ui/__tests__/bulk-action-toolbar.test.tsx
+  ui/mutation-dialogs/__tests__/bulk-action-dialog.test.tsx
+  ui/mutation-dialogs/__tests__/bulk-action-result-dialog.test.tsx
+  api/__tests__/{bulk-partyrooms-api,use-bulk-partyroom-action}.test.{ts,tsx}
+  model/__tests__/bulk-schema.test.ts
+```
+
+**파일 위치 정책**: 14c `mutation-dialogs/` 디렉토리(`change-tier-dialog.tsx` 등)와 일관. modal 컴포넌트는 `mutation-dialogs/` 직속, modal이 아닌 toolbar/list selection helper는 `ui/` 직속. test도 컴포넌트와 같은 레벨에 `__tests__`.
+
+**수정 파일:**
+```
+src/features/partyrooms/ui/partyrooms-table.tsx     # row checkbox + header 전체 선택
+src/widgets/partyrooms-list.tsx                     # selection state owner + toolbar 통합
+src/components/ui/checkbox.tsx                      # shadcn Checkbox 신규 (의존 §9)
+src/test/mocks/handlers/partyrooms.ts               # bulk-action mock handler
+src/test/mocks/fixtures/partyrooms.ts               # BulkActionResult fixture
+```
+
+### 3.2 라우트 / 사이드바
+
+변경 없음. `/partyrooms` 그대로 — list 화면에 selection UI만 layered.
+
+---
+
+## 4. mutation hook 공통 계약
+
+### 4.1 Invalidate 키
+
+bulk 성공 (부분 성공 포함) 시 `["partyrooms"]` prefix 일괄 invalidate. detail 페이지 들어가 있는 경우도 stale 표시. 14c §4.1 일관.
+
+### 4.2 toast 정책
+
+- 전체 성공 (`results.every(r => r.success)`): `mutationSuccessToast("일괄 처리 완료 (N건)")`
+- 부분 실패: `toast.warning(\`성공 \${ok}건 / 실패 \${ng}건\`)` — 상세는 결과 모달에서 보여줌
+- 전체 실패 (`results.every(r => !r.success)`): `mutationErrorToast(new ApiError({ message: "일괄 처리 전건 실패" }))` 또는 toast.error
+- HTTP 4xx/5xx (요청 자체 실패): 14c `mutationErrorToast` 그대로
+
+### 4.3 결과 모달 분기 + selection clear race
+
+- 전체 성공: toast만, 결과 모달 미표시 (UX 단순화)
+- 부분/전체 실패: 결과 모달 자동 open (실패 항목 list + 사유)
+- **selection clear 타이밍 정책**: bulk `mutation.onSuccess` 진입 즉시 `selection.clear()` 호출 (성공/실패 항목 모두). 이후 `["partyrooms"]` invalidate가 list refetch를 trigger하지만 selection이 이미 비어있어 stale visibleIds intersect 로직 불필요. 결과 dialog는 mutation response의 `results` 배열을 props로 받아 자체 state로 보유 — selection state와 완전히 decoupled.
+- **dialog close 차단**: BulkActionDialog `onOpenChange`는 `mutation.isPending` 동안만 무시 (close 차단). `onSuccess` 완료 후엔 close 가능. 사용자가 BulkActionResultDialog를 닫으면 결과 dialog state만 clear, selection은 이미 onSuccess 시점에 비어있음.
+
+---
+
+## 5. list page row selection 인프라
+
+### 5.1 selection state 위치
+
+`PartyroomsListWidget`(`widgets/partyrooms-list.tsx`)이 owner. table은 controlled props (`selectedIds: Set<number>`, `onToggleId`, `onToggleAll`) 받음.
+
+### 5.2 cross-page 정책 (α 결정)
+
+- **α (채택)**: 페이지 이동 시 selection **reset**. 단순/예측 가능. 어드민이 다중 페이지 cross-select 케이스 빈도 낮음.
+- β: cross-page persist (Set in URL or memory). 복잡도/UX trade-off. §13.2.
+
+### 5.3 filter 변경 시 정책
+
+filter (status/stageType/host/createdFrom/createdTo) 변경 시도 페이지 reset 동반 → selection reset. sort 변경도 페이지 reset 패턴 (14b §6.1 일관)이라 동일.
+
+### 5.4 selection persistence — 단일 페이지 안
+
+table 행 페이지(50건 default) 안에서만 유지. 100건 max는 한 페이지 안 도달 가능 (size=100까지 확장 future polish — 현재 size=50 기본). size=50일 때 어드민이 50건 일괄 처리 가능, 100건 처리는 두 번 나눠서.
+
+### 5.5 disabled 항목
+
+- TERMINATED 상태 row: 이미 종료된 룸은 SUSPEND/TERMINATE 불가 (개별 mutation과 일관).
+- 단, SET_HIDDEN은 TERMINATED여도 가능 (display flag은 status 무관). 따라서 row checkbox는 enabled, dialog 단계에서 action별로 backend가 per-item 처리 (TERMINATED + TERMINATE → ALREADY_TERMINATED 결과 row).
+- α 결정: row checkbox는 항상 enabled, dialog에서 action 선택 후 sample preview에 "예상 실패: X건"이라 보여주지 않음. backend 결과로 받음. 단순화 우선.
+- **운영 가정**: 14b list 기본 필터(`status=null`)는 backend에서 TERMINATED 자동 제외(14b ground-truth — `PartyroomStatus=null이면 TERMINATED 자동 제외`). 따라서 어드민이 명시적으로 `status=TERMINATED`를 선택하지 않는 한 TERMINATED row가 list에 보일 일이 적고, ALREADY_TERMINATED 결과 row 발생 빈도도 낮음. 명시적으로 status=TERMINATED 필터한 후 SUSPEND/TERMINATE 시도가 backend per-item 실패 + 결과 모달로 catch되는 운영 흐름.
+
+### 5.6 header 전체 선택
+
+`<Checkbox indeterminate>` 패턴. shadcn Checkbox는 indeterminate 직접 미지원 — `data-state="indeterminate"` + `<Indicator>` 표시. radix Checkbox 자체는 indeterminate 지원 (checked={"indeterminate"}). React Aria `aria-checked="mixed"`.
+
+선택 상태:
+- 전체 선택됨 (모든 row): `checked=true`
+- 일부만: `checked="indeterminate"`
+- 0개: `checked=false`
+
+전체 선택 클릭 → 현재 페이지 N개 모두 select. 전체 해제 → 0.
+
+### 5.7 max 100 강제
+
+selection.size > 100 즉시 toolbar에 빨간 경고 + bulk action 버튼 disabled. 백엔드 `@Size(max=100)`을 클라에서 미리 차단.
+
+---
+
+## 6. bulk action UI
+
+### 6.1 toolbar (`bulk-action-toolbar.tsx`)
+
+selection.size > 0 시 list 상단에 sticky 노출. 컨텐츠:
+
+- "선택: N건" (size>100이면 "100건 초과 — 100건 이하로 줄여주세요")
+- "일괄 처리 ▾" 버튼 (size 0 또는 >100 시 disabled)
+- "선택 해제" 버튼
+
+버튼 클릭 → `BulkActionDialog` open with `selectedIds`.
+
+### 6.2 `BulkActionDialog`
+
+form 필드:
+- **Action**: shadcn Select — `TERMINATE` (강제 종료) / `SUSPEND` (일시 정지) / `SET_HIDDEN` (표시 숨김)
+- **Reason**: `<Textarea>` — `min(1).max(500)`
+- **skipErrors**: `<Checkbox>` — 기본 checked (= true). 라벨 "한 항목 실패 시에도 계속 진행 (권장)"
+- 선택된 partyroomIds 미리보기 (요약: "선택된 N건: ID 1, 2, 3, ..." or "ID 1~10 등 N건")
+
+submit:
+- mutation.mutate({ partyroomIds, action, reason, skipErrors })
+- onSuccess(response):
+  - **즉시 `selection.clear()`** (성공/실패 모두 — §4.3 정책)
+  - 전체 성공 → toast + dialog close
+  - 부분/전체 실패 → state machine 전환: action-dialog close → result-dialog open with `results` props
+
+### 6.3 `BulkActionResultDialog`
+
+- 헤더: "일괄 처리 결과 — 성공 X건 / 실패 Y건"
+- 실패 항목 list (table 또는 div):
+  - partyroomId
+  - 14b list cache에서 lookup한 title (없으면 "(N/A)")
+  - error message
+- 닫기 버튼 → 결과 dialog close, selection이 이미 clear된 상태
+
+### 6.4 진행 표시
+
+`mutation.isPending` 시 dialog submit 버튼 "처리 중..." + spinner. 일괄 처리는 backend per-item 순차 → N개에 따라 수 초~수십 초 소요. 진행률 progress bar는 backend SSE 미지원으로 skip — spinner만 (§13.2 후보).
+
+---
+
+## 7. 에러 / Edge / 미래 호환
+
+### 7.1 요청 자체 실패
+
+- 400 (validation): `BulkPartyroomActionRequest` 위반 — 클라 zod로 미리 차단. 백엔드 도달 0 케이스 가정.
+- 401 (인증 만료): 14a interceptor가 logout + redirect.
+- 403 (권한): 14a 매트릭스 일관, toast.
+- 5xx: `mutationErrorToast` generic.
+
+### 7.2 부분 실패
+
+§4.2 / §4.3 정책. 결과 모달이 catch-all.
+
+### 7.3 race condition
+
+- list staleness: bulk 후 `["partyrooms"]` invalidate → list 재fetch. 사용자가 selection 후 다른 어드민이 status 변경 → 결과 row에서 `ALREADY_TERMINATED` 등으로 노출.
+- 결과 모달 닫기 후에도 list가 stale일 수 있음 — invalidate가 처리.
+
+### 7.4 forward-compat
+
+- `BulkActionType` 추가 시 (RESTORE/SET_FEATURED 등) — 14d zod에 enum case 추가만으로 cover.
+- `BulkActionResult.error` 구조 변경 (errorCode 추가) — 14d frontend는 string `error` 그대로 사용 (`z.string().nullable()`), errorCode field는 `?:` optional zod로 여유 (§13.2).
+- `BulkActionResult` zod schema는 backend record와 1:1: `z.object({ partyroomId: z.number(), success: z.boolean(), error: z.string().nullable() })`. response wrapper도 zod로 parse하면 backend 변경 시 즉시 catch.
+
+### 7.5 권한
+
+- bulk endpoint도 `@adminAuth.isAdmin()` — 14a 매트릭스 일관.
+- super-admin 전용 분리 — 14d 비목적.
+
+### 7.6 a11y
+
+- header checkbox `aria-label="전체 선택"`
+- row checkbox `aria-label={\`\${title} 선택\`}` 또는 `aria-labelledby={titleCellId}`
+- toolbar `role="status"` for "선택: N건" 카운트 (SR 갱신)
+- result dialog 실패 list `<table>` + `<caption className="sr-only">실패 항목</caption>`
+
+---
+
+## 8. 테스트 전략
+
+### 8.1 자동 테스트
+
+- `bulk-schema.test.ts`: 1~100 partyroomIds, action enum, reason min/max, skipErrors 기본값 동작 — 5~6 tests
+- `bulk-partyrooms-api.test.ts`: POST /admin/partyrooms/bulk-action body shape + 200 response unwrap + 4xx 전파 — 3 tests
+- `use-bulk-partyroom-action.test.tsx`: invalidate ['partyrooms'] + toast 분기 (전체성공 / 부분실패 / 전체실패) — 3 tests
+- `bulk-action-toolbar.test.tsx`: count 표시 / 100건 초과 disabled / 선택 해제 — 3 tests
+- `bulk-action-dialog.test.tsx`: 폼 필드 렌더링 / submit disabled when invalid / 14c §14 entry 14 패턴(Dialog+Select hang) 우회로 user.click(combobox) 미사용 — 4 tests
+- `bulk-action-result-dialog.test.tsx`: 성공/실패 카운트 / 실패 항목 list 렌더 / lookup title fallback — 3 tests
+- `partyrooms-table.test.tsx` 확장: row checkbox / header 전체 선택 / disabled (해당 시) — 3~4 tests
+- `partyrooms-list.test.tsx` 통합: selection persist 단일 페이지 / 페이지 이동 시 reset — 2 tests
+
+총 신규 ~30 tests. **baseline 151 + 신규 ~30 = 약 181** (14c 종료 시점 baseline).
+
+### 8.2 수동 검증 (staging)
+
+- N=1 / N=50 / N=100 경계
+- skipErrors=true / false 동작 차이
+- TERMINATE 후 list 재fetch에서 row 사라짐 (filter status=ACTIVE 기준)
+- 부분 실패 시 결과 모달 표시 + 실패 사유 노출
+
+### 8.3 MSW handler 확장
+
+- `POST /api/v1/admin/partyrooms/bulk-action` mock — body의 action별 fixture response (전체성공 / 부분 / 전체 실패 시나리오 셋)
+
+---
+
+## 9. 의존 라이브러리 추가
+
+- `@radix-ui/react-checkbox` (shadcn Checkbox 컴포넌트 base)
+- 그 외 14c 의존 그대로 (radix dropdown-menu/dialog/select 등)
+
+---
+
+## 10. 구현 chunk 분할
+
+| Chunk | 범위 | commits 예상 |
+|---|---|---|
+| G0 ~ G0.x | spec / plan 작성 + reviewer polish | 3~5 |
+| G1 | shadcn Checkbox 의존 추가 + 컴포넌트 + jsdom polyfill grep + sanity test | 1~2 |
+| G2 | partyrooms-table row checkbox + header 전체 선택 + 14b 회귀 0 | 2~3 |
+| G3 | partyrooms-list widget selection state + toolbar 통합 | 2~3 |
+| G4 | bulk schema + API fn + hook + **msw mutation handler 동시** (TDD) | 4~5 |
+| G5 | bulk-action-dialog (form + submit + state machine) | 2~3 |
+| G6 | bulk-action-result-dialog + dialog 전환 통합 | 2~3 |
+| G7 | msw fixture 시나리오 확장 (전체성공/부분/전체실패) + chunk sanity | 1~2 |
+| G8 | spec §12 catch-up + §13.2 + 14c §13.2 backfill | 1~2 |
+
+**chunk 분할 정책**: 14c G2/G3 패턴 일관 — hook commit과 같은 chunk 안에 msw mutation handler 동시 추가(G4). 그래야 G5/G6 dialog 통합 테스트가 hook 거쳐 실제 mutation 실행 가능. G7은 fixture 시나리오 확장(success/partial/all-fail)만 담당.
+
+총 commits 예상 ~25 (14c 42보다 작음 — 14d 도메인 좁음).
+
+---
+
+## 11. 위험 / 미해결
+
+### R1 — selection cross-page persist 정책
+
+**상태**: §5.2 α 결정 — 페이지 이동 시 reset. 어드민 cross-page 다중 선택 빈도 추정 기반.
+**잔존**: 운영 후 cross-page 요구 발생 시 §13.2의 β로 전환. URL ↔ Set sync 인프라 필요.
+
+### R2 — header indeterminate checkbox
+
+**상태**: shadcn Checkbox는 `checked: boolean | "indeterminate"` 지원. radix Checkbox 1.x. polyfill 불필요(추정).
+**대응**: G1 진입 시 **jsdom polyfill 필요 여부 grep 1회 의무화** — `src/test/setup.ts` 현재 4 메소드(hasPointerCapture/setPointerCapture/releasePointerCapture/scrollIntoView, 14b §14 entry 8) 외에 radix Checkbox가 요구하는 추가 polyfill이 있는지 확인. 추가 polyfill 필요 시 setup.ts 확장 + sanity test 1개. 패턴은 14c G1 dropdown-menu/dialog/tooltip 추가 시점과 일관 (§3.1에 명시).
+
+### R3 — Dialog 안 Select interaction 테스트 회피
+
+**상태**: 14c §14 entry 14 동일 한계. `BulkActionDialog`도 Action select가 Dialog 내부.
+**대응**: action 선택 테스트는 controlled prop / re-render로 우회 (initial action prop 받기) 또는 `BulkActionDialog` `open=true` + action default `TERMINATE`로 단순 검증. e2e Playwright는 §13.2.
+
+### R4 — 실패 항목 title lookup
+
+**상태**: result dialog는 14b list cache에서 partyroomId → title lookup. 전혀 lookup 안 된 항목 (예: 다른 페이지에서 선택해 캐시에 없음 — α 정책상 reset되지만, 백엔드가 추가 row 반환 시) "(N/A)" fallback.
+**대응**: react-query `getQueryData(["partyrooms", filter])` lookup helper. fallback 단일 분기 충분.
+
+### R5 — bulk action 진행 시간 큰 경우 UX
+
+**상태**: 50~100건 per-item 처리 → 백엔드 응답까지 수 초~수십 초. 모달은 spinner만. 사용자가 닫으면?
+**대응**: dialog `onOpenChange`를 `mutation.isPending` 동안 무시 (close 차단). 14c R6 패턴 일관. cancel 미지원 (backend 미지원).
+
+### R6 — skipErrors=false + 첫 실패 → 이미 commit된 항목 처리
+
+**상태**: backend behavior — skipErrors=false여도 break 전 성공 항목은 commit됨. 결과 results 배열에 그 항목까지 포함.
+**대응**: result dialog "총 N건 시도 / 성공 X건 / 실패 Y건 / 미시도 Z건" 표시. Z = request.partyroomIds.length - results.length.
+**G4 진입 시 sanity**: `AdminPartyroomTransactionalUnit#executeOne` 본문 read 1회 — per-item TX boundary가 진짜 commit per item을 보장하는지 + audit listener가 같은 TX 안에서 INSERT하는지 확인. spec §2.4 단언이 코드와 1:1인지 검증. 변동 시 §12 reality.
+
+### R7 — bulk 후 detail 페이지 stale
+
+**상태**: bulk 성공 후 detail 페이지에 들어가 있는 어드민은 stale 데이터.
+**대응**: invalidate `["partyrooms"]` prefix가 detail key도 cover. 14c R6 일관.
+
+---
+
+## 12. Open Items / Implementation Reality (post-build catch-up)
+
+G1~G7 진행 중 spec ↔ 실제 코드 불일치 항목을 SHA + 사유 + impact로 G8에서 backfill. 14b §14 / 14c §12 패턴 그대로.
+
+1. **[G1.1 backend grep]** spec §2 1:1 정합 검증 완료 — `BulkPartyroomActionRequest{partyroomIds[1-100], action, reason, skipErrors?}`, `BulkActionType{TERMINATE, SUSPEND, SET_HIDDEN}`, `AdminBulkPartyroomActionService.execute` (non-transactional outer + per-item TX), `AdminPartyroomTransactionalUnit#executeOne` (`@Transactional` switch 3가지). spec §2.4 단언과 코드 정확 일치.
+
+2. **[G1.1 backend grep — §2.6 메시지 정확화]** 실제 backend 도메인 예외 메시지가 spec 매트릭스와 일부 차이:
+   - `ALREADY_TERMINATED`: spec "이미 종료된 룸입니다" → 실제 **"이미 종료된 파티룸입니다"** (`PartyroomException` line 10)
+   - `ILLEGAL_STATE_TRANSITION`: spec "전이 불가" → 실제 **"허용되지 않은 파티룸 상태 전이입니다"** (line 15)
+   - `NOT_FOUND_ROOM`: 실제 "파티룸을 찾을 수 없습니다" — 일치 ✓
+   - 모두 한국어 i18n 적용. `BulkActionResult.error`에 그대로 들어감. UI에서는 backend message 그대로 표시 (custom 변환 안 함).
+
+3. **[G1.1 backend grep — 14c R12 해소]** mutation status 가드 grep 결과:
+   - `AdminPartyroomCommandService.updateMeta` (line 112): `if (partyroom.isTerminated()) throw ALREADY_TERMINATED` — 명시적 service-level 가드 ✓
+   - `setDisplayFlag` (line 86-102): service 자체엔 없으나 `PartyroomData.setDisplayFlagX()` 도메인 메소드에 strict guard (`PartyroomData.java:206` 주석 + `227` throw `ILLEGAL_STATE_TRANSITION`) — entity-level 가드 ✓
+   - `terminate`/`suspend`/`restore`: `PartyroomData` strict guard (lifecycle invariants) ✓
+   - **결론**: 모든 mutation에 status 가드 있음 (service 또는 entity 어느 한 층에서). 14c R12 미해결 항목 → **closed**. 14c §13.2의 해당 항목은 14d G1.1 SHA로 backfill (`d7b9c03` 후속 polish).
+
+4. **[G1.2 SHA `ee26b6e`]** shadcn `@radix-ui/react-checkbox` 1.1.3 의존 + `src/components/ui/checkbox.tsx` 컴포넌트는 14b demo subsystem 일괄 삭제 시점에도 잔존 — `pnpm dlx shadcn add checkbox` 불필요. 단 indeterminate 시각 표시(MinusIcon vs CheckIcon)가 누락돼 있어 props.checked 분기 추가. plan §G1.2 의존 추가 단계 자체는 skip.
+
+5. **[G1 polyfill grep]** `src/test/setup.ts`의 4-method polyfill(hasPointerCapture/setPointerCapture/releasePointerCapture/scrollIntoView, 14b §14 entry 8)이 radix Checkbox에도 충분 — 추가 polyfill 불필요. partyrooms-table 7 selection tests + toolbar 6 + dialog 7 + result-dialog 6 모두 PASS로 확인.
+
+6. **[G2.1 SHA `91c9111`]** `partyrooms-table.tsx` selection props 전부 optional — `selectedIds` / `onToggleId` / `onToggleAll`. 셋 다 제공된 경우만 checkbox column 활성화 (`selectionEnabled` 변수). 14b 기존 사용처(`PartyroomsListWidget`)는 props 미제공이라 회귀 0. row click navigate 충돌 회피는 checkbox cell `onClick={(e) => e.stopPropagation()}`. 14d 패턴 — 14e+ members bulk(미지원이지만 future) 시 동일 적용.
+
+7. **[G2.1 test pattern]** Radix Checkbox에서 `data-state` attribute 검증 — `unchecked` / `checked` / `indeterminate`. `toBeChecked()`는 radix Checkbox에 직접 안 됨 (input[type=checkbox]가 아님). spec §5.6 테스트 가정 일관.
+
+8. **[G3.2 SHA `7ae8a74`]** `PartyroomsListContent`에 `useState<Set<number>>` + `useEffect`로 query 변경 시 reset (8 dep — page/size/sort/status/stageType/host/createdFrom/createdTo). plan §G3.2 별 hook(`useSelectionState`) 추출 안 함 — 14d 단일 사용처라 trigger 약함. §13.2 future polish.
+
+9. **[G3.2 plan deviation — widget integration 테스트 부재]** plan §G3.2 Step 1의 5개 widget integration 테스트(filter 변경 selection reset 등)는 QueryClientProvider + MemoryRouter + msw 통합 부담으로 작성 미실시. selection logic 자체는 partyrooms-table(7) + toolbar(6) + dialog(7) + result-dialog(6) 단위 테스트로 충분히 cover됐다고 판단. e2e Playwright(§13.1 상속)에서 진정한 통합 시나리오 검증.
+
+10. **[G4.3 SHA `cc...`(use-bulk-partyroom-action)]** `useBulkPartyroomAction` hook은 toast 분기를 inline `toast.success/warning/error` 직접 호출 — `mutationSuccessToast` helper 미사용 (helper는 단일 message만 받아서 분기 패턴 부적합). `mutationErrorToast`는 onError에 그대로 사용. spec §4.2 매트릭스대로.
+
+11. **[G5.1 SHA `06ef68a`-polish 포함]** Plan §G5.1 Step 1 명시 회피 — Dialog 내부 Action Select user.click jsdom hang(14c §14 entry 14). default action="TERMINATE"로 시작해 Action 변경 흐름은 e2e 미룸. 7 테스트 모두 PASS.
+
+12. **[G5.1.1 SHA `06ef68a`]** plan §G5.1 Step 2 sample은 "전체 성공 시 onResults 미호출" 패턴이었으나, spec §4.3 "selection clear 즉시 (성공/실패 모두)" 일관성 위해 **`onResults` always-call**로 polish. widget이 onResults 진입 시점에 selection clear + (실패 시 result dialog state set) 분기. dialog는 결과 dialog open 여부와 무관.
+
+13. **[G5.2 SHA `ac27674`]** widget integration 시 `bulkResults` state를 G5.2에서는 typecheck unused warning으로 제거, G6.2에서 다시 추가. 분할 commit 전략으로 typecheck 위반 회피.
+
+14. **[G6.1 SHA `b365234`(이전 commit) / 실제 dialog SHA]** `useTitleLookup` hook은 `useQueryClient().getQueriesData({ queryKey: ["partyrooms"] })`로 prefix 매칭 — 모든 page/filter 캐시 순회. 14b list 캐시 key 패턴(`["partyrooms", { page, size, sort, ...filter }]`)에 의존. 다른 캐시 entry에 동일 partyroomId 다른 title이 있으면 첫 hit 사용. 운영상 빈도 낮음.
+
+15. **[G6.1 missed Z건 표시]** `Math.max(0, attemptedCount - results.length)` — skipErrors=false break 시나리오만 양수. spec §R6 / §6.3 정책 그대로 구현.
+
+16. **[G7.1 SHA `35a330e`]** `bulkResultBreak(ids, breakAt)` fixture만 G7.1에 추가 — G4.4가 이미 allSuccess/partial/allFail 3 fixture를 추가했으므로 break 시나리오만 별 chunk. plan §G7.1 4 fixture 명시와 일관.
+
+17. **[G7 sanity]** 전체 198/198 PASS, typecheck 0 error, build 6.50s 성공 (552KB → 563KB main bundle, +11KB radix Checkbox + bulk dialog 추가). plan 예상 +30 신규 테스트 → 실제 +47 (table 7 + toolbar 6 + schema 14 + api 3 + hook 4 + dialog 7 + result-dialog 6).
+
+18. **[14b/14c 회귀 0]** 기존 151 테스트 모두 PASS. partyrooms-table selection props가 모두 optional + 기본값 부재로 14b 사용처(`PartyroomsListWidget`은 14d에서 변경됐지만 표시는 14b 그대로) 회귀 없음.
+
+### 14c §13.2 backfill (forward-evolution 3단 패턴 (b))
+
+14c §13.2의 항목 중 14d에서 cover된 것:
+
+- **`AdminPartyroomCommandService.updateMeta` / `setDisplayFlag` status 가드 grep + 부재 시 보강** → 14d G1.1에서 grep 완료. 모든 mutation에 service/entity 어느 한 층에서 가드 있음 — 보강 불필요. **closed**. (별 commit으로 14c spec §13.2 backfill 예정 — G8.2)
+- **Dialog 안 radix Select interaction 테스트 회복** → 14d 14e entry 11에서도 동일 deferred. e2e Playwright로 cover. **잔존**.
+- **mutation dialog reset 정책 일관화 (`useDialogResetEffect` 추출)** → 14d BulkActionDialog가 inline `useEffect(() => { if (!open) { ...reset; mutation.reset() } }, [open])` 패턴 적용 (R11 폴리시). ChangeTierDialog(14c §14 entry 4) 미적용 잔존. 추출 trigger는 더 강해졌으나 14d에서도 inline 유지. **잔존**.
+- **`AdminMember/PartyroomDetailResponse` DTO 확장** → 14d 무관 (members 도메인 + detail card 영역). **잔존**.
+- **RHF v7 `.refine()` 에러 helper** → 14d BulkActionDialog는 react-hook-form 미사용 (수동 useState) — refine 에러 자체 부재. 추출 trigger 약함. **잔존**.
+
+---
+
+## 13. Future Polish (14a/14b/14c 상속 + 14d 신규)
+
+### 13.1 14c §13.1 / 14b §15.2 / 14a §13 상속 (14d에 직접 영향 있는 항목)
+
+- 백엔드 `LocalDateTime` → `OffsetDateTime` (audit / response timestamps)
+- e2e Playwright (bulk-action 시나리오 정확 검증)
+- Storybook + 시각적 회귀 (toolbar / dialogs)
+- a11y axe (Checkbox + 결과 dialog list)
+- i18n (한국어 하드코딩)
+- guest admin route (별 묶음)
+- penalty UI / admin action audit / avatar publish-retire UI (별 PR)
+- mutation dialog reset 정책 일관화 (`useDialogResetEffect` 추출 — 14c §13.2 상속)
+- RHF v7 `.refine()` 에러 위치 helper (14c §13.2 상속)
+- Dialog 안 radix Select interaction 테스트 회복 (e2e — 14c §13.2 상속)
+- `AdminPartyroomCommandService.updateMeta` / `setDisplayFlag` status 가드 grep (14c §13.2 상속)
+- `AdminMember/PartyroomDetailResponse` DTO 확장 (14c §13.2 상속)
+
+### 13.2 14d 신규
+
+- **selection cross-page persist (β)** — URL `selected` param으로 Set 동기화 + 페이지 이동/필터 변경 시 명시적 confirm. R1 잔존 시.
+- **`BulkActionType` 확장** — RESTORE / SET_FEATURED / SET_NORMAL / UPDATE_META 추가 (backend enum 확장 + frontend dialog 옵션 추가).
+- **`BulkActionResult.errorCode` 노출** — backend response에 `errorCode` 필드 추가 → 클라 일관 매핑 (§2.6).
+- **bulk 진행률 progress bar** — backend SSE / WebSocket으로 per-item 진행 알림 → 프론트 progress bar. 현재 backend 미지원.
+- **bulk action 큐 / 비동기 처리** — 100건 동기 처리는 운영 부담. backend가 큐로 받고 result polling endpoint 노출 시 frontend가 polling으로 진행률 표시.
+- **size=100까지 list page 확장** — 현재 size=50 기본. 한 페이지에 100건 cover하려면 size=100 옵션 추가 (14b filter-form sort/page select에 이미 size 옵션 있음 — 검증 필요).
+- **filter+selection re-apply** — 100건 select 후 filter 좁힐 때 invalid id (filtered out) selection 자동 정리.
+- **result dialog "재시도" 버튼** — 실패 항목만 자동 selection 복원 + dialog 재open. 운영 효율 향상.
+- **`useDialogResetEffect` shared helper 추출** — 14c §13.2 상속 항목 중 "mutation dialog reset 정책 일관화"의 자연스러운 추출 시점. 14d가 BulkActionDialog/BulkActionResultDialog 2개 추가하므로 R11 폴리시 inline 코드가 4 이상 dialog에 중복 발생. 14d 진행 중 inline 유지하되 G8 catch-up 시점에 shared 추출 reality + ChangeTierDialog 일관 적용 cover 가능 (cost: 1 commit, impact: 14c §13.2 잔존 1건 해소).
+- **R12 status 가드 backend grep opportunity** — 14c R12(updateMeta/setDisplayFlag backend status 가드 미검증) 잔존. 14d G4/G5 chunk가 same `AdminPartyroomCommandService` 영역의 backend grep을 동반하므로 `updateMeta`/`setDisplayFlag` status 체크 동시 grep으로 14c R12 해소 opportunity. cost: grep 1회 + §12 reality 1 entry, impact: 14c R12 close.
+  - **14d 결과 (G1.1)**: grep 완료, 모든 mutation에 service/entity 어느 한 층에서 가드 있음. 14c R12 → **closed**.
+- **`useSelectionState` shared hook 추출** — 14d G3.2가 widget에 `useState<Set<number>>` + 8-dep useEffect를 inline. 본 PR은 단일 사용처라 trigger 약했으나, 14e+ members bulk(미지원이지만 future) 또는 다른 list page에서 재사용 시점에 추출. 추출 신호: 두 번째 사용처 등장.
+- **`useDialogResetEffect` shared hook 추출 — 14c §13.2 상속, 14d에서도 inline 유지** — 14d `BulkActionDialog`가 R11 폴리시 inline `useEffect(() => { if (!open) { ...form reset; mutation.reset() } }, [open])` 5번째 사용처. ChangeTierDialog(14c)는 `mutation.reset()` 미적용 잔존. helper 추출 시 ChangeTierDialog 일관 적용 + 14d dialog 들이 더 짧아짐. cost: helper + 5 dialog refactor, impact: 14c §14 entry 4 deviation 해소.
+- **bulk action 통합 e2e Playwright** — 14d §11 R3 / §13.1 e2e 상속의 핵심 trigger. selection → bulk dialog Action select 변경 → submit → result dialog → 닫기 → list refetch 시나리오. jsdom hang 한계가 가장 큰 영역. 14c §14 entry 14와 동일 future polish.
+
+---
+
+## 참고 자료
+
+- 14c spec: `docs/specs/2026-04-29-admin-pr14c-design.md` (post-backfill HEAD `8fac84a`)
+- 14c plan: `docs/plans/2026-04-29-admin-pr14c.md`
+- 14b spec: `docs/specs/2026-04-29-admin-pr14b-design.md` (HEAD `8fac84a` post-backfill)
+- 14a spec: `docs/specs/2026-04-28-admin-pr14a-design.md`
+- backend:
+  - `AdminPartyroomCommandController.bulkAction`
+  - `AdminBulkPartyroomActionService.execute`
+  - `AdminPartyroomTransactionalUnit.executeOne` (per-item TX)
+  - `BulkPartyroomActionRequest` / `BulkPartyroomActionResponse` / `BulkActionType`
+- shadcn Checkbox: https://ui.shadcn.com/docs/components/checkbox
