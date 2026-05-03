@@ -23,32 +23,56 @@ interface NavItem {
   role?: AdminRole
 }
 
+interface NavSection {
+  /** 부재 시 헤더 미노출 (대시보드 같은 단독 항목용). 지정 시 섹션 라벨로 표시. */
+  label?: string
+  items: NavItem[]
+}
+
+// 운영(daily ops)과 시스템(SUPER_ADMIN governance) 분리. 권한 라인과 그룹 라인 일치.
+const navSections: NavSection[] = [
+  {
+    items: [{ to: "/", icon: LayoutDashboard, label: "대시보드" }],
+  },
+  {
+    label: "운영 관리",
+    items: [
+      { to: "/members", icon: Users, label: "회원" },
+      { to: "/partyrooms", icon: DoorOpen, label: "파티룸" },
+      { to: "/reports", icon: Flag, label: "신고" },
+    ],
+  },
+  {
+    label: "시스템 관리",
+    items: [
+      {
+        to: "/administrators",
+        icon: ShieldCheck,
+        label: "어드민 관리",
+        role: "SUPER_ADMIN",
+      },
+      {
+        to: "/announcements",
+        icon: Megaphone,
+        label: "공지",
+        role: "SUPER_ADMIN",
+      },
+      { to: "/avatars/bodies", icon: Image, label: "아바타", role: "SUPER_ADMIN" },
+    ],
+  },
+]
+
 export default function AppLayout() {
   const { meta } = useSessionStore()
   const logout = useLogout()
 
-  const navItems: NavItem[] = [
-    { to: "/", icon: LayoutDashboard, label: "대시보드" },
-    { to: "/members", icon: Users, label: "회원" },
-    { to: "/partyrooms", icon: DoorOpen, label: "파티룸" },
-    { to: "/reports", icon: Flag, label: "신고" },
-    {
-      to: "/administrators",
-      icon: ShieldCheck,
-      label: "어드민 관리",
-      role: "SUPER_ADMIN",
-    },
-    {
-      to: "/announcements",
-      icon: Megaphone,
-      label: "공지",
-      role: "SUPER_ADMIN",
-    },
-    { to: "/avatars/bodies", icon: Image, label: "아바타", role: "SUPER_ADMIN" },
-  ]
-  const visibleNavItems = navItems.filter(
-    (item) => !item.role || meta?.role === item.role,
-  )
+  // role 필터링 후 빈 섹션은 제거 (ADMIN 시 "시스템 관리" 헤더 자체 미노출).
+  const visibleSections = navSections
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((item) => !item.role || meta?.role === item.role),
+    }))
+    .filter((s) => s.items.length > 0)
 
   return (
     <div className="flex h-screen bg-background">
@@ -56,15 +80,33 @@ export default function AppLayout() {
         <div className="flex h-16 items-center border-b border-border px-6">
           <h1 className="text-xl font-bold text-foreground">PFPlay Admin</h1>
         </div>
-        <nav className="flex-1 space-y-1 p-4">
-          {visibleNavItems.map((item) => (
-            <NavLink key={item.to} to={item.to}
-              className={({ isActive }) => cn(
-                "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
-                isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-              )} end={item.to === "/"}>
-              <item.icon className="h-5 w-5" />{item.label}
-            </NavLink>
+        <nav className="flex-1 p-4 space-y-6">
+          {visibleSections.map((section, i) => (
+            <div key={i} className="space-y-1">
+              {section.label && (
+                <p className="px-4 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {section.label}
+                </p>
+              )}
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    cn(
+                      "flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    )
+                  }
+                  end={item.to === "/"}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="border-t border-border p-4 space-y-2">

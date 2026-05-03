@@ -53,4 +53,22 @@ describe("AppLayout sidebar", () => {
     const avatar = screen.getByText("아바타").closest("a")
     expect(avatar).toHaveAttribute("href", "/avatars/bodies")
   })
+
+  it("ADMIN role: '운영 관리' 헤더만 노출, '시스템 관리' 헤더 + 항목 미노출", () => {
+    mockRole = "ADMIN"
+    renderLayout()
+    expect(screen.getByText("운영 관리")).toBeInTheDocument()
+    expect(screen.queryByText("시스템 관리")).toBeNull()
+    expect(screen.queryByText("어드민 관리")).toBeNull()
+    expect(screen.queryByText("공지")).toBeNull()
+  })
+
+  it("SUPER_ADMIN role: '운영 관리' + '시스템 관리' 두 헤더 모두 노출", () => {
+    mockRole = "SUPER_ADMIN"
+    renderLayout()
+    expect(screen.getByText("운영 관리")).toBeInTheDocument()
+    expect(screen.getByText("시스템 관리")).toBeInTheDocument()
+    expect(screen.getByText("어드민 관리")).toBeInTheDocument()
+    expect(screen.getByText("공지")).toBeInTheDocument()
+  })
 })
