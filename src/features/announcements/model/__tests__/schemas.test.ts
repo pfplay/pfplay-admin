@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { createAnnouncementRequestSchema } from "../mutation-schema"
+import { announcementListQuerySchema } from "../filter-schema"
 
 // datetime-local 입력 형식 ("YYYY-MM-DDTHH:mm:ss") — schema 는 local timezone 으로 parse 하므로
 // toISOString() (UTC) 을 쓰면 KST runner 와 9시간 차이 나 미래/과거 검증이 뒤집힌다.
@@ -146,5 +147,25 @@ describe("createAnnouncementRequestSchema", () => {
       scheduledStartAt: "not-a-date",
     })
     expect(r.success).toBe(false)
+  })
+})
+
+describe("announcementListQuerySchema", () => {
+  it("빈 객체 허용 (모든 필드 optional → backend default)", () => {
+    expect(announcementListQuerySchema.safeParse({}).success).toBe(true)
+  })
+
+  it("page/size — coerce string → number", () => {
+    const r = announcementListQuerySchema.safeParse({ page: "2", size: "10" })
+    expect(r.success).toBe(true)
+    if (r.success) expect(r.data).toEqual({ page: 2, size: 10 })
+  })
+
+  it("page < 0 거부", () => {
+    expect(announcementListQuerySchema.safeParse({ page: -1 }).success).toBe(false)
+  })
+
+  it("size > 100 거부", () => {
+    expect(announcementListQuerySchema.safeParse({ size: 999 }).success).toBe(false)
   })
 })

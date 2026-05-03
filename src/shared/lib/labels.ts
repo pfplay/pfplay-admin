@@ -17,6 +17,10 @@ import type {
 } from "@/entities/report"
 import type { AuthorityTier } from "@/entities/member"
 import type { AdminRole } from "@/entities/administrator"
+import type {
+  AnnouncementType,
+  AnnouncementSeverity,
+} from "@/entities/announcement"
 import type { BulkActionType } from "@/features/partyrooms/model/bulk-schema"
 
 type StatusVariant =
@@ -129,6 +133,32 @@ export const ADMIN_ROLE: Mapping<AdminRole> = {
   variant: {
     SUPER_ADMIN: "destructive",
     ADMIN: "default",
+  },
+}
+
+export const ANNOUNCEMENT_TYPE: Mapping<AnnouncementType> = {
+  label: {
+    MAINTENANCE_NOTICE: "점검 공지",
+    EVENT: "이벤트",
+    EMERGENCY: "긴급 공지",
+  },
+  variant: {
+    MAINTENANCE_NOTICE: "warning",
+    EVENT: "default",
+    EMERGENCY: "destructive",
+  },
+}
+
+export const ANNOUNCEMENT_SEVERITY: Mapping<AnnouncementSeverity> = {
+  label: {
+    INFO: "정보",
+    WARN: "경고",
+    CRITICAL: "위급",
+  },
+  variant: {
+    INFO: "secondary",
+    WARN: "warning",
+    CRITICAL: "destructive",
   },
 }
 
