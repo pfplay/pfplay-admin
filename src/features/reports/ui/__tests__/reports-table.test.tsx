@@ -18,8 +18,8 @@ describe("ReportsTable", () => {
         />
       </MemoryRouter>,
     )
-    expect(screen.getAllByText("PENDING")).toHaveLength(2)
-    expect(screen.getByText("부적절 컨텐츠")).toBeInTheDocument()
+    expect(screen.getAllByText("대기 중")).toHaveLength(2)
+    expect(screen.getByText("부적절 콘텐츠")).toBeInTheDocument()
     expect(screen.getByText("괴롭힘")).toBeInTheDocument()
   })
 
@@ -59,7 +59,7 @@ describe("ReportsTable", () => {
         </Routes>
       </MemoryRouter>,
     )
-    fireEvent.click(screen.getByText("PENDING"))
+    fireEvent.click(screen.getByText("대기 중"))
     expect(screen.getByText("detail")).toBeInTheDocument()
   })
 

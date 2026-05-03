@@ -26,9 +26,9 @@ import type {
 } from "@/features/partyrooms/model/bulk-schema"
 
 const ACTION_OPTIONS: { value: BulkActionType; label: string }[] = [
-  { value: "TERMINATE", label: "강제 종료 (TERMINATE)" },
-  { value: "SUSPEND", label: "일시 정지 (SUSPEND)" },
-  { value: "SET_HIDDEN", label: "표시 숨김 (SET_HIDDEN)" },
+  { value: "TERMINATE", label: "강제 종료" },
+  { value: "SUSPEND", label: "일시 정지" },
+  { value: "SET_HIDDEN", label: "표시 숨김" },
 ]
 
 interface Props {

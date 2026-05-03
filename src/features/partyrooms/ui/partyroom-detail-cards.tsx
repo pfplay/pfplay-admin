@@ -14,17 +14,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { AdminPartyroomDetail } from "@/entities/partyroom"
+import type { AdminPartyroomDetail, PartyroomStatus } from "@/entities/partyroom"
 import { formatKst } from "@/shared/lib/format-kst"
-
-const STATUS_VARIANT: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  ACTIVE: "default",
-  SUSPENDED: "secondary",
-  TERMINATED: "destructive",
-}
+import {
+  PARTYROOM_STATUS,
+  STAGE_TYPE,
+  DISPLAY_FLAG_LABEL,
+  DISPLAY_FLAG_VARIANT,
+  REPORT_STATUS,
+  REPORT_CATEGORY_LABEL,
+} from "@/shared/lib/labels"
+import type { ReportStatus, ReportCategory } from "@/entities/report"
 
 function formatPlaybackTimeLimit(minutes: number | null): string {
   if (minutes === null) return "-"
@@ -50,10 +50,19 @@ export function PartyroomDetailCards({ detail }: Props) {
         <h2 className="text-2xl font-bold">
           #{detail.partyroomId} {detail.title}
         </h2>
-        <Badge variant={STATUS_VARIANT[detail.status] ?? "outline"}>
-          {detail.status}
+        <Badge
+          variant={
+            PARTYROOM_STATUS.variant[detail.status as PartyroomStatus] ??
+            "outline"
+          }
+        >
+          {PARTYROOM_STATUS.label[detail.status as PartyroomStatus] ?? detail.status}
         </Badge>
-        <Badge variant="outline">{detail.displayFlag}</Badge>
+        <Badge
+          variant={DISPLAY_FLAG_VARIANT[detail.displayFlag] ?? "outline"}
+        >
+          {DISPLAY_FLAG_LABEL[detail.displayFlag] ?? detail.displayFlag}
+        </Badge>
       </div>
 
       {/* 2. Top-level meta */}
@@ -64,7 +73,7 @@ export function PartyroomDetailCards({ detail }: Props) {
         <CardContent className="grid grid-cols-2 gap-3 text-sm">
           <div>
             <span className="text-muted-foreground">스테이지</span>
-            <div>{detail.stageType}</div>
+            <div>{STAGE_TYPE.label[detail.stageType] ?? detail.stageType}</div>
           </div>
           <div>
             <span className="text-muted-foreground">호스트</span>
@@ -245,8 +254,20 @@ export function PartyroomDetailCards({ detail }: Props) {
                 {detail.recentReports.map((r) => (
                   <TableRow key={r.id}>
                     <TableCell>{r.id}</TableCell>
-                    <TableCell>{r.category}</TableCell>
-                    <TableCell>{r.status}</TableCell>
+                    <TableCell>
+                      {REPORT_CATEGORY_LABEL[r.category as ReportCategory] ??
+                        r.category}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          REPORT_STATUS.variant[r.status as ReportStatus] ??
+                          "outline"
+                        }
+                      >
+                        {REPORT_STATUS.label[r.status as ReportStatus] ?? r.status}
+                      </Badge>
+                    </TableCell>
                     <TableCell>#{r.reporterUserAccountId}</TableCell>
                     <TableCell>{formatKst(r.createdAt)}</TableCell>
                   </TableRow>

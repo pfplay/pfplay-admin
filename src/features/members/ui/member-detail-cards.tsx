@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table"
 import type { AdminMemberDetail } from "@/entities/member"
 import { formatKst } from "@/shared/lib/format-kst"
+import { TIER } from "@/shared/lib/labels"
 
 interface Props {
   detail: AdminMemberDetail
@@ -34,8 +35,8 @@ export function MemberDetailCards({ detail }: Props) {
           #{detail.memberId} {detail.profile.nickname ?? "-"}
         </h2>
         {detail.withdrawn && (
-          <Badge variant="secondary" title={withdrawnTooltip}>
-            탈퇴 회원
+          <Badge variant="muted" title={withdrawnTooltip}>
+            탈퇴됨
           </Badge>
         )}
       </div>
@@ -94,11 +95,8 @@ export function MemberDetailCards({ detail }: Props) {
           <CardTitle>권한 + 메타</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center gap-3 text-sm">
-          <Badge
-            variant={detail.authorityTier === "GT" ? "destructive" : "default"}
-          >
-            {detail.authorityTier}
-            {detail.authorityTier === "GT" ? " (강등)" : ""}
+          <Badge variant={TIER.variant[detail.authorityTier]}>
+            {TIER.label[detail.authorityTier]}
           </Badge>
           <span className="text-muted-foreground">멤버 생성일</span>
           <span>{formatKst(detail.createdAt)}</span>

@@ -30,7 +30,7 @@ describe("PartyroomDetailCards (G8 — 8/8 카드)", () => {
     expect(screen.getByText("크루 없음")).toBeInTheDocument()
   })
 
-  it("status=TERMINATED → destructive badge 노출", () => {
+  it("status=TERMINATED → '종료됨' badge 노출 (한글화 G10)", () => {
     render(
       <MemoryRouter>
         <PartyroomDetailCards
@@ -38,7 +38,7 @@ describe("PartyroomDetailCards (G8 — 8/8 카드)", () => {
         />
       </MemoryRouter>,
     )
-    expect(screen.getByText("TERMINATED")).toBeInTheDocument()
+    expect(screen.getByText("종료됨")).toBeInTheDocument()
   })
 
   it("introduction / playbackTimeLimit 행 표시 (G4.4)", () => {

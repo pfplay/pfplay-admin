@@ -21,7 +21,7 @@ describe("PartyroomsTable", () => {
     expect(
       screen.getByText(partyroomListItemFixture.title),
     ).toBeInTheDocument()
-    expect(screen.getByText("ACTIVE")).toBeInTheDocument()
+    expect(screen.getByText("운영 중")).toBeInTheDocument()
   })
 
   it("empty 메시지", () => {

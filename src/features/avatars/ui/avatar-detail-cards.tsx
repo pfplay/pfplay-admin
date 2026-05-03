@@ -2,17 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatKst } from "@/shared/lib/format-kst"
 import { isBodyView } from "@/entities/avatar"
+import { LIFECYCLE_STATUS, OBTAINMENT_TYPE_LABEL } from "@/shared/lib/labels"
 import type {
   AdminAvatarBodyView,
   AdminAvatarFaceView,
-  LifecycleStatus,
 } from "@/entities/avatar"
-
-const STATUS_VARIANT: Record<LifecycleStatus, "default" | "secondary" | "outline"> = {
-  DRAFT: "secondary",
-  PUBLISHED: "default",
-  RETIRED: "outline",
-}
 
 interface Props {
   detail: AdminAvatarBodyView | AdminAvatarFaceView
@@ -25,12 +19,14 @@ export function AvatarDetailCards({ detail }: Props) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             #{detail.id} {detail.name}
-            <Badge variant={STATUS_VARIANT[detail.lifecycleStatus]}>
-              {detail.lifecycleStatus}
+            <Badge variant={LIFECYCLE_STATUS.variant[detail.lifecycleStatus]}>
+              {LIFECYCLE_STATUS.label[detail.lifecycleStatus]}
             </Badge>
-            <Badge variant="outline">{detail.obtainableType}</Badge>
+            <Badge variant="outline">
+              {OBTAINMENT_TYPE_LABEL[detail.obtainableType] ?? detail.obtainableType}
+            </Badge>
             {isBodyView(detail) && (
-              <Badge variant="outline">score: {detail.obtainableScore}</Badge>
+              <Badge variant="outline">점수: {detail.obtainableScore}</Badge>
             )}
           </CardTitle>
         </CardHeader>

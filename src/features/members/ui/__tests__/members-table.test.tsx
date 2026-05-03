@@ -19,7 +19,7 @@ describe("MembersTable", () => {
       </MemoryRouter>,
     )
     expect(screen.getByText(memberSummaryFixture.email)).toBeInTheDocument()
-    expect(screen.getByText("탈퇴")).toBeInTheDocument()
+    expect(screen.getByText("탈퇴됨")).toBeInTheDocument()
   })
 
   it("empty 상태 메시지", () => {

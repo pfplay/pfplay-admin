@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TIER } from "@/shared/lib/labels"
 import type { AdminMemberSummary } from "@/entities/member"
 import { formatKst } from "@/shared/lib/format-kst"
 
@@ -16,12 +17,6 @@ interface Props {
   rows: AdminMemberSummary[]
   isLoading: boolean
   isEmpty: boolean
-}
-
-const TIER_LABEL: Record<string, string> = {
-  FM: "FM",
-  AM: "AM",
-  GT: "GT (강등)",
 }
 
 export function MembersTable({ rows, isLoading, isEmpty }: Props) {
@@ -68,21 +63,19 @@ export function MembersTable({ rows, isLoading, isEmpty }: Props) {
             <TableCell>{row.providerType}</TableCell>
             <TableCell>{row.nickname ?? "-"}</TableCell>
             <TableCell>
-              <Badge
-                variant={row.authorityTier === "GT" ? "destructive" : "default"}
-              >
-                {TIER_LABEL[row.authorityTier] ?? row.authorityTier}
+              <Badge variant={TIER.variant[row.authorityTier]}>
+                {TIER.label[row.authorityTier]}
               </Badge>
             </TableCell>
             <TableCell>{formatKst(row.lastLoginAt)}</TableCell>
             <TableCell>{formatKst(row.createdAt)}</TableCell>
             <TableCell>
               {row.withdrawn ? (
-                <Badge variant="secondary" title={row.withdrawnAt ?? ""}>
-                  탈퇴
+                <Badge variant="muted" title={row.withdrawnAt ?? ""}>
+                  탈퇴됨
                 </Badge>
               ) : (
-                <Badge variant="outline">활동</Badge>
+                <Badge variant="outline">활동 중</Badge>
               )}
             </TableCell>
           </TableRow>

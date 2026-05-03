@@ -7,16 +7,16 @@ import {
 } from "@/test/mocks/fixtures/members"
 
 describe("MemberDetailCards", () => {
-  it("detail.withdrawn=true → 탈퇴 badge + withdrawnAt tooltip", () => {
+  it("detail.withdrawn=true → 탈퇴 badge + withdrawnAt tooltip (G10 한글화)", () => {
     render(<MemberDetailCards detail={memberDetailWithdrawnFixture} />)
-    const badge = screen.getByText(/탈퇴 회원/)
+    const badge = screen.getByText("탈퇴됨")
     expect(badge).toBeInTheDocument()
     expect(badge).toHaveAttribute("title", expect.stringContaining("탈퇴 처리:"))
   })
 
   it("detail.withdrawn=false → badge 미렌더", () => {
     render(<MemberDetailCards detail={memberDetailFixture} />)
-    expect(screen.queryByText(/탈퇴 회원/)).not.toBeInTheDocument()
+    expect(screen.queryByText("탈퇴됨")).not.toBeInTheDocument()
   })
 
   it("recentActivityLog 빈 배열 → '최근 활동 없음'", () => {

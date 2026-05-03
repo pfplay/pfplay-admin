@@ -10,7 +10,13 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { AdminPartyroomListItem } from "@/entities/partyroom"
+import {
+  PARTYROOM_STATUS,
+  STAGE_TYPE,
+  DISPLAY_FLAG_LABEL,
+  DISPLAY_FLAG_VARIANT,
+} from "@/shared/lib/labels"
+import type { AdminPartyroomListItem, PartyroomStatus } from "@/entities/partyroom"
 
 interface Props {
   rows: AdminPartyroomListItem[]
@@ -20,15 +26,6 @@ interface Props {
   selectedIds?: Set<number>
   onToggleId?: (id: number) => void
   onToggleAll?: (checked: boolean) => void
-}
-
-const STATUS_VARIANT: Record<
-  string,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  ACTIVE: "default",
-  SUSPENDED: "secondary",
-  TERMINATED: "destructive",
 }
 
 function formatKst(iso: string | null): string {
@@ -119,7 +116,11 @@ export function PartyroomsTable({
             )}
             <TableCell>{row.partyroomId}</TableCell>
             <TableCell>{row.title}</TableCell>
-            <TableCell>{row.stageType}</TableCell>
+            <TableCell>
+              <Badge variant={STAGE_TYPE.variant[row.stageType] ?? "outline"}>
+                {STAGE_TYPE.label[row.stageType] ?? row.stageType}
+              </Badge>
+            </TableCell>
             <TableCell>
               {row.hostNickname ?? `#${row.hostUserAccountId}`}
             </TableCell>
@@ -127,11 +128,20 @@ export function PartyroomsTable({
             <TableCell>{row.djCount}</TableCell>
             <TableCell>{row.playbackActivated ? "ON" : "OFF"}</TableCell>
             <TableCell>
-              <Badge variant={STATUS_VARIANT[row.status] ?? "outline"}>
-                {row.status}
+              <Badge
+                variant={
+                  PARTYROOM_STATUS.variant[row.status as PartyroomStatus] ??
+                  "outline"
+                }
+              >
+                {PARTYROOM_STATUS.label[row.status as PartyroomStatus] ?? row.status}
               </Badge>
             </TableCell>
-            <TableCell>{row.displayFlag}</TableCell>
+            <TableCell>
+              <Badge variant={DISPLAY_FLAG_VARIANT[row.displayFlag] ?? "outline"}>
+                {DISPLAY_FLAG_LABEL[row.displayFlag] ?? row.displayFlag}
+              </Badge>
+            </TableCell>
             <TableCell>{formatKst(row.createdAt)}</TableCell>
             <TableCell>{formatKst(row.lastActivityAt)}</TableCell>
           </TableRow>

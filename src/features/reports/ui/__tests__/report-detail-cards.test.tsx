@@ -15,8 +15,8 @@ describe("ReportDetailCards", () => {
       </MemoryRouter>,
     )
     expect(screen.getByText(/신고 #1/)).toBeInTheDocument()
-    expect(screen.getByText("PENDING")).toBeInTheDocument()
-    expect(screen.getByText("부적절 컨텐츠")).toBeInTheDocument()
+    expect(screen.getByText("대기 중")).toBeInTheDocument()
+    expect(screen.getByText("부적절 콘텐츠")).toBeInTheDocument()
     expect(screen.getByText("신고자")).toBeInTheDocument()
     expect(screen.getByText("파티룸")).toBeInTheDocument()
     expect(screen.getByText("신고 내용")).toBeInTheDocument()

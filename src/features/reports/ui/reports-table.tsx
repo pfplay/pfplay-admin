@@ -10,22 +10,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatKst } from "@/shared/lib/format-kst"
-import type { AdminReportSummary, ReportStatus, ReportCategory } from "@/entities/report"
-
-const STATUS_VARIANT: Record<ReportStatus, "default" | "secondary" | "destructive" | "outline"> = {
-  PENDING: "secondary",
-  REVIEWING: "default",
-  RESOLVED: "outline",
-  DISMISSED: "destructive",
-}
-
-const CATEGORY_LABEL: Record<ReportCategory, string> = {
-  INAPPROPRIATE_CONTENT: "부적절 컨텐츠",
-  HARASSMENT: "괴롭힘",
-  SPAM: "스팸",
-  COPYRIGHT: "저작권",
-  OTHER: "기타",
-}
+import { REPORT_STATUS, REPORT_CATEGORY_LABEL } from "@/shared/lib/labels"
+import type { AdminReportSummary } from "@/entities/report"
 
 interface Props {
   rows: AdminReportSummary[]
@@ -73,9 +59,11 @@ export function ReportsTable({ rows, isLoading, isEmpty }: Props) {
           >
             <TableCell>{row.reportId}</TableCell>
             <TableCell>#{row.reporterUserAccountId}</TableCell>
-            <TableCell>{CATEGORY_LABEL[row.category]}</TableCell>
+            <TableCell>{REPORT_CATEGORY_LABEL[row.category]}</TableCell>
             <TableCell>
-              <Badge variant={STATUS_VARIANT[row.status]}>{row.status}</Badge>
+              <Badge variant={REPORT_STATUS.variant[row.status]}>
+                {REPORT_STATUS.label[row.status]}
+              </Badge>
             </TableCell>
             <TableCell>{formatKst(row.createdAt)}</TableCell>
             <TableCell>

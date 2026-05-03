@@ -11,18 +11,12 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatKst } from "@/shared/lib/format-kst"
 import { isBodyView } from "@/entities/avatar"
+import { LIFECYCLE_STATUS, OBTAINMENT_TYPE_LABEL } from "@/shared/lib/labels"
 import type {
   AdminAvatarBodyView,
   AdminAvatarFaceView,
-  LifecycleStatus,
   AvatarResourceType,
 } from "@/entities/avatar"
-
-const STATUS_VARIANT: Record<LifecycleStatus, "default" | "secondary" | "outline"> = {
-  DRAFT: "secondary",
-  PUBLISHED: "default",
-  RETIRED: "outline",
-}
 
 interface Props {
   resourceType: AvatarResourceType
@@ -61,7 +55,7 @@ export function AvatarsTable({ resourceType, rows, isLoading, isEmpty }: Props) 
           <TableHead>이름</TableHead>
           <TableHead>획득</TableHead>
           {isBody && <TableHead>점수</TableHead>}
-          {isBody && <TableHead>combinable</TableHead>}
+          {isBody && <TableHead>합성 가능</TableHead>}
           <TableHead>상태</TableHead>
           <TableHead>생성일</TableHead>
         </TableRow>
@@ -92,14 +86,14 @@ export function AvatarsTable({ resourceType, rows, isLoading, isEmpty }: Props) 
               )}
             </TableCell>
             <TableCell>{row.name}</TableCell>
-            <TableCell>{row.obtainableType}</TableCell>
+            <TableCell>{OBTAINMENT_TYPE_LABEL[row.obtainableType] ?? row.obtainableType}</TableCell>
             {isBodyView(row) && <TableCell>{row.obtainableScore}</TableCell>}
             {isBodyView(row) && (
               <TableCell>{row.isCombinable ? "✓" : "—"}</TableCell>
             )}
             <TableCell>
-              <Badge variant={STATUS_VARIANT[row.lifecycleStatus]}>
-                {row.lifecycleStatus}
+              <Badge variant={LIFECYCLE_STATUS.variant[row.lifecycleStatus]}>
+                {LIFECYCLE_STATUS.label[row.lifecycleStatus]}
               </Badge>
             </TableCell>
             <TableCell>{formatKst(row.createdAt)}</TableCell>

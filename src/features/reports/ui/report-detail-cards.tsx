@@ -2,26 +2,8 @@ import { Link } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatKst } from "@/shared/lib/format-kst"
-import type {
-  AdminReportDetail,
-  ReportStatus,
-  ReportCategory,
-} from "@/entities/report"
-
-const STATUS_VARIANT: Record<ReportStatus, "default" | "secondary" | "destructive" | "outline"> = {
-  PENDING: "secondary",
-  REVIEWING: "default",
-  RESOLVED: "outline",
-  DISMISSED: "destructive",
-}
-
-const CATEGORY_LABEL: Record<ReportCategory, string> = {
-  INAPPROPRIATE_CONTENT: "부적절 컨텐츠",
-  HARASSMENT: "괴롭힘",
-  SPAM: "스팸",
-  COPYRIGHT: "저작권",
-  OTHER: "기타",
-}
+import { REPORT_STATUS, REPORT_CATEGORY_LABEL } from "@/shared/lib/labels"
+import type { AdminReportDetail } from "@/entities/report"
 
 interface Props {
   detail: AdminReportDetail
@@ -39,8 +21,10 @@ export function ReportDetailCards({ detail }: Props) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             신고 #{detail.reportId}
-            <Badge variant={STATUS_VARIANT[detail.status]}>{detail.status}</Badge>
-            <Badge variant="outline">{CATEGORY_LABEL[detail.category]}</Badge>
+            <Badge variant={REPORT_STATUS.variant[detail.status]}>
+              {REPORT_STATUS.label[detail.status]}
+            </Badge>
+            <Badge variant="outline">{REPORT_CATEGORY_LABEL[detail.category]}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
