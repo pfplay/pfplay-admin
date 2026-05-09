@@ -44,7 +44,7 @@ export const emergencyCancelledFixture: Announcement = {
   severity: "CRITICAL",
   titleKo: "긴급 공지 — 취소됨",
   titleEn: "Emergency notice — cancelled",
-  messageKo: "오작동으로 인한 발사 — 정정합니다.",
+  messageKo: "오작동으로 인한 송출 — 정정합니다.",
   messageEn: "Sent in error — cancelled.",
   scheduledStartAt: null,
   scheduledEndAt: null,

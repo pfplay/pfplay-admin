@@ -56,7 +56,7 @@ describe("AnnouncementLaunchForm", () => {
 
   it("빈 form 제출 — i18n 필수 메시지 노출 (한쪽만 작성 차단)", () => {
     renderForm()
-    fireEvent.click(screen.getByRole("button", { name: /공지 발사/ }))
+    fireEvent.click(screen.getByRole("button", { name: /공지 송출/ }))
     expect(screen.getByText("한국어 제목은 필수입니다")).toBeInTheDocument()
     expect(screen.getByText("영문 제목은 필수입니다")).toBeInTheDocument()
     expect(screen.getByText("한국어 본문은 필수입니다")).toBeInTheDocument()
@@ -77,12 +77,12 @@ describe("AnnouncementLaunchForm", () => {
     fireEvent.change(screen.getByLabelText("본문 (English)"), {
       target: { value: "eb" },
     })
-    fireEvent.click(screen.getByRole("button", { name: /공지 발사/ }))
+    fireEvent.click(screen.getByRole("button", { name: /공지 송출/ }))
     expect(screen.getByText("점검 시작 시각은 필수입니다")).toBeInTheDocument()
     expect(screen.getByText("점검 종료 시각은 필수입니다")).toBeInTheDocument()
   })
 
-  it("정상 입력 + 발사 → /announcements/history 로 이동", async () => {
+  it("정상 입력 + 송출 → /announcements/history 로 이동", async () => {
     renderForm()
     fireEvent.change(screen.getByLabelText("제목 (한국어)"), {
       target: { value: "정기 점검" },
@@ -102,7 +102,7 @@ describe("AnnouncementLaunchForm", () => {
     fireEvent.change(screen.getByLabelText("점검 종료"), {
       target: { value: futureLocal(2 * 60 * 60 * 1000) },
     })
-    fireEvent.click(screen.getByRole("button", { name: /공지 발사/ }))
+    fireEvent.click(screen.getByRole("button", { name: /공지 송출/ }))
     await waitFor(() => {
       expect(screen.getByTestId("history-page")).toBeInTheDocument()
     })

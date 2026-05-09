@@ -44,7 +44,7 @@ function AnnouncementsHistoryContent({ query, setQuery }: ContentProps) {
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <Megaphone className="h-4 w-4" />
-          공지 발사
+          공지 송출
         </Link>
       </div>
       <AnnouncementsTable

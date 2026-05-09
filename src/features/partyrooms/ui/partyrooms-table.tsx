@@ -16,6 +16,7 @@ import {
   DISPLAY_FLAG_LABEL,
   DISPLAY_FLAG_VARIANT,
 } from "@/shared/lib/labels"
+import { formatKst } from "@/shared/lib/format-kst"
 import type { AdminPartyroomListItem, PartyroomStatus } from "@/entities/partyroom"
 
 interface Props {
@@ -26,13 +27,6 @@ interface Props {
   selectedIds?: Set<number>
   onToggleId?: (id: number) => void
   onToggleAll?: (checked: boolean) => void
-}
-
-function formatKst(iso: string | null): string {
-  if (!iso) return "-"
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return "-"
-  return d.toLocaleString("ko-KR", { hour12: false })
 }
 
 export function PartyroomsTable({

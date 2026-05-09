@@ -29,7 +29,7 @@ interface Props {
 const TIER_OPTIONS: { value: AuthorityTier; label: string }[] = [
   { value: "FM", label: "FM (정회원)" },
   { value: "AM", label: "AM (준회원)" },
-  { value: "GT", label: "GT (강등)" },
+  { value: "GT", label: "GT (게스트)" },
 ]
 
 export function ChangeTierDialog({ memberId, currentTier, open, onOpenChange }: Props) {

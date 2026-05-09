@@ -50,7 +50,7 @@ export function CancelAnnouncementDialog({ target, onOpenChange }: Props) {
           </DialogDescription>
         </DialogHeader>
         <p className="text-xs text-muted-foreground py-2">
-          잘못 발사한 경우 취소 후 새로 발사하세요. modify 는 지원되지 않습니다.
+          잘못 송출한 경우 취소 후 새로 송출하세요. modify 는 지원되지 않습니다.
         </p>
         <DialogFooter>
           <Button

@@ -100,7 +100,7 @@ export function AnnouncementLaunchForm() {
     setErrors({})
     mutation.mutate(parsed.data, {
       onSuccess: (response) => {
-        toast.success("공지가 발사되었습니다", {
+        toast.success("공지가 송출되었습니다", {
           description: `공지 #${response.announcementId}`,
         })
         navigate("/announcements/history")
@@ -256,7 +256,7 @@ export function AnnouncementLaunchForm() {
 
       <div className="flex items-center justify-end gap-2 pt-2">
         <Button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? "발사 중..." : "공지 발사"}
+          {mutation.isPending ? "송출 중..." : "공지 송출"}
         </Button>
       </div>
     </form>
