@@ -33,7 +33,7 @@ export function AnnouncementsTable({ rows, isLoading, isEmpty, onCancelClick }: 
   if (isEmpty) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        발사된 공지가 없습니다
+        송출된 공지가 없습니다
       </div>
     )
   }
@@ -46,7 +46,7 @@ export function AnnouncementsTable({ rows, isLoading, isEmpty, onCancelClick }: 
           <TableHead>종류</TableHead>
           <TableHead>심각도</TableHead>
           <TableHead>제목</TableHead>
-          <TableHead>발사 시각</TableHead>
+          <TableHead>송출 시각</TableHead>
           <TableHead>취소 시각</TableHead>
           <TableHead className="text-right">작업</TableHead>
         </TableRow>

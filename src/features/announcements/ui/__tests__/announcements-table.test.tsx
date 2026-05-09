@@ -18,7 +18,7 @@ describe("AnnouncementsTable", () => {
     render(
       <AnnouncementsTable rows={[]} isLoading={false} isEmpty={true} onCancelClick={vi.fn()} />,
     )
-    expect(screen.getByText("발사된 공지가 없습니다")).toBeInTheDocument()
+    expect(screen.getByText("송출된 공지가 없습니다")).toBeInTheDocument()
   })
 
   it("활성 공지 — 취소 버튼 활성", () => {

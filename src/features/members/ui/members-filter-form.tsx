@@ -24,7 +24,7 @@ interface Props {
 const TIER_OPTIONS: { value: Tier; label: string }[] = [
   { value: "FM", label: "FM (정회원)" },
   { value: "AM", label: "AM (준회원)" },
-  { value: "GT", label: "GT (강등)" },
+  { value: "GT", label: "GT (게스트)" },
 ]
 
 const SORT_OPTIONS: { value: MemberSort; label: string }[] = [

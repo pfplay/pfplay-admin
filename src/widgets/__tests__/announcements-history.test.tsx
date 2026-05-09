@@ -80,9 +80,9 @@ describe("AnnouncementsHistoryWidget", () => {
     })
   })
 
-  it("발사 페이지 링크 → /announcements 로 이동", async () => {
+  it("송출 페이지 링크 → /announcements 로 이동", async () => {
     renderWidget()
-    fireEvent.click(screen.getByRole("link", { name: /공지 발사/ }))
+    fireEvent.click(screen.getByRole("link", { name: /공지 송출/ }))
     await waitFor(() =>
       expect(screen.getByTestId("launch-page")).toBeInTheDocument(),
     )

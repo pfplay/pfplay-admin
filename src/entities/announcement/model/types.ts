@@ -6,8 +6,8 @@
  *     scheduler 가 startAt 도달 시 phase ACTIVE 토글 + MAINTENANCE_STARTED ws 이벤트.
  *   * EVENT / EMERGENCY: scheduler 토글 없음. expiresAt optional (자동 dismiss).
  * - `AnnouncementSeverity`: pfplay-web 측 presentation 분기 (toast/banner/persistent).
- * - admin 콘솔에서는 신규 발사 (POST), 이력 조회 (GET), 취소 (DELETE) 만 사용.
- *   modify 없음 — 잘못 발사하면 DELETE 후 재발사.
+ * - admin 콘솔에서는 신규 송출 (POST), 이력 조회 (GET), 취소 (DELETE) 만 사용.
+ *   modify 없음 — 잘못 송출하면 DELETE 후 재송출.
  *
  * 모든 타임스탬프는 LocalDateTime ISO (KST 가정 — 14b §11 footer 일관).
  */
