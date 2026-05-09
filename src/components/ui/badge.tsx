@@ -17,6 +17,13 @@ const badgeVariants = cva(
           'border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
         outline:
           'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+        // status 색 — 어드민 status badge 시각 구분 강화 (G10)
+        success:
+          'border-transparent bg-emerald-600 text-white dark:bg-emerald-500',
+        warning:
+          'border-transparent bg-amber-500 text-white dark:bg-amber-500',
+        muted:
+          'border-transparent bg-muted text-muted-foreground',
       },
     },
     defaultVariants: {

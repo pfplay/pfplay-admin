@@ -1,0 +1,164 @@
+import { describe, expect, it, vi, afterEach } from "vitest"
+import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { PartyroomsActionsDropdown } from "@/features/partyrooms/ui/partyrooms-actions-dropdown"
+import type { AdminPartyroomDetail } from "@/entities/partyroom/model/types"
+
+const baseDetail: AdminPartyroomDetail = {
+  partyroomId: 1,
+  title: "테스트",
+  introduction: null,
+  status: "ACTIVE",
+  displayFlag: "NORMAL",
+  hostUserAccountId: 100,
+  hostNickname: "alice",
+  hostEmail: "alice@example.com",
+  crewCount: 5,
+  lastActivityAt: null,
+  stageType: "GENERAL",
+  playbackTimeLimit: null,
+  playback: { activated: false, currentTrackName: null, currentDjCrewId: null },
+  crews: [],
+  djQueue: [],
+  recentPenalties: [],
+  recentReports: [],
+  recentAdminActions: [],
+}
+
+function renderWithClient(ui: React.ReactNode) {
+  const qc = new QueryClient()
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>)
+}
+
+describe("PartyroomsActionsDropdown — status-aware disabled", () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it("ACTIVE: 일시 정지 enabled, 재개 disabled, 강제 종료 enabled", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+
+    expect(await screen.findByRole("menuitem", { name: /일시 정지/ })).not.toHaveAttribute(
+      "data-disabled",
+    )
+    expect(screen.getByRole("menuitem", { name: /재개/ })).toHaveAttribute("data-disabled")
+    expect(screen.getByRole("menuitem", { name: /강제 종료/ })).not.toHaveAttribute(
+      "data-disabled",
+    )
+  })
+
+  it("SUSPENDED: 일시 정지 disabled, 재개 enabled, 강제 종료 enabled", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "SUSPENDED" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+
+    expect(await screen.findByRole("menuitem", { name: /일시 정지/ })).toHaveAttribute(
+      "data-disabled",
+    )
+    expect(screen.getByRole("menuitem", { name: /재개/ })).not.toHaveAttribute("data-disabled")
+    expect(screen.getByRole("menuitem", { name: /강제 종료/ })).not.toHaveAttribute(
+      "data-disabled",
+    )
+  })
+
+  it("TERMINATED: all 3 lifecycle items disabled", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "TERMINATED" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+
+    expect(await screen.findByRole("menuitem", { name: /일시 정지/ })).toHaveAttribute(
+      "data-disabled",
+    )
+    expect(screen.getByRole("menuitem", { name: /재개/ })).toHaveAttribute("data-disabled")
+    expect(screen.getByRole("menuitem", { name: /강제 종료/ })).toHaveAttribute(
+      "data-disabled",
+    )
+  })
+
+  it("clicking enabled 강제 종료 opens terminate dialog", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+    await user.click(await screen.findByRole("menuitem", { name: /강제 종료/ }))
+    expect(screen.getByText(/파티룸 강제 종료/)).toBeInTheDocument()
+  })
+
+  it("clicking enabled 재개 on SUSPENDED opens restore dialog", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "SUSPENDED" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+    await user.click(await screen.findByRole("menuitem", { name: /재개/ }))
+    expect(screen.getByText(/파티룸 재개/)).toBeInTheDocument()
+  })
+
+  it("ACTIVE: 메타 수정 enabled, TERMINATED: disabled", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    const { unmount } = renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+    expect(await screen.findByRole("menuitem", { name: /메타 수정/ })).not.toHaveAttribute(
+      "data-disabled",
+    )
+    unmount()
+
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "TERMINATED" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+    expect(await screen.findByRole("menuitem", { name: /메타 수정/ })).toHaveAttribute(
+      "data-disabled",
+    )
+  })
+
+  it("clicking 메타 수정 opens update-meta dialog", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+    await user.click(await screen.findByRole("menuitem", { name: /메타 수정/ }))
+    expect(screen.getByText(/파티룸 메타 수정/)).toBeInTheDocument()
+  })
+
+  it("ACTIVE: 표시 변경 enabled, TERMINATED: disabled", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    const { unmount } = renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+    expect(await screen.findByRole("menuitem", { name: /표시 변경/ })).not.toHaveAttribute(
+      "data-disabled",
+    )
+    unmount()
+
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "TERMINATED" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+    expect(await screen.findByRole("menuitem", { name: /표시 변경/ })).toHaveAttribute(
+      "data-disabled",
+    )
+  })
+
+  it("clicking 표시 변경 opens display-flag dialog", async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0, delay: null })
+    renderWithClient(
+      <PartyroomsActionsDropdown partyroom={{ ...baseDetail, status: "ACTIVE" }} />,
+    )
+    await user.click(screen.getByRole("button", { name: '작업' }))
+    await user.click(await screen.findByRole("menuitem", { name: /표시 변경/ }))
+    expect(screen.getByText(/파티룸 표시 변경/)).toBeInTheDocument()
+  })
+})

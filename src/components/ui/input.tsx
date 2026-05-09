@@ -2,9 +2,12 @@ import * as React from 'react'
 
 import { cn } from '@/shared/lib/utils'
 
-function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
-  return (
+// react-hook-form `register()`가 ref로 DOM input을 잡고 값을 추적한다.
+// forwardRef 누락 시 register는 동작하지만 ref drop으로 폼 검증이 빈 값으로 처리됨 (G20.1).
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
+  ({ className, type, ...props }, ref) => (
     <input
+      ref={ref}
       type={type}
       data-slot="input"
       className={cn(
@@ -15,7 +18,8 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
       )}
       {...props}
     />
-  )
-}
+  ),
+)
+Input.displayName = 'Input'
 
 export { Input }
