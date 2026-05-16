@@ -9,6 +9,7 @@ import type {
   SuspendRequest,
   UpdatePartyroomMetaRequest,
   UpdateDisplayFlagRequest,
+  ExpelCrewRequest,
 } from "../model/mutation-schema"
 
 export async function listPartyrooms(
@@ -73,5 +74,22 @@ export async function updatePartyroomDisplayFlag(
   await http<void>(`/api/v1/admin/partyrooms/${partyroomId}/display-flag`, {
     method: "PATCH",
     body,
+  })
+}
+
+export async function applyCrewPenalty(
+  partyroomId: number,
+  vars: ExpelCrewRequest,
+): Promise<void> {
+  // 성공은 항상 201 + { data: { penaltyId: null } } (ONE_TIME). 응답 바디는
+  // 사용하지 않으므로 http<void> 로 받아 discard (terminate 는 204라 바디 없음 —
+  // 여기는 201+JSON 이지만 penaltyId 불필요. 의도된 차이).
+  await http<void>(`/api/v1/admin/partyrooms/${partyroomId}/penalties`, {
+    method: "POST",
+    body: {
+      crewId: vars.crewId,
+      penaltyType: "ONE_TIME_EXPULSION",
+      reason: vars.reason,
+    },
   })
 }
