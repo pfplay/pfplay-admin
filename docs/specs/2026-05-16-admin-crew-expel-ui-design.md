@@ -37,6 +37,8 @@ body: { crewId: Long, penaltyType: "ONE_TIME_EXPULSION", reason: String(1..255) 
 201 → { data: { penaltyId: null } }   // ONE_TIME 은 history row 없음 → penaltyId null
 ```
 
+성공은 **항상 201** (멱등 재강퇴 포함 — `expel` 은 항상 실행되고 DB 레벨에서 멱등). 200 경로 없음.
+
 서버 동작(`AdminCrewPenaltyCommandService.apply`):
 - `partyroom` 미존재 → `NOT_FOUND_ROOM`
 - `partyroom.isTerminated()` → `ALREADY_TERMINATED`
@@ -58,11 +60,11 @@ CSRF/Origin: 공유 `http` 클라이언트(`@/shared/api/http`)가 admin 콘솔 
 | `features/partyrooms/api/partyrooms-api.ts` | 수정 | `applyCrewPenalty(partyroomId, body)` 추가 → 위 엔드포인트 POST. `penaltyType` 은 함수 내부에서 `"ONE_TIME_EXPULSION"` 고정 |
 | `features/partyrooms/model/mutation-schema.ts` | 수정 | `expelCrewSchema` (zod): `crewId: number(int, positive)`, `reason: string().trim().min(1).max(255)`. `ExpelCrewRequest` 타입 export |
 | `features/partyrooms/api/use-expel-crew.ts` | 신규 | `useMutation`. mutationFn=`applyCrewPenalty`. onSuccess: `qc.invalidateQueries({queryKey:["partyrooms"]})` (prefix → detail `["partyrooms","detail",id]` 포함) + `mutationSuccessToast("크루 강퇴 완료")`. onError: `mutationErrorToast` |
-| `features/partyrooms/ui/mutation-dialogs/expel-crew-dialog.tsx` | 신규 | `terminate-dialog.tsx` 패턴 복제. props `{ partyroomId, crewId, crewLabel, open, onOpenChange }`. reason textarea(필수). zod 검증 실패/빈값 시 submit disabled. 성공 시 `onOpenChange(false)`. 닫힐 때 폼+mutation reset(기존 dialog reset 패턴 따름) |
-| `features/partyrooms/ui/crew-card.tsx` | 신규 | 현 `partyroom-detail-cards.tsx` 섹션 4(크루 `Card`+`Table`) 추출. props `{ partyroomId, crews }`. "액션" 컬럼 추가: 비-HOST 행 = "강퇴" `Button`(`variant="destructive"` 또는 outline+destructive 텍스트, 기존 강제종료 스타일 일치), HOST 행 = `disabled` Button + `title`/tooltip "HOST 강퇴 불가". 로컬 state 로 열린 crew 다이얼로그 1개 관리 |
+| `features/partyrooms/ui/mutation-dialogs/expel-crew-dialog.tsx` | 신규 | `terminate-dialog.tsx` 패턴 복제(react-hook-form + zodResolver + `useDialogResetEffect`). props `{ partyroomId, crewId, crewLabel, open, onOpenChange }`. reason textarea(필수, `maxLength={255}` — schema `.max(255)` 와 일치하는 클라이언트 hard stop). zod 검증 실패/빈값 시 submit disabled. 성공 시 `onOpenChange(false)`, 에러 시 유지 |
+| `features/partyrooms/ui/crew-card.tsx` | 신규 | 현 `partyroom-detail-cards.tsx` 섹션 4(크루 `Card`+`Table`) 추출. props `{ partyroomId, crews }`. "액션" 컬럼 추가: HOST 행 판별 = `gradeType === "HOST"` (백엔드 `GradeType` enum literal 확정: `HOST`, COMMUNITY_MANAGER, MODERATOR, CLUBBER, LISTENER — `pfplay-platform .../party/domain/enums/GradeType.java`). HOST 행 = `disabled` Button + `title`/tooltip "HOST 강퇴 불가", 비-HOST 행 = "강퇴" `Button`(기존 강제종료 destructive 스타일 일치). 로컬 state 로 열린 crew 다이얼로그 1개 관리 |
 | `features/partyrooms/ui/partyroom-detail-cards.tsx` | 수정 | 섹션 4 인라인 블록을 `<CrewCard partyroomId={detail.partyroomId} crews={detail.crews} />` 로 교체. 그 외 섹션(재생/DJ큐/페널티/신고/액션) 불변 |
 
-크루 행 식별: `detail.crews[].crewId`(상세에 이미 표시 중), `gradeType`(HOST 판별), `nickname`(다이얼로그 라벨용 `crewLabel = "#{crewId} {nickname ?? memberId}"`).
+크루 행 식별: `detail.crews[].crewId`(상세에 이미 표시 중), `gradeType`(HOST 판별), 다이얼로그 라벨 `crewLabel = `#${crewId} ${nickname ?? `회원 #${memberId}`}`` — `nickname` 은 nullable, fallback 은 bare 숫자 대신 `회원 #{memberId}` (테스트 기대 문자열 결정적). 참고: 크루 `gradeType` 은 HOST/COMMUNITY_MANAGER/MODERATOR/CLUBBER/LISTENER 만 — "DJ" 는 grade 가 아니라 `dj_queue` 소속 여부(상세 섹션 5)로 별개. DJ 인 크루도 grade 는 보통 LISTENER/CLUBBER 이므로 강퇴 버튼 정상 노출됨.
 
 ---
 
@@ -71,7 +73,7 @@ CSRF/Origin: 공유 `http` 클라이언트(`@/shared/api/http`)가 admin 콘솔 
 ```
 파티룸 상세(/partyrooms/:id)
   └ CrewCard
-      └ crew 행(예: crewId=14, gradeType=DJ) "강퇴" 클릭
+      └ crew 행(예: crewId=14, gradeType=LISTENER, dj_queue 소속=DJ) "강퇴" 클릭
           └ ExpelCrewDialog(open, crewId=14, crewLabel) — reason 입력
               └ submit → useExpelCrew.mutate({ partyroomId, crewId:14, reason })
                   └ applyCrewPenalty → http POST /api/v1/admin/partyrooms/{id}/penalties
@@ -95,7 +97,7 @@ CSRF/Origin: 공유 `http` 클라이언트(`@/shared/api/http`)가 admin 콘솔 
 | 룸 TERMINATED (`ALREADY_TERMINATED`) | `http`→`ApiError`→`mutationErrorToast` 메시지. 다이얼로그 유지(재시도 가능) |
 | crew 미존재 / partyroom 불일치 (`NOT_FOUND_ROOM`) | 동일 — 토스트, 다이얼로그 유지 |
 | 네트워크/5xx | 동일 — `mutationErrorToast` |
-| 이미 inactive 한 crew | 백엔드 멱등 처리(`deactivateCrew` 0행) → 200/201 정상. 무효화로 목록 정합 |
+| 이미 inactive 한 crew | 백엔드 멱등 처리(`deactivateCrew` 0행) → **201** 정상(200 경로 없음). 무효화로 목록 정합 |
 
 다이얼로그는 에러 시 닫지 않음(성공 시에만 close) — 기존 terminate/suspend 다이얼로그 동작과 일치.
 
