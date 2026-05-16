@@ -9,6 +9,7 @@ import {
   restorePartyroom,
   updatePartyroomMeta,
   updatePartyroomDisplayFlag,
+  applyCrewPenalty,
 } from "../partyrooms-api"
 import { partyroomListItemFixture } from "@/test/mocks/fixtures/partyrooms"
 import { ApiError } from "@/shared/api/error"
@@ -186,6 +187,24 @@ describe("partyrooms-api", () => {
       )
       await updatePartyroomDisplayFlag(1, { flag: "FEATURED" })
       expect(bodySeen).toEqual({ flag: "FEATURED" })
+    })
+  })
+
+  describe("applyCrewPenalty", () => {
+    it("POSTs penalties with ONE_TIME_EXPULSION + crewId + reason", async () => {
+      let captured: unknown
+      server.use(
+        http.post("*/api/v1/admin/partyrooms/3/penalties", async ({ request }) => {
+          captured = await request.json()
+          return HttpResponse.json({ data: { penaltyId: null } }, { status: 201 })
+        }),
+      )
+      await applyCrewPenalty(3, { crewId: 14, reason: "cleanup" })
+      expect(captured).toEqual({
+        crewId: 14,
+        penaltyType: "ONE_TIME_EXPULSION",
+        reason: "cleanup",
+      })
     })
   })
 })
