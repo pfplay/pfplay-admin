@@ -29,6 +29,7 @@ import {
   formatPartyroomAdminActionMetadata,
 } from "@/shared/lib/labels"
 import type { ReportStatus, ReportCategory } from "@/entities/report"
+import { CrewCard } from "./crew-card"
 
 function formatPlaybackTimeLimit(minutes: number | null): string {
   if (minutes === null) return "-"
@@ -129,39 +130,7 @@ export function PartyroomDetailCards({ detail }: Props) {
       </Card>
 
       {/* 4. Crews */}
-      <Card>
-        <CardHeader>
-          <CardTitle>크루 ({detail.crews.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {detail.crews.length === 0 ? (
-            <p className="text-sm text-muted-foreground">크루 없음</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>크루 ID</TableHead>
-                  <TableHead>회원 ID</TableHead>
-                  <TableHead>등급</TableHead>
-                  <TableHead>닉네임</TableHead>
-                  <TableHead>입장 시각</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {detail.crews.map((c) => (
-                  <TableRow key={c.crewId}>
-                    <TableCell>{c.crewId}</TableCell>
-                    <TableCell>{c.memberId}</TableCell>
-                    <TableCell>{c.gradeType}</TableCell>
-                    <TableCell>{c.nickname ?? "-"}</TableCell>
-                    <TableCell>{formatKst(c.enteredAt)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+      <CrewCard partyroomId={detail.partyroomId} crews={detail.crews} />
 
       {/* 5. DJ queue */}
       <Card>
