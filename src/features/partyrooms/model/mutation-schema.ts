@@ -30,3 +30,11 @@ export type UpdatePartyroomMetaRequest = z.infer<typeof UpdatePartyroomMetaSchem
 export const DisplayFlagEnum = z.enum(["NORMAL", "FEATURED", "HIDDEN"])
 export const UpdateDisplayFlagSchema = z.object({ flag: DisplayFlagEnum })
 export type UpdateDisplayFlagRequest = z.infer<typeof UpdateDisplayFlagSchema>
+
+// backend ground-truth: AdminApplyPenaltyRequest — crewId @NotNull,
+// reason @NotBlank @Size(1..255). penaltyType 은 api fn 에서 ONE_TIME_EXPULSION 고정.
+export const ExpelCrewSchema = z.object({
+  crewId: z.number().int().positive(),
+  reason: z.string().trim().min(1, "사유를 입력해주세요").max(255),
+})
+export type ExpelCrewRequest = z.infer<typeof ExpelCrewSchema>
