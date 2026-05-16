@@ -48,4 +48,9 @@ export const partyroomHandlers = [
       })),
     })
   }),
+
+  // crew-expel penalties endpoint — default success (ONE_TIME expulsion)
+  http.post(`${API}/:partyroomId/penalties`, () =>
+    HttpResponse.json({ data: { penaltyId: null } }, { status: 201 }),
+  ),
 ]
