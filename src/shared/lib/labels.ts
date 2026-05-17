@@ -162,6 +162,39 @@ export const ANNOUNCEMENT_SEVERITY: Mapping<AnnouncementSeverity> = {
   },
 }
 
+export type AnnouncementDerivedStatus =
+  | "PLANNED" | "ACTIVE" | "COMPLETED" | "CANCELLED" | "SENT"
+
+export const ANNOUNCEMENT_DERIVED_STATUS: Mapping<AnnouncementDerivedStatus> = {
+  label: {
+    PLANNED: "예정",
+    ACTIVE: "진행중",
+    COMPLETED: "정상완료",
+    CANCELLED: "철회",
+    SENT: "송출됨",
+  },
+  variant: {
+    PLANNED: "warning",
+    ACTIVE: "success",
+    COMPLETED: "muted",
+    CANCELLED: "muted",
+    SENT: "default",
+  },
+}
+
+// 우선순위: 철회 > 완료 > 진행중 > (점검이면 예정 / 그 외 송출됨)
+export function deriveAnnouncementStatus(a: {
+  type: "MAINTENANCE_NOTICE" | "EVENT" | "EMERGENCY"
+  maintenanceStartedAt: string | null
+  cancelledAt: string | null
+  completedAt: string | null
+}): AnnouncementDerivedStatus {
+  if (a.cancelledAt) return "CANCELLED"
+  if (a.completedAt) return "COMPLETED"
+  if (a.maintenanceStartedAt) return "ACTIVE"
+  return a.type === "MAINTENANCE_NOTICE" ? "PLANNED" : "SENT"
+}
+
 // 파티룸 상세 "최근 관리자 액션" 표 actionType.
 // backend `PartyroomAdminActionType` enum 11종. 알 수 없는 값은 raw 표시 (forward-compat).
 export const PARTYROOM_ADMIN_ACTION_TYPE_LABEL: Record<string, string> = {

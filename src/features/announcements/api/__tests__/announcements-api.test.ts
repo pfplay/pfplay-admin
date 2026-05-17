@@ -5,6 +5,8 @@ import {
   createAnnouncement,
   listAnnouncements,
   cancelAnnouncement,
+  adjustAnnouncementSchedule,
+  completeAnnouncement,
 } from "../announcements-api"
 import { ApiError } from "@/shared/api/error"
 import {
@@ -13,6 +15,9 @@ import {
   annInvalidScheduleForTypeError,
   annInvalidScheduleWindowError,
   annScheduledStartInPastError,
+  annNotActiveError,
+  annAlreadyCompletedError,
+  annInvalidEndAdjustmentError,
 } from "@/test/mocks/fixtures/announcements"
 import type { CreateAnnouncementRequest } from "../../model/mutation-schema"
 
@@ -168,5 +173,71 @@ describe("announcements-api", () => {
         expiresAt: null,
       }),
     ).rejects.toMatchObject({ errorCode: "ANN-005" })
+  })
+
+  it("adjustAnnouncementSchedule — PATCH /:id/schedule + body 전송", async () => {
+    let bodySeen: unknown
+    let capturedId: string | undefined
+    server.use(
+      http.patch("*/api/v1/admin/announcements/:id/schedule", async ({ request, params }) => {
+        capturedId = params.id as string
+        bodySeen = await request.json()
+        return HttpResponse.json({ data: null })
+      }),
+    )
+    await expect(adjustAnnouncementSchedule(101, "2026-05-04T05:00:00")).resolves.toBeUndefined()
+    expect(capturedId).toBe("101")
+    expect(bodySeen).toEqual({ scheduledEndAt: "2026-05-04T05:00:00" })
+  })
+
+  it("completeAnnouncement — POST /:id/complete 호출", async () => {
+    let called = false
+    let capturedId: string | undefined
+    server.use(
+      http.post("*/api/v1/admin/announcements/:id/complete", ({ params }) => {
+        called = true
+        capturedId = params.id as string
+        return HttpResponse.json({ data: null })
+      }),
+    )
+    await expect(completeAnnouncement(104)).resolves.toBeUndefined()
+    expect(called).toBe(true)
+    expect(capturedId).toBe("104")
+  })
+
+  it("ANN-006 INVALID_END_ADJUSTMENT → ApiError 전파", async () => {
+    server.use(
+      http.patch("*/api/v1/admin/announcements/:id/schedule", () =>
+        HttpResponse.json(annInvalidEndAdjustmentError, { status: 400 }),
+      ),
+    )
+    await expect(adjustAnnouncementSchedule(101, "2000-01-01T00:00:00")).rejects.toMatchObject({
+      status: 400,
+      errorCode: "ANN-006",
+    })
+  })
+
+  it("ANN-007 NOT_ACTIVE → ApiError 전파", async () => {
+    server.use(
+      http.post("*/api/v1/admin/announcements/:id/complete", () =>
+        HttpResponse.json(annNotActiveError, { status: 409 }),
+      ),
+    )
+    await expect(completeAnnouncement(102)).rejects.toMatchObject({
+      status: 409,
+      errorCode: "ANN-007",
+    })
+  })
+
+  it("ANN-008 ALREADY_COMPLETED → ApiError 전파", async () => {
+    server.use(
+      http.post("*/api/v1/admin/announcements/:id/complete", () =>
+        HttpResponse.json(annAlreadyCompletedError, { status: 409 }),
+      ),
+    )
+    await expect(completeAnnouncement(105)).rejects.toMatchObject({
+      status: 409,
+      errorCode: "ANN-008",
+    })
   })
 })

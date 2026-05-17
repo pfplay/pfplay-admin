@@ -19,6 +19,7 @@ export const maintenanceNoticeFixture: Announcement = {
   sentByAdministratorId: 1,
   maintenanceStartedAt: null,
   cancelledAt: null,
+  completedAt: null,
 }
 
 export const eventFixture: Announcement = {
@@ -36,6 +37,7 @@ export const eventFixture: Announcement = {
   sentByAdministratorId: 2,
   maintenanceStartedAt: null,
   cancelledAt: null,
+  completedAt: null,
 }
 
 export const emergencyCancelledFixture: Announcement = {
@@ -53,6 +55,23 @@ export const emergencyCancelledFixture: Announcement = {
   sentByAdministratorId: 1,
   maintenanceStartedAt: null,
   cancelledAt: "2026-04-30T20:05:00",
+  completedAt: null,
+}
+
+export const activeMaintenanceFixture: Announcement = {
+  ...maintenanceNoticeFixture,
+  id: 104,
+  maintenanceStartedAt: "2026-05-04T03:00:00",
+  cancelledAt: null,
+  completedAt: null,
+}
+
+export const completedMaintenanceFixture: Announcement = {
+  ...maintenanceNoticeFixture,
+  id: 105,
+  maintenanceStartedAt: "2026-05-04T03:00:00",
+  completedAt: "2026-05-04T04:00:00",
+  cancelledAt: null,
 }
 
 export const announcementListFixture: AnnouncementListResponse = {
@@ -96,3 +115,7 @@ export const annScheduledStartInPastError = {
   errorCode: "ANN-005",
   message: "시작 시각은 현재 이후여야 합니다.",
 }
+
+export const annNotActiveError = { status: 409, errorCode: "ANN-007", message: "진행 중인 점검 공지가 아닙니다." }
+export const annAlreadyCompletedError = { status: 409, errorCode: "ANN-008", message: "이미 정상 종료된 점검 공지입니다." }
+export const annInvalidEndAdjustmentError = { status: 400, errorCode: "ANN-006", message: "조정할 종료 시각은 현재 이후여야 합니다." }

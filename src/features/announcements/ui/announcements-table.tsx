@@ -10,7 +10,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatKst } from "@/shared/lib/format-kst"
-import { ANNOUNCEMENT_TYPE, ANNOUNCEMENT_SEVERITY } from "@/shared/lib/labels"
+import {
+  ANNOUNCEMENT_TYPE,
+  ANNOUNCEMENT_SEVERITY,
+  ANNOUNCEMENT_DERIVED_STATUS,
+  deriveAnnouncementStatus,
+} from "@/shared/lib/labels"
 import type { Announcement } from "@/entities/announcement"
 
 interface Props {
@@ -18,9 +23,18 @@ interface Props {
   isLoading: boolean
   isEmpty: boolean
   onCancelClick: (announcement: Announcement) => void
+  onAdjustClick?: (announcement: Announcement) => void
+  onCompleteClick?: (announcement: Announcement) => void
 }
 
-export function AnnouncementsTable({ rows, isLoading, isEmpty, onCancelClick }: Props) {
+export function AnnouncementsTable({
+  rows,
+  isLoading,
+  isEmpty,
+  onCancelClick,
+  onAdjustClick,
+  onCompleteClick,
+}: Props) {
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -47,13 +61,13 @@ export function AnnouncementsTable({ rows, isLoading, isEmpty, onCancelClick }: 
           <TableHead>심각도</TableHead>
           <TableHead>제목</TableHead>
           <TableHead>송출 시각</TableHead>
-          <TableHead>취소 시각</TableHead>
+          <TableHead>상태</TableHead>
           <TableHead className="text-right">작업</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((row) => {
-          const isCancelled = row.cancelledAt !== null
+          const status = deriveAnnouncementStatus(row)
           return (
             <TableRow key={row.id}>
               <TableCell className="font-mono text-sm">#{row.id}</TableCell>
@@ -77,24 +91,52 @@ export function AnnouncementsTable({ rows, isLoading, isEmpty, onCancelClick }: 
               </TableCell>
               <TableCell>{formatKst(row.sentAt)}</TableCell>
               <TableCell>
-                {isCancelled ? (
-                  <span className="text-muted-foreground" title={formatKst(row.cancelledAt)}>
-                    {formatKst(row.cancelledAt)}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
+                <Badge variant={ANNOUNCEMENT_DERIVED_STATUS.variant[status]}>
+                  {ANNOUNCEMENT_DERIVED_STATUS.label[status]}
+                </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isCancelled}
-                  onClick={() => onCancelClick(row)}
-                  aria-label={`공지 #${row.id} 취소`}
-                >
-                  {isCancelled ? "취소됨" : "취소"}
-                </Button>
+                {status === "ACTIVE" && (
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onAdjustClick?.(row)}
+                      aria-label={`공지 #${row.id} 종료시각 조정`}
+                    >
+                      종료시각 조정
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onCompleteClick?.(row)}
+                      aria-label={`공지 #${row.id} 지금 종료`}
+                    >
+                      지금 종료
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onCancelClick(row)}
+                      aria-label={`공지 #${row.id} 철회`}
+                    >
+                      철회
+                    </Button>
+                  </div>
+                )}
+                {(status === "PLANNED" || status === "SENT") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onCancelClick(row)}
+                    aria-label={`공지 #${row.id} 철회`}
+                  >
+                    철회
+                  </Button>
+                )}
+                {(status === "COMPLETED" || status === "CANCELLED") && (
+                  <span className="text-muted-foreground">—</span>
+                )}
               </TableCell>
             </TableRow>
           )
