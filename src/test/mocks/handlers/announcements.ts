@@ -30,4 +30,7 @@ export const announcementHandlers = [
   }),
 
   http.delete(`${API}/:id`, () => HttpResponse.json({ data: null })),
+
+  http.patch(`${API}/:id/schedule`, () => HttpResponse.json({ data: null })),
+  http.post(`${API}/:id/complete`, () => HttpResponse.json({ data: null })),
 ]

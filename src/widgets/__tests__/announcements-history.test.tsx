@@ -24,16 +24,15 @@ function renderWidget(initialPath = "/announcements/history") {
 describe("AnnouncementsHistoryWidget", () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it("이력 로드 — fixture 3건 (활성 2 / 취소 1)", async () => {
+  it("이력 로드 — fixture 3건 (예정 1 / 이벤트 1 / 철회 1)", async () => {
     renderWidget()
     await waitFor(() => {
       expect(screen.getByText("정기 점검 안내")).toBeInTheDocument()
     })
     expect(screen.getByText("5월 이벤트 시작")).toBeInTheDocument()
     expect(screen.getByText("긴급 공지 — 취소됨")).toBeInTheDocument()
-    // 취소된 공지 1건은 버튼 비활성
-    const cancelledBtn = screen.getByRole("button", { name: "공지 #103 취소" })
-    expect(cancelledBtn).toBeDisabled()
+    // 철회된 공지(#103)는 액션 버튼 없음 — "—" 텍스트만 표시
+    expect(screen.queryByRole("button", { name: "공지 #103 철회" })).toBeNull()
   })
 
   it("총 건수 표시 (Pagination)", async () => {
@@ -43,7 +42,7 @@ describe("AnnouncementsHistoryWidget", () => {
     })
   })
 
-  it("취소 버튼 → confirm 모달 → 확정 → 취소 mutation 호출", async () => {
+  it("철회 버튼 → confirm 모달 → 확정 → 취소 mutation 호출", async () => {
     let deleteCalled = false
     server.use(
       http.delete("*/api/v1/admin/announcements/101", () => {
@@ -55,7 +54,7 @@ describe("AnnouncementsHistoryWidget", () => {
     await waitFor(() => {
       expect(screen.getByText("정기 점검 안내")).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByRole("button", { name: "공지 #101 취소" }))
+    fireEvent.click(screen.getByRole("button", { name: "공지 #101 철회" }))
     expect(await screen.findByText("공지 취소")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "취소 확정" }))
     await waitFor(() => expect(deleteCalled).toBe(true))
@@ -71,7 +70,7 @@ describe("AnnouncementsHistoryWidget", () => {
     await waitFor(() => {
       expect(screen.getByText("정기 점검 안내")).toBeInTheDocument()
     })
-    fireEvent.click(screen.getByRole("button", { name: "공지 #101 취소" }))
+    fireEvent.click(screen.getByRole("button", { name: "공지 #101 철회" }))
     expect(await screen.findByText("공지 취소")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "취소 확정" }))
     // onError 후에도 dialog 는 닫지 않음 (onSuccess 만 close)
