@@ -9,6 +9,8 @@ import {
 import { useAnnouncementsList } from "@/features/announcements/api/use-announcements-list"
 import { AnnouncementsTable } from "@/features/announcements/ui/announcements-table"
 import { CancelAnnouncementDialog } from "@/features/announcements/ui/cancel-announcement-dialog"
+import { AdjustScheduleDialog } from "@/features/announcements/ui/adjust-schedule-dialog"
+import { CompleteAnnouncementDialog } from "@/features/announcements/ui/complete-announcement-dialog"
 import { Pagination } from "@/widgets/pagination"
 import type { Announcement } from "@/entities/announcement"
 
@@ -26,6 +28,8 @@ interface ContentProps {
 function AnnouncementsHistoryContent({ query, setQuery }: ContentProps) {
   const { data, isLoading } = useAnnouncementsList(query)
   const [cancelTarget, setCancelTarget] = useState<Announcement | null>(null)
+  const [adjustTarget, setAdjustTarget] = useState<Announcement | null>(null)
+  const [completeTarget, setCompleteTarget] = useState<Announcement | null>(null)
 
   const items = data?.content ?? []
   const isEmpty = !isLoading && items.length === 0
@@ -52,6 +56,8 @@ function AnnouncementsHistoryContent({ query, setQuery }: ContentProps) {
         isLoading={isLoading}
         isEmpty={isEmpty}
         onCancelClick={setCancelTarget}
+        onAdjustClick={setAdjustTarget}
+        onCompleteClick={setCompleteTarget}
       />
       {data && (
         <Pagination
@@ -65,6 +71,18 @@ function AnnouncementsHistoryContent({ query, setQuery }: ContentProps) {
         target={cancelTarget}
         onOpenChange={(o) => {
           if (!o) setCancelTarget(null)
+        }}
+      />
+      <AdjustScheduleDialog
+        target={adjustTarget}
+        onOpenChange={(o) => {
+          if (!o) setAdjustTarget(null)
+        }}
+      />
+      <CompleteAnnouncementDialog
+        target={completeTarget}
+        onOpenChange={(o) => {
+          if (!o) setCompleteTarget(null)
         }}
       />
     </div>

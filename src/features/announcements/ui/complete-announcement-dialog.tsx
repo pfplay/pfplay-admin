@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ANNOUNCEMENT_TYPE } from "@/shared/lib/labels"
-import { useCancelAnnouncement } from "../api/use-cancel-announcement"
+import { useCompleteAnnouncement } from "../api/use-complete-announcement"
 import type { Announcement } from "@/entities/announcement"
 
 interface Props {
@@ -16,8 +16,8 @@ interface Props {
   onOpenChange: (open: boolean) => void
 }
 
-export function CancelAnnouncementDialog({ target, onOpenChange }: Props) {
-  const mutation = useCancelAnnouncement()
+export function CompleteAnnouncementDialog({ target, onOpenChange }: Props) {
+  const mutation = useCompleteAnnouncement()
   const open = target !== null
 
   const handleConfirm = () => {
@@ -37,20 +37,20 @@ export function CancelAnnouncementDialog({ target, onOpenChange }: Props) {
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>공지 취소</DialogTitle>
+          <DialogTitle>점검 정상 종료</DialogTitle>
           <DialogDescription>
             {target ? (
               <>
                 <code className="font-mono">#{target.id}</code>{" "}
                 {ANNOUNCEMENT_TYPE.label[target.type]} —{" "}
-                <span className="font-medium">{target.titleKo}</span> 공지를 취소합니다.
-                사용자 화면에서 즉시 dismiss 되며, 본 작업은 되돌릴 수 없습니다.
+                <span className="font-medium">{target.titleKo}</span> 점검을
+                정상 종료합니다.
               </>
             ) : null}
           </DialogDescription>
         </DialogHeader>
         <p className="text-xs text-muted-foreground py-2">
-          종료시각 조정은 별도 기능입니다. 본 작업은 공지 철회(취소)입니다.
+          지금 점검을 정상 종료합니다. 사용자가 즉시 서비스로 복귀합니다. 되돌릴 수 없습니다.
         </p>
         <DialogFooter>
           <Button
@@ -66,7 +66,7 @@ export function CancelAnnouncementDialog({ target, onOpenChange }: Props) {
             onClick={handleConfirm}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? "처리 중..." : "취소 확정"}
+            {mutation.isPending ? "처리 중..." : "확정"}
           </Button>
         </DialogFooter>
       </DialogContent>

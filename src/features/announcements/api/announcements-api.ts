@@ -40,3 +40,17 @@ export async function listAnnouncements(
 export async function cancelAnnouncement(id: number): Promise<void> {
   await http<void>(`${API}/${id}`, { method: "DELETE" })
 }
+
+export async function adjustAnnouncementSchedule(
+  id: number,
+  scheduledEndAt: string,
+): Promise<void> {
+  await http<void>(`${API}/${id}/schedule`, {
+    method: "PATCH",
+    body: { scheduledEndAt },
+  })
+}
+
+export async function completeAnnouncement(id: number): Promise<void> {
+  await http<void>(`${API}/${id}/complete`, { method: "POST" })
+}
