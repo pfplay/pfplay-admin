@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ApiError } from "@/shared/api/error"
 
-const OWN_DOMAINS = ["pfplay.xyz", "admin.pfplay.xyz", "pfplay.kr"]
+const OWN_DOMAINS = ["pfplay.xyz", "admin.pfplay.xyz"]
 
 function renderPageUrl(url: string | null) {
   if (!url) return <span className="text-muted-foreground">—</span>
