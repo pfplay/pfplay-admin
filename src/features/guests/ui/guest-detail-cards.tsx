@@ -6,6 +6,10 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatKst } from "@/shared/lib/format-kst"
+import {
+  formatActivityEventLabel,
+  formatActivityMetadata,
+} from "@/shared/lib/labels"
 import type { AdminGuestDetail } from "@/entities/guest"
 
 interface Props {
@@ -58,18 +62,30 @@ export function GuestDetailCards({ detail }: Props) {
             <p className="text-sm text-muted-foreground">활동 기록 없음</p>
           ) : (
             <ul className="text-sm space-y-1">
-              {detail.recentActivityLog.map((log, i) => (
-                <li key={i}>
-                  <span className="font-medium">{log.eventType}</span>
-                  {log.partyroomId !== null && (
-                    <span> · partyroom #{log.partyroomId}</span>
-                  )}
-                  <span className="text-muted-foreground">
-                    {" "}
-                    · {formatKst(log.occurredAt)}
-                  </span>
-                </li>
-              ))}
+              {/* Chunk 2 reviewer follow-up: raw enum 대신 한글 라벨 + metadata 풀이 (MemberDetailCards parity) */}
+              {detail.recentActivityLog.map((log, i) => {
+                const metaText = formatActivityMetadata(
+                  log.eventType,
+                  log.metadata,
+                )
+                return (
+                  <li key={i}>
+                    <span className="font-medium">
+                      {formatActivityEventLabel(log.eventType, log.metadata)}
+                    </span>
+                    {log.partyroomId !== null && (
+                      <span> · partyroom #{log.partyroomId}</span>
+                    )}
+                    {metaText !== "—" && (
+                      <span> · {metaText}</span>
+                    )}
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {formatKst(log.occurredAt)}
+                    </span>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </CardContent>
