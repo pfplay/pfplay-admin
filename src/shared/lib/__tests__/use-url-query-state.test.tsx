@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { renderHook } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
+import { renderHook, act } from "@testing-library/react"
+import { MemoryRouter, useLocation } from "react-router-dom"
 import { z } from "zod"
 import { toast } from "sonner"
 import { useUrlQueryState } from "../use-url-query-state"
@@ -14,6 +14,30 @@ const schema = z.object({
 function wrapper(initialEntries: string[]) {
   return ({ children }: { children: React.ReactNode }) => (
     <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter>
+  )
+}
+
+// preserveExternalKeys 테스트용: useLocation 으로 search string 노출하는 헬퍼
+function SearchProbe({
+  children,
+  onChange,
+}: {
+  children: React.ReactNode
+  onChange: (search: string) => void
+}) {
+  const loc = useLocation()
+  onChange(loc.search)
+  return <>{children}</>
+}
+
+function probeWrapper(
+  initialEntries: string[],
+  onSearch: (search: string) => void,
+) {
+  return ({ children }: { children: React.ReactNode }) => (
+    <MemoryRouter initialEntries={initialEntries}>
+      <SearchProbe onChange={onSearch}>{children}</SearchProbe>
+    </MemoryRouter>
   )
 }
 
@@ -51,5 +75,82 @@ describe("useUrlQueryState", () => {
     })
     expect(typeof result.current.setQuery).toBe("function")
     expect(typeof result.current.reset).toBe("function")
+  })
+})
+
+describe("useUrlQueryState — preserveExternalKeys", () => {
+  const schemaWithEmail = z.object({
+    email: z.string().max(255).optional(),
+    page: z.coerce.number().int().min(0).default(0),
+  })
+
+  it("setQuery 시 preserveExternalKeys 의 외부 키 (tab) 가 URL 에 보존", () => {
+    let currentSearch = ""
+    const { result } = renderHook(
+      () =>
+        useUrlQueryState(schemaWithEmail, { preserveExternalKeys: ["tab"] }),
+      {
+        wrapper: probeWrapper(["/x?tab=guest&email=foo"], (s) => {
+          currentSearch = s
+        }),
+      },
+    )
+
+    act(() => result.current.setQuery({ email: "bar" }))
+
+    expect(currentSearch).toContain("tab=guest")
+    expect(currentSearch).toContain("email=bar")
+  })
+
+  it("옵션 미지정 시 외부 키 (tab) 가 setQuery 후 사라짐 — 기존 동작 회귀 가드", () => {
+    let currentSearch = ""
+    // options 미전달 — 기존 호출처 (partyrooms 등) 동등 동작
+    const { result } = renderHook(() => useUrlQueryState(schemaWithEmail), {
+      wrapper: probeWrapper(["/x?tab=guest&email=foo"], (s) => {
+        currentSearch = s
+      }),
+    })
+
+    act(() => result.current.setQuery({ email: "bar" }))
+
+    expect(currentSearch).not.toContain("tab=guest")
+    expect(currentSearch).toContain("email=bar")
+  })
+
+  it("reset 시에도 preserveExternalKeys 의 외부 키 (tab) 가 URL 에 보존", () => {
+    let currentSearch = ""
+    const { result } = renderHook(
+      () =>
+        useUrlQueryState(schemaWithEmail, { preserveExternalKeys: ["tab"] }),
+      {
+        wrapper: probeWrapper(["/x?tab=guest&email=foo&page=3"], (s) => {
+          currentSearch = s
+        }),
+      },
+    )
+
+    act(() => result.current.reset())
+
+    expect(currentSearch).toContain("tab=guest")
+    expect(currentSearch).not.toContain("email=foo")
+    expect(currentSearch).not.toContain("page=3")
+  })
+
+  it("preserveExternalKeys 의 키가 URL 에 없으면 무영향", () => {
+    let currentSearch = ""
+    const { result } = renderHook(
+      () =>
+        useUrlQueryState(schemaWithEmail, { preserveExternalKeys: ["tab"] }),
+      {
+        wrapper: probeWrapper(["/x?email=foo"], (s) => {
+          currentSearch = s
+        }),
+      },
+    )
+
+    act(() => result.current.setQuery({ email: "bar" }))
+
+    expect(currentSearch).not.toContain("tab=")
+    expect(currentSearch).toContain("email=bar")
   })
 })
