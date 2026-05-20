@@ -7,6 +7,7 @@ import {
   Flag,
   Image,
   Megaphone,
+  MessageSquareWarning,
   ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
@@ -40,6 +41,7 @@ const navSections: NavSection[] = [
       { to: "/members", icon: Users, label: "회원" },
       { to: "/partyrooms", icon: DoorOpen, label: "파티룸" },
       { to: "/reports", icon: Flag, label: "신고" },
+      { to: "/voc/bug-reports", icon: MessageSquareWarning, label: "사용자 피드백" },
     ],
   },
   {
