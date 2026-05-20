@@ -5,6 +5,7 @@ import { ChangePasswordPage } from "@/pages/change-password-page"
 import { DashboardPage } from "@/pages/dashboard-page"
 import { MembersPage } from "@/pages/members-page"
 import { MemberDetailPage } from "@/pages/member-detail-page"
+import { GuestDetailPage } from "@/pages/guest-detail-page"
 import { PartyroomsPage } from "@/pages/partyrooms-page"
 import { PartyroomDetailPage } from "@/pages/partyroom-detail-page"
 import { ReportsPage } from "@/pages/reports-page"
@@ -26,6 +27,7 @@ export function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/members/:memberId" element={<MemberDetailPage />} />
+        <Route path="/guests/:guestId" element={<GuestDetailPage />} />
         <Route path="/partyrooms" element={<PartyroomsPage />} />
         <Route path="/partyrooms/:partyroomId" element={<PartyroomDetailPage />} />
         <Route path="/reports" element={<ReportsPage />} />
