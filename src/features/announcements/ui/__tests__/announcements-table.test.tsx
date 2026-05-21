@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react"
 import { AnnouncementsTable } from "../announcements-table"
 import {
   maintenanceNoticeFixture,
+  eventFixture,
   emergencyCancelledFixture,
   activeMaintenanceFixture,
   completedMaintenanceFixture,
@@ -120,6 +121,40 @@ describe("AnnouncementsTable", () => {
     expect(cancelBtn).not.toBeDisabled()
     fireEvent.click(cancelBtn)
     expect(onCancelClick).toHaveBeenCalledWith(activeMaintenanceFixture)
+  })
+
+  it("점검 공지 — 점검 예정 시작/종료 시각 컬럼이 KST 로 렌더된다", () => {
+    render(
+      <AnnouncementsTable
+        rows={[maintenanceNoticeFixture]}
+        isLoading={false}
+        isEmpty={false}
+        onCancelClick={vi.fn()}
+      />,
+    )
+    // 헤더에 두 컬럼 존재
+    expect(screen.getByRole("columnheader", { name: "점검 예정 시작" })).toBeInTheDocument()
+    expect(screen.getByRole("columnheader", { name: "점검 예정 종료" })).toBeInTheDocument()
+    // 셀에 KST 포맷 값이 보임 (scheduledStartAt + scheduledEndAt + sentAt 3개가 모두 KST suffix 가짐)
+    const kstCells = screen.getAllByText(/KST$/)
+    expect(kstCells.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it("점검 외 공지 (EVENT) — 점검 시각 컬럼은 '-' 로 표시", () => {
+    render(
+      <AnnouncementsTable
+        rows={[eventFixture]}
+        isLoading={false}
+        isEmpty={false}
+        onCancelClick={vi.fn()}
+      />,
+    )
+    // 헤더는 항상 존재 (점검 공지 외에도 컬럼은 보임)
+    expect(screen.getByRole("columnheader", { name: "점검 예정 시작" })).toBeInTheDocument()
+    expect(screen.getByRole("columnheader", { name: "점검 예정 종료" })).toBeInTheDocument()
+    // EVENT 는 scheduledStartAt / scheduledEndAt 둘 다 null → 셀이 "-"
+    const dashCells = screen.getAllByText("-")
+    expect(dashCells.length).toBeGreaterThanOrEqual(2)
   })
 
   it("정상완료 공지 — 액션 없음", () => {

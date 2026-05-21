@@ -61,6 +61,8 @@ export function AnnouncementsTable({
           <TableHead>심각도</TableHead>
           <TableHead>제목</TableHead>
           <TableHead>송출 시각</TableHead>
+          <TableHead>점검 예정 시작</TableHead>
+          <TableHead>점검 예정 종료</TableHead>
           <TableHead>상태</TableHead>
           <TableHead className="text-right">작업</TableHead>
         </TableRow>
@@ -90,6 +92,8 @@ export function AnnouncementsTable({
                 </div>
               </TableCell>
               <TableCell>{formatKst(row.sentAt)}</TableCell>
+              <TableCell>{formatKst(row.scheduledStartAt)}</TableCell>
+              <TableCell>{formatKst(row.scheduledEndAt)}</TableCell>
               <TableCell>
                 <Badge variant={ANNOUNCEMENT_DERIVED_STATUS.variant[status]}>
                   {ANNOUNCEMENT_DERIVED_STATUS.label[status]}
