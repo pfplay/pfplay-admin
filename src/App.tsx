@@ -5,6 +5,7 @@ import { ChangePasswordPage } from "@/pages/change-password-page"
 import { DashboardPage } from "@/pages/dashboard-page"
 import { MembersPage } from "@/pages/members-page"
 import { MemberDetailPage } from "@/pages/member-detail-page"
+import { GuestDetailPage } from "@/pages/guest-detail-page"
 import { PartyroomsPage } from "@/pages/partyrooms-page"
 import { PartyroomDetailPage } from "@/pages/partyroom-detail-page"
 import { ReportsPage } from "@/pages/reports-page"
@@ -15,6 +16,8 @@ import { AnnouncementsPage } from "@/pages/announcements-page"
 import { AnnouncementsHistoryPage } from "@/pages/announcements-history-page"
 import { AdministratorsPage } from "@/pages/administrators-page"
 import { AdministratorDetailPage } from "@/pages/administrator-detail-page"
+import { BugReportsPage } from "@/pages/bug-reports-page"
+import { BugReportDetailPage } from "@/pages/bug-report-detail-page"
 import { ProtectedRoute } from "@/widgets/protected-route"
 
 export function App() {
@@ -26,6 +29,7 @@ export function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/members" element={<MembersPage />} />
         <Route path="/members/:memberId" element={<MemberDetailPage />} />
+        <Route path="/guests/:guestId" element={<GuestDetailPage />} />
         <Route path="/partyrooms" element={<PartyroomsPage />} />
         <Route path="/partyrooms/:partyroomId" element={<PartyroomDetailPage />} />
         <Route path="/reports" element={<ReportsPage />} />
@@ -37,6 +41,8 @@ export function App() {
         <Route path="/announcements/history" element={<AnnouncementsHistoryPage />} />
         <Route path="/administrators" element={<AdministratorsPage />} />
         <Route path="/administrators/:administratorId" element={<AdministratorDetailPage />} />
+        <Route path="/voc/bug-reports" element={<BugReportsPage />} />
+        <Route path="/voc/bug-reports/:bugReportId" element={<BugReportDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
