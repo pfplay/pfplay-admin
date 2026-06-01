@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label"
 import { useProvisionPool } from "../api/use-provision-pool"
 import { provisionPoolSchema } from "../model/provision-schema"
 
+const DEFAULT_COUNT = "10"
+
 export function ProvisionPoolForm() {
-  const [count, setCount] = useState("10")
+  const [count, setCount] = useState(DEFAULT_COUNT)
   const [error, setError] = useState<string | null>(null)
   const mutation = useProvisionPool()
 
@@ -24,6 +26,7 @@ export function ProvisionPoolForm() {
         toast.success("봇 풀이 충원되었습니다", {
           description: `${parsed.data.count}개 봇 계정 요청`,
         })
+        setCount(DEFAULT_COUNT)
       },
     })
   }

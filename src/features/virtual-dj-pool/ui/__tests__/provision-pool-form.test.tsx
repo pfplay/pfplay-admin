@@ -54,4 +54,23 @@ describe("ProvisionPoolForm", () => {
     expect(provisionPool).not.toHaveBeenCalled()
     expect(screen.getByText(/최대 500 이하/)).toBeInTheDocument()
   })
+
+  it("성공 후 입력값을 기본값으로 초기화(중복 충원 방지)", async () => {
+    provisionPool.mockResolvedValue(undefined)
+    const u = userEvent.setup()
+    render(wrap(<ProvisionPoolForm />))
+    const input = screen.getByLabelText(/봇 수/) as HTMLInputElement
+    // 1. 초기값 확인
+    expect(input.value).toBe("10")
+    // 2. 값 변경
+    await u.clear(input)
+    await u.type(input, "50")
+    expect(input.value).toBe("50")
+    // 3. 제출
+    await u.click(screen.getByRole("button", { name: /충원/ }))
+    // 4. 성공 후 기본값으로 초기화됨 확인
+    await waitFor(() => {
+      expect(input.value).toBe("10")
+    })
+  })
 })
