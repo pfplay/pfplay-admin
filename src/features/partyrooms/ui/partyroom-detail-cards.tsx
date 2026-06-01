@@ -30,6 +30,7 @@ import {
 } from "@/shared/lib/labels"
 import type { ReportStatus, ReportCategory } from "@/entities/report"
 import { CrewCard } from "./crew-card"
+import { VirtualDjConfigCard } from "./virtual-dj-config-card"
 
 function formatPlaybackTimeLimit(minutes: number | null): string {
   if (minutes === null) return "-"
@@ -129,7 +130,10 @@ export function PartyroomDetailCards({ detail }: Props) {
         </CardContent>
       </Card>
 
-      {/* 4. Crews */}
+      {/* 4. Virtual DJ config */}
+      <VirtualDjConfigCard partyroomId={detail.partyroomId} />
+
+      {/* 5. Crews */}
       <CrewCard partyroomId={detail.partyroomId} crews={detail.crews} />
 
       {/* 5. DJ queue */}
