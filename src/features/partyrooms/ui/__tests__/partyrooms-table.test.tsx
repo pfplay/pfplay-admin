@@ -55,6 +55,69 @@ describe("PartyroomsTable", () => {
     expect(screen.getByText("detail")).toBeInTheDocument()
   })
 
+  describe("가상 DJ 컬럼", () => {
+    it("virtualDj 있으면 봇 카운트 + 상태 뱃지 렌더", () => {
+      const rowWithVdj = {
+        ...partyroomListItemFixture,
+        virtualDj: {
+          status: "MANAGED" as const,
+          targetCount: 3,
+          botDjCount: 2,
+        },
+      }
+      render(
+        <MemoryRouter>
+          <PartyroomsTable
+            rows={[rowWithVdj]}
+            isLoading={false}
+            isEmpty={false}
+          />
+        </MemoryRouter>,
+      )
+      expect(screen.getByText("봇 2/3")).toBeInTheDocument()
+      expect(screen.getByText("운영중")).toBeInTheDocument()
+    })
+
+    it("targetCount null이면 분모 — 표시", () => {
+      const rowWithVdj = {
+        ...partyroomListItemFixture,
+        virtualDj: {
+          status: "OFF" as const,
+          targetCount: null,
+          botDjCount: 0,
+        },
+      }
+      render(
+        <MemoryRouter>
+          <PartyroomsTable
+            rows={[rowWithVdj]}
+            isLoading={false}
+            isEmpty={false}
+          />
+        </MemoryRouter>,
+      )
+      expect(screen.getByText("봇 0/—")).toBeInTheDocument()
+    })
+
+    it("virtualDj null이면 — 표시", () => {
+      const rowWithoutVdj = {
+        ...partyroomListItemFixture,
+        virtualDj: null,
+      }
+      render(
+        <MemoryRouter>
+          <PartyroomsTable
+            rows={[rowWithoutVdj]}
+            isLoading={false}
+            isEmpty={false}
+          />
+        </MemoryRouter>,
+      )
+      // 가상 DJ 셀이 — 만 표시 (헤더 외에 dash 1개)
+      expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(1)
+    })
+  })
+
   describe("selection mode", () => {
     it("selection props 없으면 checkbox column 미렌더 (회귀 0)", () => {
       render(
