@@ -164,18 +164,16 @@ public record SongPackDetailResponse(Long id, String name, String description, L
 
 ### Task 2.1: 어드민 music-search 프록시
 
+**확정 사실:** `app/build.gradle`에 `implementation project(':playlist')` 존재 → app이 playlist 의존 **O**.
+→ 어드민 엔드포인트를 `AdminVirtualDjController`에 추가하고 `MusicSearchService` 주입(별도 컨트롤러 불필요).
+
 **Files:**
-- 확인: `app` 모듈이 `playlist` 모듈(`MusicSearchService`)을 의존하는지 (`app/build.gradle` 확인).
-  - 의존 O → 어드민 엔드포인트를 `AdminVirtualDjController`에 추가, `MusicSearchService` 주입.
-  - 의존 X → `playlist` 모듈에 `AdminMusicSearchController` 신설, `@adminAuth.canManageVirtualDj()` 게이팅(common 모듈 SpEL은 전 모듈 가시).
-- Modify/Create: 위 결정에 따른 컨트롤러 + 기존 `QueryMusicSearchResponse` 재사용
-- Test: 컨트롤러 슬라이스 — 어드민 인증 통과 / 응답 형태.
+- Modify: `AdminVirtualDjController.java` (검색 GET 추가, `MusicSearchService` 주입) + 기존 `QueryMusicSearchResponse` 재사용
+- Test: `AdminVirtualDjControllerTest.java` — 어드민 인증 통과 / 응답 형태.
 
-- [ ] **Step 1: 모듈 의존 확인** — `grep -n "project(" app/build.gradle | grep playlist`. 결과를 plan 노트에 기록하고 위 분기 선택.
+- [ ] **Step 1: 실패 테스트** — `GET /api/v1/admin/virtual-dj/music-search?q=foo` → 200 + 검색 결과 형태(`{musicList:[...]}`). `MusicSearchService` mock.
 
-- [ ] **Step 2: 실패 테스트** — `GET /api/v1/admin/virtual-dj/music-search?q=foo` → 200 + 검색 결과 형태. `MusicSearchService` mock.
-
-- [ ] **Step 3: 엔드포인트 구현**
+- [ ] **Step 2: 엔드포인트 구현**
 
 ```java
 @Operation(summary = "어드민 음악 검색 (송팩 빌더용)",
@@ -188,11 +186,11 @@ public ResponseEntity<ApiCommonResponse<QueryMusicSearchResponse>> searchMusic(@
             QueryMusicSearchResponse.from(musicSearchService.getSearchList(q))));
 }
 ```
-(playlist 모듈에 둘 경우 동일 시그니처의 별도 컨트롤러.)
+(`MusicSearchService.getSearchList(String q)`에 원시 쿼리 문자열 전달 — 기존 컨트롤러와 동일. 어드민은 platform 옵션 불필요해 단일 `q`로 단순화.)
 
-- [ ] **Step 4: 인증 분리 회귀 테스트** — 회원전용 `/api/v1/music-search`는 `hasRole('MEMBER')` 유지(불변), 어드민 경로는 `canManageVirtualDj`로 별개임을 테스트로 잠금.
+- [ ] **Step 3: 인증 분리 회귀 테스트** — 회원전용 `/api/v1/music-search`는 `hasRole('MEMBER')` 유지(불변), 어드민 경로는 `canManageVirtualDj`로 별개임을 테스트로 잠금.
 
-- [ ] **Step 5: 테스트 통과 + 커밋** — `feat(virtualdj): 어드민 음악 검색 프록시(canManageVirtualDj)`
+- [ ] **Step 4: 테스트 통과 + 커밋** — `feat(virtualdj): 어드민 음악 검색 프록시(canManageVirtualDj)`
 
 ### Task 2.2: 어드민 파티룸 목록에 가상DJ 요약 조인
 
@@ -217,9 +215,21 @@ public record VirtualDjSummary(VirtualDjStatus status, Integer targetCount, long
 `AdminPartyroomListRow`에도 동일 필드 추가.
 
 - [ ] **Step 3: 쿼리 확장** — `findAdminList`에:
-  - `QPartyroomVirtualDjConfigData cfg` left join on `cfg.partyroomId.id.eq(p.id)` (엔티티/Q클래스 경로 확인 — `domain/entity/data/PartyroomVirtualDjConfigData`).
-  - `botDjCountSubquery` = correlated: dj join userAccount(isDummy) where `dj.partyroomId.id.eq(p.id)` and dummy. (`djCountSubquery` 패턴 복제 + isDummy 술어.)
-  - select tuple 끝에 `cfg.status`, `cfg.targetCount`, `botDjCountSubquery` 추가; `mapRow`에서 `cfg.status==null ? null : new VirtualDjSummary(...)`.
+  - **config left join (경로 주의)**: `QPartyroomVirtualDjConfigData cfg` left join on `cfg.partyroomId.eq(p.id)`.
+    ⚠️ `PartyroomVirtualDjConfigData.partyroomId`는 **plain `Long` `@Id`**(embedded `PartyroomId` 아님) →
+    `.id.eq` 쓰면 컴파일 실패. 반드시 `cfg.partyroomId.eq(p.id)`.
+  - **botDjCountSubquery (홉 주의)**: ⚠️ `DjData`에는 `userId`가 **없다**(`partyroomId/crewId/playlistId`만 보유).
+    DJ→UserAccount 직접 경로 없음 → **DJ → CrewData(crewId로 userId 획득) → UserAccountData(isDummy)** 3단 홉:
+    ```java
+    JPQLQuery<Long> botDjCountSubquery = JPAExpressions
+        .select(dj.count()).from(dj)
+        .join(crewData).on(crewData.crewId.eq(dj.crewId))          // crewId 실제 필드명/타입 확인
+        .join(userAccountData).on(userAccountData.userId.uid.eq(crewData.userId.uid))
+        .where(dj.partyroomId.id.eq(p.id)                          // DjData.partyroomId는 embedded PartyroomId → .id.eq OK
+               .and(userAccountData.isDummy.isTrue()));
+    ```
+    (`dj.partyroomId.id.eq(p.id)`는 기존 `djCountSubquery`와 동일하게 맞음 — DjData는 embedded PartyroomId 보유.)
+  - select tuple 끝에 `cfg.status`, `cfg.targetCount`, `botDjCountSubquery` 추가; `mapRow`에서 `cfg.status==null ? null : new VirtualDjSummary(cfg.status, cfg.targetCount, botDjCount)`.
 
 - [ ] **Step 4: 서비스 매핑** — `AdminPartyroomQueryService.list`가 Row→Response 매핑 시 virtualDj 전달.
 
@@ -318,7 +328,7 @@ export async function provisionPool(count: number): Promise<void> {
 
 - [ ] **Step 1: 실패 테스트(MSW)** — 7개 호출(list GET, detail GET, create POST, rename PUT, delete DELETE, addTrack POST, removeTrack DELETE) 경로/메서드/언랩 검증.
 - [ ] **Step 2: api 구현** — `const API = "/api/v1/admin/virtual-dj/song-packs"`. addTrack body = `{name, linkId, duration, thumbnailImage}`(이미 매핑된 형태).
-- [ ] **Step 3: zod** — create/rename name 1..100, description ≤255. addTrack 필드 제약(name≤200, linkId≤100, duration non-blank, thumbnail≤1000) — 백엔드 `AddPackTrackRequest` 미러.
+- [ ] **Step 3: zod** — create/rename name 1..100, **description ≤500**(백엔드 `CreateSongPackRequest`가 `@Size(max=500)`). addTrack 필드 제약(name≤200, linkId≤100, duration non-blank, thumbnail≤1000) — 백엔드 `AddPackTrackRequest` 미러.
 - [ ] **Step 4: 훅** — invalidate `["virtual-dj","song-packs"]` / `["virtual-dj","song-pack",id]`.
 - [ ] **Step 5: 테스트 통과 + 커밋** — `feat(virtual-dj): 송팩 api/훅`
 
@@ -349,7 +359,9 @@ export function toPackTrack(m: MusicSearchResult): AddTrackInput {
 ```
 실제 응답 필드명은 백엔드 `QueryMusicSearchResponse` 확인 후 확정.
 
-- [ ] **Step 2: search api** — `GET /api/v1/admin/virtual-dj/music-search?q=` (어드민 프록시, Task 2.1). `useQuery(["music-search", q], enabled: q.length>0)`.
+- [ ] **Step 2: search api** — `GET /api/v1/admin/virtual-dj/music-search?q=` (어드민 프록시, Task 2.1).
+  응답 봉투 = `ApiCommonResponse<{ musicList: MusicSearchResult[] }>` → `unwrap(res).musicList` 까지 벗겨 배열 반환
+  (envelope 위로 map 금지). `useQuery(["music-search", q], enabled: q.length>0)`.
 - [ ] **Step 3: UI 포팅** — web 컴포넌트 3종을 admin 스택(http client, shadcn)으로 이식. 결과 아이템에 duration·thumbnail 표시. `onSelect(track)` 콜백 prop.
 - [ ] **Step 4: 테스트 통과 + 커밋** — `feat(music-search): 어드민 음악 검색 포팅 + boundary 매퍼`
 
@@ -427,9 +439,11 @@ export function toPackTrack(m: MusicSearchResult): AddTrackInput {
 ## 비범위 (재확인)
 구별모드 토글 UI(deferred) / 아바타 커스터마이징(P1) / AI(P3) / 크로스룸 자동 reconcile(#264). 부하측정·anti-flap IT는 백엔드 비블로커 후속.
 
-## plan 실행 중 코드확인 잔여(소형, 블로커 아님)
-- 송팩 NOT_FOUND 예외코드 정확한 enum 값(`VirtualDjException`/`deletePack` 경유 확인).
-- `ProvisionPoolRequest` count 상한(@Max) 실제 값 → zod 미러.
-- `QueryMusicSearchResponse` 정확한 필드명 → boundary 매퍼 확정.
-- `PartyroomVirtualDjConfigData` Q클래스 경로/필드명(status/targetCount/companionFloor/songPackId).
-- `app→playlist` 모듈 의존 여부(Task 2.1 분기).
+## 코드확인 — 리뷰에서 해소됨 (plan 실행 시 참조)
+- 송팩 NOT_FOUND = `VirtualDjException.SONG_PACK_NOT_FOUND` (VDJ-001, NOT_FOUND). ✅
+- `ProvisionPoolRequest` count 상한 = `@Max(500)`. ✅ (Task 3.2 zod 일치)
+- `QueryMusicSearchResponse` = `{ musicList: [{ videoId, videoTitle, runningTime, thumbnailUrl }] }`.
+  boundary 매퍼(Task 4.3) 정확, search-api는 `.musicList` 언랩. ✅
+- `PartyroomVirtualDjConfigData`: `partyroomId`=**plain Long @Id**(`.eq` 사용), 필드 `status/targetCount/companionFloor/songPackId`. ✅
+- `app→playlist` 의존 = **O**(`implementation project(':playlist')`). Task 2.1 단일 경로 확정. ✅
+- `DjData`: `userId` 없음 → 봇 DJ 카운트는 DJ→Crew→UserAccount 홉(Task 2.2). `crewData.crewId` 실제 필드명/타입만 실행 시 확인.
