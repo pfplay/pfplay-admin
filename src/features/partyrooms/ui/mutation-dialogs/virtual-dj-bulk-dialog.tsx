@@ -167,7 +167,7 @@ export function VirtualDjBulkDialog({
                   ))}
                 </select>
                 {showNoSongPackWarning && (
-                  <p className="text-warning text-sm" role="alert">
+                  <p className="text-amber-600 text-sm" role="alert">
                     송팩 없으면 봇이 곡을 못 틉니다
                   </p>
                 )}
