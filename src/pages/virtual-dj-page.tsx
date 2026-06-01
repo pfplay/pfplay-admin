@@ -1,12 +1,5 @@
 import { useParams, Navigate } from "react-router-dom"
-
-function PoolPageContent() {
-  return (
-    <div className="p-6 lg:p-8">
-      <h2 className="text-2xl font-bold">봇 풀</h2>
-    </div>
-  )
-}
+import { PoolPageContent } from "@/features/virtual-dj-pool"
 
 function SongPacksPageContent() {
   return (
