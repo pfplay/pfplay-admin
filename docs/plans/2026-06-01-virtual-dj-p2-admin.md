@@ -219,13 +219,14 @@ public record VirtualDjSummary(VirtualDjStatus status, Integer targetCount, long
     ⚠️ `PartyroomVirtualDjConfigData.partyroomId`는 **plain `Long` `@Id`**(embedded `PartyroomId` 아님) →
     `.id.eq` 쓰면 컴파일 실패. 반드시 `cfg.partyroomId.eq(p.id)`.
   - **botDjCountSubquery (홉 주의)**: ⚠️ `DjData`에는 `userId`가 **없다**(`partyroomId/crewId/playlistId`만 보유).
-    DJ→UserAccount 직접 경로 없음 → **DJ → CrewData(crewId로 userId 획득) → UserAccountData(isDummy)** 3단 홉:
+    DJ→UserAccount 직접 경로 없음 → **DJ → CrewData → UserAccountData(isDummy)** 3단 홉.
+    **정규 패턴 존재**: `ActiveDjSnapshotQueryRepositoryImpl`(:34, :52)가 동일 조인을 이미 사용 → 그대로 복제:
     ```java
     JPQLQuery<Long> botDjCountSubquery = JPAExpressions
         .select(dj.count()).from(dj)
-        .join(crewData).on(crewData.crewId.eq(dj.crewId))          // crewId 실제 필드명/타입 확인
+        .join(crewData).on(crewData.id.eq(dj.crewId.id))            // CrewData PK=id(Long), DjData.crewId=embedded CrewId→.id 언랩
         .join(userAccountData).on(userAccountData.userId.uid.eq(crewData.userId.uid))
-        .where(dj.partyroomId.id.eq(p.id)                          // DjData.partyroomId는 embedded PartyroomId → .id.eq OK
+        .where(dj.partyroomId.id.eq(p.id)                           // DjData.partyroomId는 embedded PartyroomId → .id.eq OK
                .and(userAccountData.isDummy.isTrue()));
     ```
     (`dj.partyroomId.id.eq(p.id)`는 기존 `djCountSubquery`와 동일하게 맞음 — DjData는 embedded PartyroomId 보유.)
@@ -446,4 +447,5 @@ export function toPackTrack(m: MusicSearchResult): AddTrackInput {
   boundary 매퍼(Task 4.3) 정확, search-api는 `.musicList` 언랩. ✅
 - `PartyroomVirtualDjConfigData`: `partyroomId`=**plain Long @Id**(`.eq` 사용), 필드 `status/targetCount/companionFloor/songPackId`. ✅
 - `app→playlist` 의존 = **O**(`implementation project(':playlist')`). Task 2.1 단일 경로 확정. ✅
-- `DjData`: `userId` 없음 → 봇 DJ 카운트는 DJ→Crew→UserAccount 홉(Task 2.2). `crewData.crewId` 실제 필드명/타입만 실행 시 확인.
+- `DjData`: `userId` 없음 → 봇 DJ 카운트는 DJ→Crew→UserAccount 홉(Task 2.2). 정규 조인 키 = `crewData.id.eq(dj.crewId.id)`
+  (`ActiveDjSnapshotQueryRepositoryImpl`:34/:52에 동일 패턴 존재 — CrewData PK=`id`, DjData.crewId=embedded `CrewId`). ✅
