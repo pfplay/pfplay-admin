@@ -142,8 +142,11 @@ virtualDj: { status, targetCount, botDjCount } | null   // config 없으면 null
 /virtual-dj/:resourceType        (pool | song-packs)
 /virtual-dj/song-packs/:packId   (송팩 트랙 빌더 상세)
 ```
-nav 신규 항목 "가상 DJ"(`시스템 관리` 그룹). role 게이팅 = **`ADMIN`** (백엔드 `canManageVirtualDj()→isAdmin()`,
-C2 해소. 아바타의 `SUPER_ADMIN`보다 낮음).
+nav 신규 항목 "가상 DJ"는 **`운영 관리` 그룹 + role 제한 없음**(회원·파티룸과 동일). 근거: 백엔드 게이트
+`canManageVirtualDj()→isAdmin()=ROLE_ADMIN`이고 `AdminLoginService`가 모든 어드민에 ROLE_ADMIN 부여
+(super-admin엔 ROLE_SUPER_ADMIN 추가) → **ADMIN·SUPER_ADMIN 둘 다 관리 가능**. nav role 필터는 exact-match라
+"ADMIN 이상"을 못 쓰므로 role 미지정(전 어드민 노출)이 맞음. 코드 주석의 "운영=daily ops" 라인과도 일치
+(시스템 관리는 SUPER_ADMIN 전용 governance라 부적합).
 
 ### 4.2 화면 ① 봇 풀 (`/virtual-dj/pool`)
 - **요약 카드**: 총 봇 / idle / 배치됨(방별 목록). 데이터 = `GET /virtual-dj/pool`(§3.1).
