@@ -54,6 +54,20 @@ describe("AppLayout sidebar", () => {
     expect(avatar).toHaveAttribute("href", "/avatars/bodies")
   })
 
+  it("ADMIN role: 가상 DJ nav 노출 (role 무제한)", () => {
+    mockRole = "ADMIN"
+    renderLayout()
+    const virtualDj = screen.getByText("가상 DJ").closest("a")
+    expect(virtualDj).toHaveAttribute("href", "/virtual-dj/pool")
+  })
+
+  it("SUPER_ADMIN role: 가상 DJ nav 노출 (role 무제한)", () => {
+    mockRole = "SUPER_ADMIN"
+    renderLayout()
+    const virtualDj = screen.getByText("가상 DJ").closest("a")
+    expect(virtualDj).toHaveAttribute("href", "/virtual-dj/pool")
+  })
+
   it("ADMIN role: '운영 관리' 헤더만 노출, '시스템 관리' 헤더 + 항목 미노출", () => {
     mockRole = "ADMIN"
     renderLayout()

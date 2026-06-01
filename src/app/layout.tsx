@@ -9,6 +9,7 @@ import {
   Megaphone,
   MessageSquareWarning,
   ShieldCheck,
+  Bot,
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { useSessionStore } from "@/entities/session"
@@ -42,6 +43,7 @@ const navSections: NavSection[] = [
       { to: "/partyrooms", icon: DoorOpen, label: "파티룸" },
       { to: "/reports", icon: Flag, label: "신고" },
       { to: "/voc/bug-reports", icon: MessageSquareWarning, label: "사용자 피드백" },
+      { to: "/virtual-dj/pool", icon: Bot, label: "가상 DJ" },
     ],
   },
   {
