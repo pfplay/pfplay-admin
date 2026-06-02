@@ -76,11 +76,29 @@ export function BotRoster() {
                   checked={selectedIds.includes(bot.userId)}
                   onCheckedChange={() => toggle(bot.userId)}
                 />
-                <img
-                  src={bot.avatarBodyUri}
-                  alt={bot.nickname}
-                  className="h-10 w-10 rounded-md object-cover"
-                />
+                {/* 채팅 아이콘(P1 보장 대상) + 인룸 바디 실루엣을 함께 노출 */}
+                <div className="flex shrink-0 items-end gap-2">
+                  <figure className="flex flex-col items-center gap-0.5">
+                    <img
+                      src={bot.avatarIconUri}
+                      alt={`${bot.nickname} 아이콘`}
+                      className="h-10 w-10 rounded-full border object-cover"
+                    />
+                    <figcaption className="text-[10px] leading-none text-muted-foreground">
+                      아이콘
+                    </figcaption>
+                  </figure>
+                  <figure className="flex flex-col items-center gap-0.5">
+                    <img
+                      src={bot.avatarBodyUri}
+                      alt={`${bot.nickname} 바디`}
+                      className="h-8 w-8 rounded-md object-cover"
+                    />
+                    <figcaption className="text-[10px] leading-none text-muted-foreground">
+                      바디
+                    </figcaption>
+                  </figure>
+                </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
                     {bot.nickname}
@@ -115,6 +133,7 @@ export function BotRoster() {
         botIds={selectedIds}
         open={distributeOpen}
         onOpenChange={setDistributeOpen}
+        onDistributed={() => setSelectedIds([])}
       />
 
       {editTarget && (

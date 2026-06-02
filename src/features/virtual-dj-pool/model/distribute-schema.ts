@@ -7,7 +7,9 @@ import { z } from "zod"
  * backend DistributeBotAvatarRequest(@NotEmpty botIds, @NotEmpty bodyUris) 와 정렬.
  */
 export const distributeAvatarsSchema = z.object({
-  botIds: z.array(z.number()).min(1, "봇을 1명 이상 선택하세요"),
+  botIds: z
+    .array(z.number().int().positive())
+    .min(1, "봇을 1명 이상 선택하세요"),
   bodyUris: z.array(z.string()).min(1, "아바타를 1개 이상 선택하세요"),
 })
 

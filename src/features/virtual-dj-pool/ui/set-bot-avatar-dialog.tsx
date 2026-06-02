@@ -71,7 +71,7 @@ export function SetBotAvatarDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             disabled={mutation.isPending}
           >
             취소

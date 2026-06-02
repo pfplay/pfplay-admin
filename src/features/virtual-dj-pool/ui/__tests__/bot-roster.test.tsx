@@ -61,14 +61,16 @@ function renderRoster() {
 }
 
 describe("BotRoster", () => {
-  it("행마다 닉네임·바디 썸네일·배치룸·변경 버튼 렌더", async () => {
+  it("행마다 닉네임·채팅 아이콘·바디 썸네일·배치룸·변경 버튼 렌더", async () => {
     mockRoster()
     renderRoster()
     await waitFor(() => expect(screen.getByText("봇하나")).toBeInTheDocument())
     expect(screen.getByText("봇둘")).toBeInTheDocument()
 
-    // 바디 썸네일
-    expect(screen.getByAltText("봇하나")).toHaveAttribute("src", "body1")
+    // 채팅 아이콘(P1 보장 대상)이 노출되어야 함
+    expect(screen.getByAltText("봇하나 아이콘")).toHaveAttribute("src", "icon1")
+    // 바디 썸네일도 함께 노출 (인룸 실루엣 다양성)
+    expect(screen.getByAltText("봇하나 바디")).toHaveAttribute("src", "body1")
 
     // 배치룸 링크 (placed) vs idle 표시
     const placedLink = screen.getByRole("link", { name: "메인룸" })
@@ -127,6 +129,41 @@ describe("BotRoster", () => {
     expect(
       within(dialog).getByText(/아바타 일괄 변경 \(1명\)/),
     ).toBeInTheDocument()
+  })
+
+  it("배분 성공 후 선택 해제(툴바 사라짐)", async () => {
+    mockRoster()
+    server.use(
+      http.post(
+        "*/api/v1/admin/virtual-dj/bots/avatar/distribute",
+        () =>
+          HttpResponse.json({
+            data: { assigned: [{ userId: 1, avatarBodyUri: "u1" }] },
+          }),
+      ),
+    )
+    renderRoster()
+    await waitFor(() => expect(screen.getByText("봇하나")).toBeInTheDocument())
+
+    await userEvent.click(
+      screen.getByRole("checkbox", { name: /봇하나 선택/ }),
+    )
+    expect(screen.getByText(/선택: 1명/)).toBeInTheDocument()
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "아바타 일괄 변경" }),
+    )
+    const dialog = await screen.findByRole("dialog")
+    await within(dialog).findByText("바디 1")
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: /바디 1/ }),
+    )
+    await userEvent.click(within(dialog).getByRole("button", { name: /배분/ }))
+
+    // 결과 요약은 다이얼로그에 남되, 부모 선택은 해제되어 툴바가 사라짐
+    await waitFor(() =>
+      expect(screen.queryByText(/선택: 1명/)).not.toBeInTheDocument(),
+    )
   })
 
   it("로드 에러 시 안내", async () => {

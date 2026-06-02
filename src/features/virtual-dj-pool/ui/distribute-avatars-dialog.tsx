@@ -18,6 +18,8 @@ interface Props {
   botIds: number[]
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** 배분 성공(invalidate 후) 시 호출 — 부모가 선택 해제 등 처리 */
+  onDistributed?: () => void
 }
 
 /**
@@ -28,6 +30,7 @@ export function DistributeAvatarsDialog({
   botIds,
   open,
   onOpenChange,
+  onDistributed,
 }: Props) {
   const [bodyUris, setBodyUris] = useState<string[]>([])
   const mutation = useDistributeAvatars()
@@ -47,7 +50,10 @@ export function DistributeAvatarsDialog({
 
   const handleSubmit = () => {
     if (!parsed.success) return
-    mutation.mutate(parsed.data)
+    // 호출별 onSuccess 는 hook onSuccess(invalidate) 이후 실행됨 → 배분 후 부모가 선택 해제
+    mutation.mutate(parsed.data, {
+      onSuccess: () => onDistributed?.(),
+    })
   }
 
   const result = mutation.data
@@ -95,7 +101,7 @@ export function DistributeAvatarsDialog({
 
         <DialogFooter>
           {result ? (
-            <Button type="button" onClick={() => onOpenChange(false)}>
+            <Button type="button" onClick={() => handleOpenChange(false)}>
               닫기
             </Button>
           ) : (
@@ -103,7 +109,7 @@ export function DistributeAvatarsDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
                 disabled={mutation.isPending}
               >
                 취소

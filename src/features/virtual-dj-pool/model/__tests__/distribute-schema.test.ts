@@ -25,4 +25,19 @@ describe("distributeAvatarsSchema", () => {
     })
     expect(r.success).toBe(false)
   })
+
+  it("양의 정수가 아닌 botId 는 실패", () => {
+    expect(
+      distributeAvatarsSchema.safeParse({ botIds: [0], bodyUris: ["u1"] })
+        .success,
+    ).toBe(false)
+    expect(
+      distributeAvatarsSchema.safeParse({ botIds: [-1], bodyUris: ["u1"] })
+        .success,
+    ).toBe(false)
+    expect(
+      distributeAvatarsSchema.safeParse({ botIds: [1.5], bodyUris: ["u1"] })
+        .success,
+    ).toBe(false)
+  })
 })
