@@ -3,6 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { usePoolSummary } from "../api/use-pool-summary"
 import { PoolSummaryCards } from "./pool-summary-cards"
 import { ProvisionPoolForm } from "./provision-pool-form"
+import { BotRoster } from "./bot-roster"
 
 export function PoolPageContent() {
   const { data, isLoading, isError } = usePoolSummary()
@@ -35,6 +36,8 @@ export function PoolPageContent() {
         <h2 className="text-lg font-semibold">봇 충원</h2>
         <ProvisionPoolForm />
       </div>
+
+      <BotRoster />
     </div>
   )
 }

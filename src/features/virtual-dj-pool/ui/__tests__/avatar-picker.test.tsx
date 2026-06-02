@@ -100,6 +100,18 @@ describe("AvatarPicker", () => {
     expect(screen.getByText("단독")).toBeInTheDocument()
   })
 
+  it("로드됐으나 카탈로그가 비면 안내", async () => {
+    mockCatalog([])
+    renderPicker(
+      <AvatarPicker mode="single" value={null} onChange={() => {}} />,
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByText("표시할 아바타가 없습니다."),
+      ).toBeInTheDocument()
+    })
+  })
+
   it("로드 에러 시 안내", async () => {
     server.use(
       http.get("*/api/v1/admin/virtual-dj/avatar-catalog", () =>

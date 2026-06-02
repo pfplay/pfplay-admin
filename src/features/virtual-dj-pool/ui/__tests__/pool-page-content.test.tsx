@@ -19,8 +19,21 @@ function renderPage() {
   )
 }
 
+// BotRoster 섹션(요약 카드 아래)이 추가로 fetch 하는 엔드포인트 — 페이지 렌더 시 항상 mock.
+function mockRosterEndpoints() {
+  server.use(
+    http.get("*/api/v1/admin/virtual-dj/bots", () =>
+      HttpResponse.json({ data: [] }),
+    ),
+    http.get("*/api/v1/admin/virtual-dj/avatar-catalog", () =>
+      HttpResponse.json({ data: [] }),
+    ),
+  )
+}
+
 describe("PoolPageContent", () => {
   it("요약 로드 후 수치 + 폼 렌더", async () => {
+    mockRosterEndpoints()
     server.use(
       http.get("*/api/v1/admin/virtual-dj/pool", () =>
         HttpResponse.json({
@@ -41,6 +54,7 @@ describe("PoolPageContent", () => {
   })
 
   it("로드 에러 시 에러 안내", async () => {
+    mockRosterEndpoints()
     server.use(
       http.get("*/api/v1/admin/virtual-dj/pool", () =>
         HttpResponse.json(

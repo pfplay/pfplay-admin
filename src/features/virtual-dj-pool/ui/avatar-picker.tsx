@@ -41,6 +41,14 @@ export function AvatarPicker(props: AvatarPickerProps) {
 
   const options = data.map(toAvatarOption)
 
+  if (options.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        표시할 아바타가 없습니다.
+      </p>
+    )
+  }
+
   const isSelected = (value: string) =>
     props.mode === "single"
       ? props.value === value
