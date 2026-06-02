@@ -47,3 +47,20 @@ export interface PartyroomVirtualDjSummary {
   targetCount: number | null
   botDjCount: number
 }
+
+export interface AvatarCatalogItem {
+  bodyUri: string
+  name: string
+  thumbnailUri: string
+  combinable: boolean
+  obtainableType: string | null
+}
+
+export interface BotRosterItem {
+  userId: number
+  nickname: string
+  avatarBodyUri: string
+  avatarIconUri: string
+  placementRoomId: number | null
+  placementRoomTitle: string | null
+}

@@ -7,4 +7,6 @@ export type {
   SongPackDetail,
   VirtualDjLiveStatus,
   PartyroomVirtualDjSummary,
+  AvatarCatalogItem,
+  BotRosterItem,
 } from "./model/types"
