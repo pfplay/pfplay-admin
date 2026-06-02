@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest"
 import { server } from "@/test/mocks/server"
 import { http, HttpResponse } from "msw"
-import { getBots, setBotAvatar, distributeAvatars } from "../bots-api"
+import {
+  getBots,
+  setBotAvatar,
+  distributeAvatars,
+  assignPersona,
+  unassignPersona,
+} from "../bots-api"
 import { ApiError } from "@/shared/api/error"
 
 describe("bots-api", () => {
@@ -106,5 +112,49 @@ describe("bots-api", () => {
       ),
     )
     await expect(distributeAvatars([], ["x"])).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it("assignPersona — POST body {botIds, personaId} unwrap applied", async () => {
+    let bodySeen: unknown
+    server.use(
+      http.post(
+        "*/api/v1/admin/virtual-dj/bots/persona/assign",
+        async ({ request }) => {
+          bodySeen = await request.json()
+          return HttpResponse.json({ data: { applied: 2 } })
+        },
+      ),
+    )
+    const r = await assignPersona([101, 102], 7)
+    expect(bodySeen).toEqual({ botIds: [101, 102], personaId: 7 })
+    expect(r.applied).toBe(2)
+  })
+
+  it("unassignPersona — POST body {botIds} unwrap applied", async () => {
+    let bodySeen: unknown
+    server.use(
+      http.post(
+        "*/api/v1/admin/virtual-dj/bots/persona/unassign",
+        async ({ request }) => {
+          bodySeen = await request.json()
+          return HttpResponse.json({ data: { applied: 3 } })
+        },
+      ),
+    )
+    const r = await unassignPersona([101, 102, 103])
+    expect(bodySeen).toEqual({ botIds: [101, 102, 103] })
+    expect(r.applied).toBe(3)
+  })
+
+  it("assignPersona — 서버 에러 시 ApiError 전파", async () => {
+    server.use(
+      http.post("*/api/v1/admin/virtual-dj/bots/persona/assign", () =>
+        HttpResponse.json(
+          { status: 400, errorCode: "VDJ-020", message: "no persona" },
+          { status: 400 },
+        ),
+      ),
+    )
+    await expect(assignPersona([101], 999)).rejects.toBeInstanceOf(ApiError)
   })
 })

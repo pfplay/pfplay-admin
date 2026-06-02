@@ -76,4 +76,6 @@ export interface BotRosterItem {
   avatarIconUri: string
   placementRoomId: number | null
   placementRoomTitle: string | null
+  personaId: number | null
+  personaName: string | null
 }
