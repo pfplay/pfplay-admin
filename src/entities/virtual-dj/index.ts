@@ -5,6 +5,8 @@ export type {
   SongPackListItem,
   SongPackTrack,
   SongPackDetail,
+  PersonaListItem,
+  Persona,
   VirtualDjLiveStatus,
   PartyroomVirtualDjSummary,
   AvatarCatalogItem,

@@ -10,6 +10,7 @@ import {
   MessageSquareWarning,
   ShieldCheck,
   Bot,
+  Drama,
 } from "lucide-react"
 import { cn } from "@/shared/lib/utils"
 import { useSessionStore } from "@/entities/session"
@@ -44,6 +45,7 @@ const navSections: NavSection[] = [
       { to: "/reports", icon: Flag, label: "신고" },
       { to: "/voc/bug-reports", icon: MessageSquareWarning, label: "사용자 피드백" },
       { to: "/virtual-dj/pool", icon: Bot, label: "가상 DJ" },
+      { to: "/virtual-dj/personas", icon: Drama, label: "페르소나" },
     ],
   },
   {
