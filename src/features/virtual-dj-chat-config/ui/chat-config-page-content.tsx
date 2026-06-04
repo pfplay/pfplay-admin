@@ -86,7 +86,7 @@ export function ChatConfigPageContent() {
             </Label>
           </div>
 
-          {/* 자가갱신 모드 (P3-B forward gate — 동작 없음) */}
+          {/* 자가갱신 모드 (P3-B — 반응 기반 플레이리스트 자가갱신 토글) */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Checkbox
@@ -106,7 +106,7 @@ export function ChatConfigPageContent() {
               </Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              P3-B 예정 — 현재 동작 없음
+              켜면 봇이 청취자 반응 기반으로 플레이리스트를 주기적으로 자가갱신합니다 (LLM 선곡).
             </p>
           </div>
 
