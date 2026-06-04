@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { hideBrokenImage } from "@/shared/lib/hide-broken-image"
 import { useBots } from "../api/use-bots"
 import type { BotRosterItem } from "@/entities/virtual-dj"
 import { DistributeAvatarsDialog } from "./distribute-avatars-dialog"
@@ -93,6 +94,7 @@ export function BotRoster() {
                       src={bot.avatarIconUri}
                       alt={`${bot.nickname} 아이콘`}
                       className="h-10 w-10 rounded-full border object-cover"
+                      onError={hideBrokenImage}
                     />
                     <figcaption className="text-[10px] leading-none text-muted-foreground">
                       아이콘
@@ -103,6 +105,7 @@ export function BotRoster() {
                       src={bot.avatarBodyUri}
                       alt={`${bot.nickname} 바디`}
                       className="h-8 w-8 rounded-md object-cover"
+                      onError={hideBrokenImage}
                     />
                     <figcaption className="text-[10px] leading-none text-muted-foreground">
                       바디

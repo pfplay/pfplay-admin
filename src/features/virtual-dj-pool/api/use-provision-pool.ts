@@ -8,6 +8,8 @@ export function useProvisionPool() {
     mutationFn: (count: number) => provisionPool(count),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["virtual-dj", "pool"] })
+      // provision 은 새 봇 계정을 만든다 — 같은 페이지의 봇 로스터도 갱신해야 즉시 반영된다.
+      qc.invalidateQueries({ queryKey: ["virtual-dj", "bots"] })
     },
     onError: mutationErrorToast,
   })

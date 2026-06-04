@@ -1,6 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/shared/lib/utils"
+import { hideBrokenImage } from "@/shared/lib/hide-broken-image"
 import { useAvatarCatalog } from "../api/use-avatar-catalog"
 import { toAvatarOption, type AvatarOption } from "../model/to-avatar-option"
 
@@ -102,6 +103,7 @@ function AvatarTile({ option, selected, onSelect }: TileProps) {
         src={option.thumbnail}
         alt={option.label}
         className="aspect-square w-full rounded-md object-cover"
+        onError={hideBrokenImage}
       />
       <span className="line-clamp-1 w-full text-xs font-medium">
         {option.label}

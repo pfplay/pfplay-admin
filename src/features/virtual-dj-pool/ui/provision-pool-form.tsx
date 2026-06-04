@@ -24,7 +24,7 @@ export function ProvisionPoolForm() {
     mutation.mutate(parsed.data.count, {
       onSuccess: () => {
         toast.success("봇 풀이 충원되었습니다", {
-          description: `${parsed.data.count}개 봇 계정 요청`,
+          description: `${parsed.data.count}개 봇 계정 추가됨`,
         })
         setCount(DEFAULT_COUNT)
       },

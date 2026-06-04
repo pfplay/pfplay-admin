@@ -43,7 +43,12 @@ export function AssignPersonaDialog({
   onApplied,
 }: Props) {
   const [personaId, setPersonaId] = useState<string>("")
-  const { data: personas } = usePersonas()
+  const {
+    data: personas,
+    isError: personasError,
+    isLoading: personasLoading,
+  } = usePersonas()
+  const activePersonaCount = (personas ?? []).filter((p) => p.active).length
   const assign = useAssignPersona()
   const unassign = useUnassignPersona()
 
@@ -90,6 +95,19 @@ export function AssignPersonaDialog({
               {result.applied}명에게 적용했습니다.
             </p>
           </div>
+        ) : personasLoading ? (
+          <p className="py-2 text-sm text-muted-foreground">
+            페르소나 목록을 불러오는 중...
+          </p>
+        ) : personasError ? (
+          <p className="py-2 text-sm text-destructive">
+            페르소나 목록을 불러오지 못했습니다. (매핑 해제는 가능합니다)
+          </p>
+        ) : activePersonaCount === 0 ? (
+          <p className="py-2 text-sm text-muted-foreground">
+            지정할 수 있는 활성 페르소나가 없습니다. 먼저 페르소나를
+            생성·활성화하세요. (매핑 해제는 가능합니다)
+          </p>
         ) : (
           <div className="py-2">
             <Select value={personaId} onValueChange={setPersonaId}>
