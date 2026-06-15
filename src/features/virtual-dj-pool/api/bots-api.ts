@@ -9,6 +9,10 @@ export interface DistributeResult {
   assigned: { userId: number; avatarBodyUri: string }[]
 }
 
+export interface PersonaApplyResult {
+  applied: number
+}
+
 export async function getBots(): Promise<BotRosterItem[]> {
   const res = await http<ApiCommonResponse<BotRosterItem[]>>(API)
   return unwrap(res)
@@ -31,6 +35,27 @@ export async function distributeAvatars(
   const res = await http<ApiCommonResponse<DistributeResult>>(
     `${API}/avatar/distribute`,
     { method: "POST", body: { botIds, bodyUris } },
+  )
+  return unwrap(res)
+}
+
+export async function assignPersona(
+  botIds: number[],
+  personaId: number,
+): Promise<PersonaApplyResult> {
+  const res = await http<ApiCommonResponse<PersonaApplyResult>>(
+    `${API}/persona/assign`,
+    { method: "POST", body: { botIds, personaId } },
+  )
+  return unwrap(res)
+}
+
+export async function unassignPersona(
+  botIds: number[],
+): Promise<PersonaApplyResult> {
+  const res = await http<ApiCommonResponse<PersonaApplyResult>>(
+    `${API}/persona/unassign`,
+    { method: "POST", body: { botIds } },
   )
   return unwrap(res)
 }

@@ -34,6 +34,19 @@ export interface SongPackDetail {
   tracks: SongPackTrack[]
 }
 
+export interface PersonaListItem {
+  id: number
+  name: string
+  active: boolean
+}
+
+export interface Persona {
+  id: number
+  name: string
+  instruction: string
+  active: boolean
+}
+
 export interface VirtualDjLiveStatus {
   status: VirtualDjStatus
   targetCount: number | null
@@ -63,4 +76,6 @@ export interface BotRosterItem {
   avatarIconUri: string
   placementRoomId: number | null
   placementRoomTitle: string | null
+  personaId: number | null
+  personaName: string | null
 }
