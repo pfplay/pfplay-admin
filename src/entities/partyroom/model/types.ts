@@ -1,3 +1,5 @@
+import type { PartyroomVirtualDjSummary } from "@/entities/virtual-dj"
+
 export type PartyroomStatus = "ACTIVE" | "SUSPENDED" | "TERMINATED"
 export type StageType = "MAIN" | "GENERAL"
 
@@ -76,6 +78,8 @@ export interface AdminPartyroomListItem {
   displayFlag: DisplayFlag
   createdAt: string
   lastActivityAt: string | null
+  /** P2 가상 DJ 요약 (backend Task 2.2). config 없으면 null. */
+  virtualDj?: PartyroomVirtualDjSummary | null
 }
 
 export interface AdminPartyroomDetail {

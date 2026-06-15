@@ -4,12 +4,14 @@ interface Props {
   selectionSize: number
   onClearSelection: () => void
   onOpenDialog: () => void
+  onOpenVirtualDj: () => void
 }
 
 export function BulkActionToolbar({
   selectionSize,
   onClearSelection,
   onOpenDialog,
+  onOpenVirtualDj,
 }: Props) {
   if (selectionSize === 0) return null
   const overLimit = selectionSize > 100
@@ -27,6 +29,14 @@ export function BulkActionToolbar({
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={onClearSelection}>
           선택 해제
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onOpenVirtualDj}
+          disabled={overLimit}
+        >
+          가상 DJ 설정
         </Button>
         <Button size="sm" onClick={onOpenDialog} disabled={overLimit}>
           일괄 처리

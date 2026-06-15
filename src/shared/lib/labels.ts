@@ -22,6 +22,7 @@ import type {
   AnnouncementSeverity,
 } from "@/entities/announcement"
 import type { BulkActionType } from "@/features/partyrooms/model/bulk-schema"
+import type { VirtualDjStatus } from "@/entities/virtual-dj"
 
 type StatusVariant =
   | "default"
@@ -47,6 +48,20 @@ export const PARTYROOM_STATUS: Mapping<PartyroomStatus> = {
     ACTIVE: "success",
     SUSPENDED: "warning",
     TERMINATED: "muted",
+  },
+}
+
+// P2 가상 DJ 상태 — OFF(미운영) / MANAGED(운영중) / FROZEN(동결)
+export const VIRTUAL_DJ_STATUS: Mapping<VirtualDjStatus> = {
+  label: {
+    OFF: "미운영",
+    MANAGED: "운영중",
+    FROZEN: "동결",
+  },
+  variant: {
+    OFF: "muted",
+    MANAGED: "success",
+    FROZEN: "warning",
   },
 }
 

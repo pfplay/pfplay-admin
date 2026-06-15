@@ -9,6 +9,7 @@ describe("BulkActionToolbar", () => {
         selectionSize={0}
         onClearSelection={vi.fn()}
         onOpenDialog={vi.fn()}
+        onOpenVirtualDj={vi.fn()}
       />,
     )
     expect(container.firstChild).toBeNull()
@@ -20,6 +21,7 @@ describe("BulkActionToolbar", () => {
         selectionSize={1}
         onClearSelection={vi.fn()}
         onOpenDialog={vi.fn()}
+        onOpenVirtualDj={vi.fn()}
       />,
     )
     expect(screen.getByText(/선택: 1건/)).toBeInTheDocument()
@@ -33,6 +35,7 @@ describe("BulkActionToolbar", () => {
         selectionSize={101}
         onClearSelection={vi.fn()}
         onOpenDialog={vi.fn()}
+        onOpenVirtualDj={vi.fn()}
       />,
     )
     expect(screen.getByText(/100건 초과/)).toBeInTheDocument()
@@ -46,6 +49,7 @@ describe("BulkActionToolbar", () => {
         selectionSize={3}
         onClearSelection={onClearSelection}
         onOpenDialog={vi.fn()}
+        onOpenVirtualDj={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByRole("button", { name: /선택 해제/ }))
@@ -59,10 +63,25 @@ describe("BulkActionToolbar", () => {
         selectionSize={3}
         onClearSelection={vi.fn()}
         onOpenDialog={onOpenDialog}
+        onOpenVirtualDj={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByRole("button", { name: /일괄 처리/ }))
     expect(onOpenDialog).toHaveBeenCalledOnce()
+  })
+
+  it("가상 DJ 설정 클릭 → onOpenVirtualDj 호출", () => {
+    const onOpenVirtualDj = vi.fn()
+    render(
+      <BulkActionToolbar
+        selectionSize={3}
+        onClearSelection={vi.fn()}
+        onOpenDialog={vi.fn()}
+        onOpenVirtualDj={onOpenVirtualDj}
+      />,
+    )
+    fireEvent.click(screen.getByRole("button", { name: /가상 DJ 설정/ }))
+    expect(onOpenVirtualDj).toHaveBeenCalledOnce()
   })
 
   it("count 라인 role='status' (SR)", () => {
@@ -71,6 +90,7 @@ describe("BulkActionToolbar", () => {
         selectionSize={5}
         onClearSelection={vi.fn()}
         onOpenDialog={vi.fn()}
+        onOpenVirtualDj={vi.fn()}
       />,
     )
     expect(screen.getByRole("status")).toHaveTextContent(/5건/)
