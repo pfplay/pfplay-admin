@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/shared/lib/utils"
 import { useCreateAnnouncement } from "../api/use-create-announcement"
 import {
@@ -38,6 +39,7 @@ interface FormState {
   scheduledStartAt: string
   scheduledEndAt: string
   expiresAt: string
+  sendPush: boolean
 }
 
 const INITIAL: FormState = {
@@ -50,6 +52,7 @@ const INITIAL: FormState = {
   scheduledStartAt: "",
   scheduledEndAt: "",
   expiresAt: "",
+  sendPush: false,
 }
 
 export function AnnouncementLaunchForm() {
@@ -87,6 +90,7 @@ export function AnnouncementLaunchForm() {
       scheduledStartAt: state.scheduledStartAt || null,
       scheduledEndAt: state.scheduledEndAt || null,
       expiresAt: state.expiresAt || null,
+      sendPush: state.sendPush,
     }
     const parsed = createAnnouncementRequestSchema.safeParse(body)
     if (!parsed.success) {
@@ -156,6 +160,18 @@ export function AnnouncementLaunchForm() {
           ))}
         </div>
       </fieldset>
+
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="ann-send-push"
+          checked={state.sendPush}
+          onCheckedChange={(c) => set("sendPush", c === true)}
+          aria-label="Web Push 발송"
+        />
+        <Label htmlFor="ann-send-push" className="text-sm font-normal cursor-pointer">
+          Web Push 발송 — 구독자 전체에게 즉시 푸시됩니다 (되돌릴 수 없음)
+        </Label>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">

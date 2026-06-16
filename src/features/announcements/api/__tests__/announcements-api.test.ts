@@ -40,6 +40,7 @@ describe("announcements-api", () => {
       scheduledStartAt: "2099-01-01T00:00:00",
       scheduledEndAt: "2099-01-01T01:00:00",
       expiresAt: null,
+      sendPush: false,
     }
     const r = await createAnnouncement(body)
     expect(bodySeen).toEqual(body)
@@ -129,6 +130,7 @@ describe("announcements-api", () => {
         scheduledStartAt: null,
         scheduledEndAt: null,
         expiresAt: null,
+        sendPush: false,
       }),
     ).rejects.toBeInstanceOf(ApiError)
   })
@@ -150,6 +152,7 @@ describe("announcements-api", () => {
         scheduledStartAt: "2099-01-01T01:00:00",
         scheduledEndAt: "2099-01-01T00:00:00",
         expiresAt: null,
+        sendPush: false,
       }),
     ).rejects.toMatchObject({ errorCode: "ANN-004" })
   })
@@ -171,6 +174,7 @@ describe("announcements-api", () => {
         scheduledStartAt: "2000-01-01T00:00:00",
         scheduledEndAt: "2000-01-01T01:00:00",
         expiresAt: null,
+        sendPush: false,
       }),
     ).rejects.toMatchObject({ errorCode: "ANN-005" })
   })
