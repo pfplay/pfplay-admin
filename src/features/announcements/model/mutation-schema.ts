@@ -19,6 +19,8 @@ const baseSchema = z.object({
   scheduledStartAt: datetimeLocalNullable,
   scheduledEndAt: datetimeLocalNullable,
   expiresAt: datetimeLocalNullable,
+  // true 면 발행 시 구독자 전체에게 Web Push fan-out (되돌릴 수 없는 외부 브로드캐스트).
+  sendPush: z.boolean().default(false),
 })
 
 // type 별 schedule 필드 분기 검증.
