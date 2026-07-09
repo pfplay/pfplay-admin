@@ -24,7 +24,7 @@ const RESULTS: MusicSearchResult[] = [
 
 function mockSearch(list: MusicSearchResult[] = RESULTS) {
   server.use(
-    http.get("*/api/v1/admin/virtual-dj/music-search", () =>
+    http.get("*/api/v1/admin/virtual-crew/music-search", () =>
       HttpResponse.json({ data: { musicList: list } }),
     ),
   )

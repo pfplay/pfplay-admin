@@ -56,10 +56,10 @@ describe("PartyroomsTable", () => {
   })
 
   describe("가상 DJ 컬럼", () => {
-    it("virtualDj 있으면 봇 카운트 + 상태 뱃지 렌더", () => {
+    it("virtualCrew 있으면 봇 카운트 + 상태 뱃지 렌더", () => {
       const rowWithVdj = {
         ...partyroomListItemFixture,
-        virtualDj: {
+        virtualCrew: {
           status: "MANAGED" as const,
           targetCount: 3,
           botDjCount: 2,
@@ -81,7 +81,7 @@ describe("PartyroomsTable", () => {
     it("targetCount null이면 분모 — 표시", () => {
       const rowWithVdj = {
         ...partyroomListItemFixture,
-        virtualDj: {
+        virtualCrew: {
           status: "OFF" as const,
           targetCount: null,
           botDjCount: 0,
@@ -99,10 +99,10 @@ describe("PartyroomsTable", () => {
       expect(screen.getByText("봇 0/—")).toBeInTheDocument()
     })
 
-    it("virtualDj null이면 — 표시", () => {
+    it("virtualCrew null이면 — 표시", () => {
       const rowWithoutVdj = {
         ...partyroomListItemFixture,
-        virtualDj: null,
+        virtualCrew: null,
       }
       render(
         <MemoryRouter>

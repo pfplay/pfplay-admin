@@ -9,7 +9,7 @@ import { PartyroomsTable } from "@/features/partyrooms/ui/partyrooms-table"
 import { BulkActionToolbar } from "@/features/partyrooms/ui/bulk-action-toolbar"
 import { BulkActionDialog } from "@/features/partyrooms/ui/mutation-dialogs/bulk-action-dialog"
 import { BulkActionResultDialog } from "@/features/partyrooms/ui/mutation-dialogs/bulk-action-result-dialog"
-import { VirtualDjBulkDialog } from "@/features/partyrooms/ui/mutation-dialogs/virtual-dj-bulk-dialog"
+import { VirtualCrewBulkDialog } from "@/features/partyrooms/ui/mutation-dialogs/virtual-crew-bulk-dialog"
 import type { BulkActionResult } from "@/features/partyrooms/model/bulk-schema"
 import { useUrlQueryState } from "@/shared/lib/use-url-query-state"
 import { useSelectionState } from "@/shared/lib/use-selection-state"
@@ -84,9 +84,9 @@ function PartyroomsListContent({ query, setQuery, reset }: ContentProps) {
         selectionSize={selectedIds.size}
         onClearSelection={clearSelection}
         onOpenDialog={() => setBulkOpen(true)}
-        onOpenVirtualDj={() => setVdjOpen(true)}
+        onOpenVirtualCrew={() => setVdjOpen(true)}
       />
-      <VirtualDjBulkDialog
+      <VirtualCrewBulkDialog
         selectedIds={Array.from(selectedIds)}
         open={vdjOpen}
         onOpenChange={setVdjOpen}
