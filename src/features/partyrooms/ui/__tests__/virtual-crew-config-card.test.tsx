@@ -208,7 +208,7 @@ describe("VirtualCrewConfigCard", () => {
     await waitFor(() => expect(called).toBe(true))
   })
 
-  it("OFF 상태 → 부활/리소스 회수 버튼 비활성", async () => {
+  it("OFF 상태 → 부활/리소스 회수/재배치 버튼 비활성", async () => {
     mockSongPacks()
     mockLiveStatus({ status: "OFF" })
 
@@ -217,6 +217,65 @@ describe("VirtualCrewConfigCard", () => {
 
     expect(screen.getByRole("button", { name: "부활" })).toBeDisabled()
     expect(screen.getByRole("button", { name: "리소스 회수" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "재배치" })).toBeDisabled()
+  })
+
+  it("MANAGED 상태 → 재배치 버튼 활성", async () => {
+    mockSongPacks()
+    mockLiveStatus({ status: "MANAGED", targetCount: 8, currentBotDjCount: 3 })
+
+    renderWithClient(<VirtualCrewConfigCard partyroomId={7} />)
+    await screen.findByText(/봇 3\/8/)
+
+    expect(screen.getByRole("button", { name: "재배치" })).toBeEnabled()
+  })
+
+  it("재배치 → confirm 후 POST replace, 다이얼로그 닫힘", async () => {
+    mockSongPacks()
+    mockLiveStatus({ status: "MANAGED", targetCount: 8, currentBotDjCount: 3 })
+    let replaceCalled = false
+    server.use(
+      http.post("*/api/v1/admin/partyrooms/7/virtual-crew/replace", () => {
+        replaceCalled = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    vi.spyOn(toast, "success").mockImplementation(() => "")
+
+    renderWithClient(<VirtualCrewConfigCard partyroomId={7} />)
+    await screen.findByText(/봇 3\/8/)
+
+    // 카드의 트리거 버튼
+    fireEvent.click(screen.getByRole("button", { name: "재배치" }))
+    // 확인 다이얼로그 (트리거와 동일한 이름의 확인 버튼이 존재 — within(dialog)로 스코프)
+    const dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByText("봇 재배치")).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole("button", { name: "재배치" }))
+
+    await waitFor(() => expect(replaceCalled).toBe(true))
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+  })
+
+  it("재배치 다이얼로그 취소 → POST replace 호출 안 함", async () => {
+    mockSongPacks()
+    mockLiveStatus({ status: "MANAGED", targetCount: 8, currentBotDjCount: 3 })
+    let replaceCalled = false
+    server.use(
+      http.post("*/api/v1/admin/partyrooms/7/virtual-crew/replace", () => {
+        replaceCalled = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
+    renderWithClient(<VirtualCrewConfigCard partyroomId={7} />)
+    await screen.findByText(/봇 3\/8/)
+
+    fireEvent.click(screen.getByRole("button", { name: "재배치" }))
+    const dialog = await screen.findByRole("dialog")
+    fireEvent.click(within(dialog).getByRole("button", { name: "취소" }))
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    expect(replaceCalled).toBe(false)
   })
 
   it("로드 실패 → 에러 메시지", async () => {

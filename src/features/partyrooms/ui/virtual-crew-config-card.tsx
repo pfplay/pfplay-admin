@@ -23,6 +23,7 @@ import { useApplyVirtualCrew } from "@/features/partyrooms/api/use-apply-virtual
 import { useDrainVirtualCrew } from "@/features/partyrooms/api/use-drain-virtual-crew"
 import { useDrainResourcesVirtualCrew } from "@/features/partyrooms/api/use-drain-resources-virtual-crew"
 import { useReviveVirtualCrew } from "@/features/partyrooms/api/use-revive-virtual-crew"
+import { useReplaceVirtualCrew } from "@/features/partyrooms/api/use-replace-virtual-crew"
 import {
   VirtualCrewConfigSchema,
   type VirtualCrewConfigRequest,
@@ -52,12 +53,14 @@ export function VirtualCrewConfigCard({ partyroomId }: Props) {
   const drainMutation = useDrainVirtualCrew(partyroomId)
   const drainResourcesMutation = useDrainResourcesVirtualCrew(partyroomId)
   const reviveMutation = useReviveVirtualCrew(partyroomId)
+  const replaceMutation = useReplaceVirtualCrew(partyroomId)
 
   const [status, setStatus] = useState<VirtualCrewStatus>("OFF")
   const [targetCount, setTargetCount] = useState("")
   const [djBotCount, setDjBotCount] = useState("")
   const [songPackId, setSongPackId] = useState<string>("") // "" = 없음
   const [drainOpen, setDrainOpen] = useState(false)
+  const [replaceOpen, setReplaceOpen] = useState(false)
 
   // 서버 live status 가 로드되면 폼 초기값을 동기화 (1회/갱신 시)
   useEffect(() => {
@@ -226,6 +229,14 @@ export function VirtualCrewConfigCard({ partyroomId }: Props) {
           </Button>
           <Button
             variant="outline"
+            onClick={() => setReplaceOpen(true)}
+            disabled={!isLive || replaceMutation.isPending}
+            title="봇 전원 회수 후 현재 설정·송팩 기준 재배치 — 송팩 교체/곡 편집 반영, DJ봇 수 변경 후 재분배, 드리프트 리셋"
+          >
+            {replaceMutation.isPending ? "재배치 중..." : "재배치"}
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => drainResourcesMutation.mutate()}
             disabled={!isLive || drainResourcesMutation.isPending}
             title="봇 제거하되 운영(운영중) 상태는 유지"
@@ -273,6 +284,41 @@ export function VirtualCrewConfigCard({ partyroomId }: Props) {
               }
             >
               {drainMutation.isPending ? "제거 중..." : "봇 비우기"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* replace = 봇 전원 교체 → 가벼운 confirm (drain 과 달리 비파괴: MANAGED 유지) */}
+      <Dialog open={replaceOpen} onOpenChange={setReplaceOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>봇 재배치</DialogTitle>
+            <DialogDescription>
+              이 파티룸의 가상 DJ 봇을 전부 회수한 뒤 현재 설정·송팩 기준으로
+              다시 배치합니다. 송팩 교체/곡 구성 변경을 반영하거나 트랙 분배를
+              다시 계산할 때 사용하세요. 운영(운영중) 상태는 유지됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setReplaceOpen(false)}
+              disabled={replaceMutation.isPending}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              disabled={replaceMutation.isPending}
+              onClick={() =>
+                replaceMutation.mutate(undefined, {
+                  onSuccess: () => setReplaceOpen(false),
+                })
+              }
+            >
+              {replaceMutation.isPending ? "재배치 중..." : "재배치"}
             </Button>
           </DialogFooter>
         </DialogContent>
