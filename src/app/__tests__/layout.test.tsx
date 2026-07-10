@@ -57,15 +57,15 @@ describe("AppLayout sidebar", () => {
   it("ADMIN role: 가상 DJ nav 노출 (role 무제한)", () => {
     mockRole = "ADMIN"
     renderLayout()
-    const virtualDj = screen.getByText("가상 DJ").closest("a")
-    expect(virtualDj).toHaveAttribute("href", "/virtual-dj/pool")
+    const virtualCrew = screen.getByText("가상 DJ").closest("a")
+    expect(virtualCrew).toHaveAttribute("href", "/virtual-crew/pool")
   })
 
   it("SUPER_ADMIN role: 가상 DJ nav 노출 (role 무제한)", () => {
     mockRole = "SUPER_ADMIN"
     renderLayout()
-    const virtualDj = screen.getByText("가상 DJ").closest("a")
-    expect(virtualDj).toHaveAttribute("href", "/virtual-dj/pool")
+    const virtualCrew = screen.getByText("가상 DJ").closest("a")
+    expect(virtualCrew).toHaveAttribute("href", "/virtual-crew/pool")
   })
 
   it("ADMIN role: '운영 관리' 헤더만 노출, '시스템 관리' 헤더 + 항목 미노출", () => {

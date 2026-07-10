@@ -15,7 +15,7 @@ import {
   STAGE_TYPE,
   DISPLAY_FLAG_LABEL,
   DISPLAY_FLAG_VARIANT,
-  VIRTUAL_DJ_STATUS,
+  VIRTUAL_CREW_STATUS,
 } from "@/shared/lib/labels"
 import { formatKst } from "@/shared/lib/format-kst"
 import type { AdminPartyroomListItem, PartyroomStatus } from "@/entities/partyroom"
@@ -123,13 +123,13 @@ export function PartyroomsTable({
             <TableCell>{row.crewCount}</TableCell>
             <TableCell>{row.djCount}</TableCell>
             <TableCell>
-              {row.virtualDj ? (
+              {row.virtualCrew ? (
                 <span className="flex items-center gap-1.5 whitespace-nowrap">
-                  <Badge variant={VIRTUAL_DJ_STATUS.variant[row.virtualDj.status]}>
-                    {VIRTUAL_DJ_STATUS.label[row.virtualDj.status]}
+                  <Badge variant={VIRTUAL_CREW_STATUS.variant[row.virtualCrew.status]}>
+                    {VIRTUAL_CREW_STATUS.label[row.virtualCrew.status]}
                   </Badge>
                   <span className="text-muted-foreground">
-                    봇 {row.virtualDj.botDjCount}/{row.virtualDj.targetCount ?? "—"}
+                    봇 {row.virtualCrew.botDjCount}/{row.virtualCrew.targetCount ?? "—"}
                   </span>
                 </span>
               ) : (

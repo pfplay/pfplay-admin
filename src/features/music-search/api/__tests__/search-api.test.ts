@@ -7,7 +7,7 @@ import { ApiError } from "@/shared/api/error"
 describe("search-api", () => {
   it("searchMusics — envelope 를 unwrap 하고 musicList 배열을 반환", async () => {
     server.use(
-      http.get("*/api/v1/admin/virtual-dj/music-search", () =>
+      http.get("*/api/v1/admin/virtual-crew/music-search", () =>
         HttpResponse.json({
           data: {
             musicList: [
@@ -42,7 +42,7 @@ describe("search-api", () => {
   it("searchMusics — q 쿼리 파라미터를 인코딩하여 전송", async () => {
     let urlSeen = ""
     server.use(
-      http.get("*/api/v1/admin/virtual-dj/music-search", ({ request }) => {
+      http.get("*/api/v1/admin/virtual-crew/music-search", ({ request }) => {
         urlSeen = request.url
         return HttpResponse.json({ data: { musicList: [] } })
       }),
@@ -53,7 +53,7 @@ describe("search-api", () => {
 
   it("searchMusics — 빈 musicList 도 정상적으로 빈 배열 반환", async () => {
     server.use(
-      http.get("*/api/v1/admin/virtual-dj/music-search", () =>
+      http.get("*/api/v1/admin/virtual-crew/music-search", () =>
         HttpResponse.json({ data: { musicList: [] } }),
       ),
     )
@@ -62,7 +62,7 @@ describe("search-api", () => {
 
   it("searchMusics — 서버 에러 시 ApiError 전파", async () => {
     server.use(
-      http.get("*/api/v1/admin/virtual-dj/music-search", () =>
+      http.get("*/api/v1/admin/virtual-crew/music-search", () =>
         HttpResponse.json(
           { status: 500, errorCode: "VDJ-900", message: "boom" },
           { status: 500 },
