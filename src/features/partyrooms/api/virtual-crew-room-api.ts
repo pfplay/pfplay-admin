@@ -10,6 +10,7 @@ import type { VirtualCrewConfigRequest } from "../model/virtual-crew-config-sche
 //   POST /api/v1/admin/partyrooms/{id}/virtual-crew/drain           → 204 (봇 제거 + 상태 OFF)
 //   POST /api/v1/admin/partyrooms/{id}/virtual-crew/drain-resources → 204 (봇만 회수, MANAGED 유지 — 부활 가능)
 //   POST /api/v1/admin/partyrooms/{id}/virtual-crew/revive          → 204 (봇을 target 까지 재배치)
+//   POST /api/v1/admin/partyrooms/{id}/virtual-crew/replace          → 204 (봇 전원 회수 후 현재 config·송팩 기준 재배치)
 const base = (id: number) => `/api/v1/admin/partyrooms/${id}/virtual-crew`
 
 export async function getLiveStatus(id: number): Promise<VirtualCrewLiveStatus> {
@@ -34,4 +35,8 @@ export async function drainResources(id: number): Promise<void> {
 
 export async function revive(id: number): Promise<void> {
   await http<void>(`${base(id)}/revive`, { method: "POST" })
+}
+
+export async function replace(id: number): Promise<void> {
+  await http<void>(`${base(id)}/replace`, { method: "POST" })
 }
