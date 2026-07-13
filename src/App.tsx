@@ -19,6 +19,7 @@ import { AdministratorDetailPage } from "@/pages/administrator-detail-page"
 import { BugReportsPage } from "@/pages/bug-reports-page"
 import { BugReportDetailPage } from "@/pages/bug-report-detail-page"
 import { VirtualCrewPage } from "@/pages/virtual-crew-page"
+import { VirtualCrewHubPage } from "@/pages/virtual-crew-hub-page"
 import { SongPackDetailPage } from "@/pages/song-pack-detail-page"
 import { ProtectedRoute } from "@/widgets/protected-route"
 
@@ -45,7 +46,7 @@ export function App() {
         <Route path="/administrators/:administratorId" element={<AdministratorDetailPage />} />
         <Route path="/voc/bug-reports" element={<BugReportsPage />} />
         <Route path="/voc/bug-reports/:bugReportId" element={<BugReportDetailPage />} />
-        <Route path="/virtual-crew" element={<Navigate to="/virtual-crew/pool" replace />} />
+        <Route path="/virtual-crew" element={<VirtualCrewHubPage />} />
         <Route path="/virtual-crew/:resourceType" element={<VirtualCrewPage />} />
         <Route path="/virtual-crew/song-packs/:packId" element={<SongPackDetailPage />} />
       </Route>

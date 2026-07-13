@@ -14,9 +14,12 @@ describe("VirtualCrewBulkSchema", () => {
     expect(VirtualCrewBulkSchema.parse(managed)).toEqual(managed)
   })
 
-  it("MANAGED + songPackId null 허용 (경고는 UI 책임)", () => {
-    const r = VirtualCrewBulkSchema.parse({ ...managed, songPackId: null })
-    expect(r.songPackId).toBeNull()
+  it("MANAGED + songPackId null → 거부 (송팩 필수)", () => {
+    const r = VirtualCrewBulkSchema.safeParse({ ...managed, songPackId: null })
+    expect(r.success).toBe(false)
+    if (!r.success) {
+      expect(r.error.issues.some((i) => i.path[0] === "songPackId")).toBe(true)
+    }
   })
 
   it("MANAGED — targetCount null 거부 (필수)", () => {

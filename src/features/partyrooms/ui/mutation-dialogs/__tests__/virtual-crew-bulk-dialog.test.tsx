@@ -84,7 +84,7 @@ describe("VirtualCrewBulkDialog", () => {
       target: { value: "MANAGED" },
     })
     expect(
-      screen.getByText(/송팩 없으면 봇이 곡을 못 틉니다/),
+      screen.getByText(/송팩을 선택해야/),
     ).toBeInTheDocument()
   })
 
@@ -104,7 +104,7 @@ describe("VirtualCrewBulkDialog", () => {
       target: { value: "5" },
     })
     expect(
-      screen.queryByText(/송팩 없으면 봇이 곡을 못 틉니다/),
+      screen.queryByText(/송팩을 선택해야/),
     ).not.toBeInTheDocument()
   })
 

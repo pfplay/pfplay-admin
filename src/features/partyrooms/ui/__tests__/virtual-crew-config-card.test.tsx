@@ -96,7 +96,7 @@ describe("VirtualCrewConfigCard", () => {
     fireEvent.change(screen.getByLabelText("가상 DJ 상태"), {
       target: { value: "MANAGED" },
     })
-    const warn = screen.getByText(/송팩 없으면 봇이 곡을 못 틉니다/)
+    const warn = screen.getByText(/송팩을 선택해야/)
     expect(warn).toBeInTheDocument()
     expect(warn.className).toContain("text-amber-600")
   })

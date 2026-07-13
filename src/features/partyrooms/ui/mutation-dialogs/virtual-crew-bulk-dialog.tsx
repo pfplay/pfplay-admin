@@ -154,7 +154,7 @@ export function VirtualCrewBulkDialog({
                 </p>
               </div>
               <div className="space-y-1">
-                <Label htmlFor="vdj-songpack">송팩 (선택)</Label>
+                <Label htmlFor="vdj-songpack">송팩 (운영중일 때 필수)</Label>
                 <select
                   id="vdj-songpack"
                   aria-label="송팩 선택"
@@ -162,7 +162,7 @@ export function VirtualCrewBulkDialog({
                   onChange={(e) => setSongPackId(e.target.value)}
                   className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
                 >
-                  <option value="">없음</option>
+                  <option value="">선택 안 함</option>
                   {(songPacks ?? []).map((p) => (
                     <option key={p.id} value={String(p.id)}>
                       {p.name} ({p.trackCount}곡)
@@ -171,7 +171,7 @@ export function VirtualCrewBulkDialog({
                 </select>
                 {showNoSongPackWarning && (
                   <p className="text-amber-600 text-sm" role="alert">
-                    송팩 없으면 봇이 곡을 못 틉니다
+                    운영중이려면 송팩을 선택해야 해요 (미선택 시 봇이 배치되지 않음)
                   </p>
                 )}
               </div>

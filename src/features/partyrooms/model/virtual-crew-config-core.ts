@@ -5,7 +5,8 @@ import type { VirtualCrewStatus } from "@/entities/virtual-crew"
 //   status @NotNull VirtualCrewStatus{OFF, MANAGED}
 //   targetCount Integer? — MANAGED 일 때 필수 ≥1 (총 봇 수), 그 외엔 무시(null)
 //   djBotCount Integer? — MANAGED 일 때 필수 ≥0 (크루=DJ 역할 봇 수, 나머지는 리스너). targetCount 이하여야 함. 그 외엔 무시(null)
-//   songPackId Long? — 항상 선택(nullable). MANAGED + null 이면 봇이 곡을 못 틈(reconcile SKIP_NO_SONG_PACK)
+//   songPackId Long? — MANAGED 일 때 필수(nullable 스키마이나 UI 검증으로 필수화). null 이면 봇이
+//     곡을 못 틀고 reconcile SKIP_NO_SONG_PACK 로 아예 배치 안 됨 → "운영중인데 봇 0" 함정 차단.
 export const VirtualCrewStatusEnum = z.enum(["OFF", "MANAGED"])
 
 // 컴파일 타임 안전장치 — entities VirtualCrewStatus 와 enum 이 어긋나면 타입 에러
@@ -29,7 +30,12 @@ export const virtualCrewConfigShape = {
 //   또한 djBotCount(DJ 역할 봇) 는 targetCount(총 봇) 이하여야 함 (backend djBotCount>targetCount → 400).
 //   ※ djBotCount>재생가능트랙수 도 backend 400 이지만, 프론트는 트랙 수를 모르므로 검증하지 않음.
 export function applyManagedConditional(
-  val: { status: z.infer<typeof VirtualCrewStatusEnum>; targetCount: number | null; djBotCount: number | null },
+  val: {
+    status: z.infer<typeof VirtualCrewStatusEnum>
+    targetCount: number | null
+    djBotCount: number | null
+    songPackId: number | null
+  },
   ctx: z.RefinementCtx,
 ): void {
   if (val.status !== "MANAGED") return
@@ -38,6 +44,13 @@ export function applyManagedConditional(
       code: z.ZodIssueCode.custom,
       path: ["targetCount"],
       message: "운영중일 때 목표 인원은 필수입니다 (1 이상)",
+    })
+  }
+  if (val.songPackId === null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["songPackId"],
+      message: "운영중일 때 송팩은 필수입니다 (없으면 봇이 배치되지 않음)",
     })
   }
   if (val.djBotCount === null) {
