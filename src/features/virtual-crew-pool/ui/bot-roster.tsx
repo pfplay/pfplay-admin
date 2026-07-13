@@ -10,6 +10,7 @@ import type { BotRosterItem } from "@/entities/virtual-crew"
 import { DistributeAvatarsDialog } from "./distribute-avatars-dialog"
 import { SetBotAvatarDialog } from "./set-bot-avatar-dialog"
 import { AssignPersonaDialog } from "./assign-persona-dialog"
+import { RemoveBotsDialog } from "./remove-bots-dialog"
 
 /**
  * 봇 전역 로스터 — 행마다 바디 썸네일 + 닉네임 + 배치룸(있으면 링크) + 선택 체크박스 +
@@ -20,9 +21,14 @@ export function BotRoster() {
   const { data, isLoading, isError } = useBots()
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [distributeOpen, setDistributeOpen] = useState(false)
+  const [removeOpen, setRemoveOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<BotRosterItem | null>(null)
   const [personaTargetIds, setPersonaTargetIds] = useState<number[] | null>(
     null,
+  )
+
+  const selectedBots = (data ?? []).filter((b) =>
+    selectedIds.includes(b.userId),
   )
 
   const toggle = (userId: number) => {
@@ -72,6 +78,13 @@ export function BotRoster() {
                   onClick={() => setPersonaTargetIds(selectedIds)}
                 >
                   페르소나 일괄 지정
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setRemoveOpen(true)}
+                >
+                  선택 제거
                 </Button>
               </div>
             </div>
@@ -172,6 +185,13 @@ export function BotRoster() {
         open={distributeOpen}
         onOpenChange={setDistributeOpen}
         onDistributed={() => setSelectedIds([])}
+      />
+
+      <RemoveBotsDialog
+        bots={selectedBots}
+        open={removeOpen}
+        onOpenChange={setRemoveOpen}
+        onRemoved={() => setSelectedIds([])}
       />
 
       {editTarget && (

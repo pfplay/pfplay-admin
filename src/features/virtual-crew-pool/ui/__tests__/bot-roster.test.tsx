@@ -180,6 +180,49 @@ describe("BotRoster", () => {
     )
   })
 
+  it("idle 봇 선택 → 선택 제거 → 확인 다이얼로그 → 제거 성공 시 선택 해제", async () => {
+    mockRoster()
+    let removeCalled = false
+    server.use(
+      http.post("*/api/v1/admin/virtual-crew/bots/remove", () => {
+        removeCalled = true
+        return HttpResponse.json({ data: { removed: 1, removedUserIds: [2] } })
+      }),
+    )
+    renderRoster()
+    await waitFor(() => expect(screen.getByText("봇둘")).toBeInTheDocument())
+
+    // idle 봇(봇둘) 선택
+    await userEvent.click(screen.getByRole("checkbox", { name: /봇둘 선택/ }))
+    await userEvent.click(screen.getByRole("button", { name: "선택 제거" }))
+
+    const dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByText(/봇 1명 제거/)).toBeInTheDocument()
+    await userEvent.click(within(dialog).getByRole("button", { name: "제거" }))
+
+    await waitFor(() => expect(removeCalled).toBe(true))
+    // 성공 후 선택 해제 → 툴바 사라짐
+    await waitFor(() =>
+      expect(screen.queryByText(/선택: 1명/)).not.toBeInTheDocument(),
+    )
+  })
+
+  it("배치된 봇 선택 시 제거 버튼 비활성 + 경고 노출", async () => {
+    mockRoster()
+    renderRoster()
+    await waitFor(() => expect(screen.getByText("봇하나")).toBeInTheDocument())
+
+    // 배치된 봇(봇하나) 선택
+    await userEvent.click(screen.getByRole("checkbox", { name: /봇하나 선택/ }))
+    await userEvent.click(screen.getByRole("button", { name: "선택 제거" }))
+
+    const dialog = await screen.findByRole("dialog")
+    expect(
+      within(dialog).getByText(/먼저 해당 방을/),
+    ).toBeInTheDocument()
+    expect(within(dialog).getByRole("button", { name: "제거" })).toBeDisabled()
+  })
+
   it("로드 에러 시 안내", async () => {
     server.use(
       http.get("*/api/v1/admin/virtual-crew/bots", () =>

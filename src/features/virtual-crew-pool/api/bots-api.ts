@@ -13,6 +13,11 @@ export interface PersonaApplyResult {
   applied: number
 }
 
+export interface RemoveBotsResult {
+  removed: number
+  removedUserIds: number[]
+}
+
 export async function getBots(): Promise<BotRosterItem[]> {
   const res = await http<ApiCommonResponse<BotRosterItem[]>>(API)
   return unwrap(res)
@@ -57,5 +62,15 @@ export async function unassignPersona(
     `${API}/persona/unassign`,
     { method: "POST", body: { botIds } },
   )
+  return unwrap(res)
+}
+
+export async function removeBots(
+  botUserIds: number[],
+): Promise<RemoveBotsResult> {
+  const res = await http<ApiCommonResponse<RemoveBotsResult>>(`${API}/remove`, {
+    method: "POST",
+    body: { botUserIds },
+  })
   return unwrap(res)
 }
