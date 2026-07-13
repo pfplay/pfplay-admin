@@ -76,10 +76,10 @@ describe("VirtualCrewConfigCard", () => {
     mockLiveStatus({ status: "OFF" })
     renderWithClient(<VirtualCrewConfigCard partyroomId={7} />)
 
-    await screen.findByLabelText("가상 DJ 상태")
+    await screen.findByLabelText("가상 크루 상태")
     expect(screen.queryByLabelText("목표 인원")).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText("가상 DJ 상태"), {
+    fireEvent.change(screen.getByLabelText("가상 크루 상태"), {
       target: { value: "MANAGED" },
     })
     expect(screen.getByLabelText("목표 인원")).toBeInTheDocument()
@@ -92,8 +92,8 @@ describe("VirtualCrewConfigCard", () => {
     mockLiveStatus({ status: "OFF" })
     renderWithClient(<VirtualCrewConfigCard partyroomId={7} />)
 
-    await screen.findByLabelText("가상 DJ 상태")
-    fireEvent.change(screen.getByLabelText("가상 DJ 상태"), {
+    await screen.findByLabelText("가상 크루 상태")
+    fireEvent.change(screen.getByLabelText("가상 크루 상태"), {
       target: { value: "MANAGED" },
     })
     const warn = screen.getByText(/송팩을 선택해야/)
@@ -114,9 +114,9 @@ describe("VirtualCrewConfigCard", () => {
     vi.spyOn(toast, "success").mockImplementation(() => "")
 
     renderWithClient(<VirtualCrewConfigCard partyroomId={7} />)
-    await screen.findByLabelText("가상 DJ 상태")
+    await screen.findByLabelText("가상 크루 상태")
 
-    fireEvent.change(screen.getByLabelText("가상 DJ 상태"), {
+    fireEvent.change(screen.getByLabelText("가상 크루 상태"), {
       target: { value: "MANAGED" },
     })
     fireEvent.change(screen.getByLabelText("목표 인원"), {
@@ -213,7 +213,7 @@ describe("VirtualCrewConfigCard", () => {
     mockLiveStatus({ status: "OFF" })
 
     renderWithClient(<VirtualCrewConfigCard partyroomId={7} />)
-    await screen.findByLabelText("가상 DJ 상태")
+    await screen.findByLabelText("가상 크루 상태")
 
     expect(screen.getByRole("button", { name: "부활" })).toBeDisabled()
     expect(screen.getByRole("button", { name: "리소스 회수" })).toBeDisabled()
@@ -291,7 +291,7 @@ describe("VirtualCrewConfigCard", () => {
     renderWithClient(<VirtualCrewConfigCard partyroomId={7} />)
 
     expect(
-      await screen.findByText(/가상 DJ 상태를 불러오지 못했습니다/),
+      await screen.findByText(/가상 크루 상태를 불러오지 못했습니다/),
     ).toBeInTheDocument()
   })
 })

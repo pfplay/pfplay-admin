@@ -41,7 +41,7 @@ describe("useBulkVirtualCrew", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["partyrooms"] })
-    expect(successSpy).toHaveBeenCalledWith("가상 DJ 일괄 적용 완료 (3건)")
+    expect(successSpy).toHaveBeenCalledWith("가상 크루 일괄 적용 완료 (3건)")
   })
 
   it("on 400 error: does NOT invalidate", async () => {

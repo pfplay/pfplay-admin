@@ -101,7 +101,7 @@ export function VirtualCrewBulkDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>가상 DJ 설정 ({selectedIds.length}건)</DialogTitle>
+          <DialogTitle>가상 크루 설정 ({selectedIds.length}건)</DialogTitle>
           <DialogDescription>
             선택된 ID: <span className="text-foreground">{previewIds}</span>
           </DialogDescription>

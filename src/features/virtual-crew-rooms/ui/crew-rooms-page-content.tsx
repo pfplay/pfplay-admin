@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
+import { ChevronRight } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { usePartyroomsList } from "@/features/partyrooms/api/use-partyrooms-list"
 import { useReplaceVirtualCrew } from "@/features/partyrooms/api/use-replace-virtual-crew"
-import { useDrainVirtualCrew } from "@/features/partyrooms/api/use-drain-virtual-crew"
+import { useDrainResourcesVirtualCrew } from "@/features/partyrooms/api/use-drain-resources-virtual-crew"
 import { VirtualCrewBulkDialog } from "@/features/partyrooms/ui/mutation-dialogs/virtual-crew-bulk-dialog"
 import type { PartyroomsListQuery } from "@/features/partyrooms/model/filter-schema"
 import type { AdminPartyroomListItem } from "@/entities/partyroom"
@@ -33,7 +34,7 @@ function CrewRoomRow({
 }) {
   const vc = room.virtualCrew
   const replace = useReplaceVirtualCrew(room.partyroomId)
-  const drain = useDrainVirtualCrew(room.partyroomId)
+  const drainResources = useDrainResourcesVirtualCrew(room.partyroomId)
   const managed = vc?.status === "MANAGED"
 
   return (
@@ -72,14 +73,16 @@ function CrewRoomRow({
           <Button
             size="sm"
             variant="outline"
-            disabled={!managed || drain.isPending}
-            onClick={() => drain.mutate()}
-            title="봇 전원 회수 (설정 유지)"
+            disabled={!managed || drainResources.isPending}
+            onClick={() => drainResources.mutate()}
+            title="봇 제거하되 운영(운영중) 상태는 유지 — 이후 부활/재배치 가능"
           >
-            드레인
+            리소스 회수
           </Button>
-          <Button asChild size="sm" variant="ghost">
-            <Link to={`/partyrooms/${room.partyroomId}`}>상세</Link>
+          <Button asChild size="sm" variant="secondary">
+            <Link to={`/partyrooms/${room.partyroomId}`} className="gap-1">
+              상세 설정 <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
           </Button>
         </div>
       </TableCell>

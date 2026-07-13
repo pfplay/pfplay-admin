@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/shared/lib/utils"
 import { hideBrokenImage } from "@/shared/lib/hide-broken-image"
 import { useBots } from "../api/use-bots"
 import type { BotRosterItem } from "@/entities/virtual-crew"
@@ -77,10 +78,18 @@ export function BotRoster() {
           )}
 
           <ul className="divide-y rounded-md border">
-            {data.map((bot) => (
+            {data.map((bot) => {
+              const placed = bot.placementRoomId !== null
+              return (
               <li
                 key={bot.userId}
-                className="flex items-center gap-3 px-3 py-2"
+                data-placed={placed}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2",
+                  placed
+                    ? "border-l-2 border-l-emerald-500 bg-emerald-500/10"
+                    : "border-l-2 border-l-transparent",
+                )}
               >
                 <Checkbox
                   aria-label={`${bot.nickname} 선택`}
@@ -116,12 +125,12 @@ export function BotRoster() {
                   <p className="truncate text-sm font-medium">
                     {bot.nickname}
                   </p>
-                  {bot.placementRoomId !== null ? (
+                  {placed ? (
                     <Link
                       to={`/partyrooms/${bot.placementRoomId}`}
-                      className="text-xs text-muted-foreground hover:underline"
+                      className="text-xs font-medium text-emerald-600 hover:underline"
                     >
-                      {bot.placementRoomTitle}
+                      배치됨 · {bot.placementRoomTitle}
                     </Link>
                   ) : (
                     <span className="text-xs text-muted-foreground">
@@ -152,7 +161,8 @@ export function BotRoster() {
                   아바타 변경
                 </Button>
               </li>
-            ))}
+              )
+            })}
           </ul>
         </>
       )}

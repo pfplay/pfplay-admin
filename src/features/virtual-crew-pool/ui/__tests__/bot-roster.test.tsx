@@ -73,13 +73,27 @@ describe("BotRoster", () => {
     expect(screen.getByAltText("봇하나 바디")).toHaveAttribute("src", "body1")
 
     // 배치룸 링크 (placed) vs idle 표시
-    const placedLink = screen.getByRole("link", { name: "메인룸" })
+    const placedLink = screen.getByRole("link", { name: /메인룸/ })
     expect(placedLink).toHaveAttribute("href", "/partyrooms/10")
 
     // 개별 변경 버튼 행마다
     expect(
       screen.getAllByRole("button", { name: "아바타 변경" }),
     ).toHaveLength(2)
+  })
+
+  it("배치된 봇은 미배치 봇과 색상(data-placed)으로 구분된다", async () => {
+    mockRoster()
+    renderRoster()
+    await waitFor(() => expect(screen.getByText("봇하나")).toBeInTheDocument())
+
+    const placedLi = screen.getByText("봇하나").closest("li")
+    const idleLi = screen.getByText("봇둘").closest("li")
+    expect(placedLi).toHaveAttribute("data-placed", "true")
+    expect(idleLi).toHaveAttribute("data-placed", "false")
+    // 배치 봇 행에만 강조 색상(에메랄드) 적용
+    expect(placedLi?.className).toContain("emerald")
+    expect(idleLi?.className).not.toContain("emerald")
   })
 
   it("선택 없으면 일괄 툴바 숨김, 1개 이상 선택 시 노출", async () => {
