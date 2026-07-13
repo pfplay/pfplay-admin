@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, fireEvent } from "@testing-library/react"
 import { MemoryRouter, Routes, Route } from "react-router-dom"
 import AppLayout from "../layout"
 
@@ -54,18 +54,32 @@ describe("AppLayout sidebar", () => {
     expect(avatar).toHaveAttribute("href", "/avatars/bodies")
   })
 
-  it("ADMIN role: 가상 DJ nav 노출 (role 무제한)", () => {
+  it("가상 크루 그룹 부모 nav → 허브(/virtual-crew), role 무제한", () => {
     mockRole = "ADMIN"
     renderLayout()
-    const virtualCrew = screen.getByText("가상 DJ").closest("a")
-    expect(virtualCrew).toHaveAttribute("href", "/virtual-crew/pool")
-  })
+    const parent = screen.getByText("가상 크루").closest("a")
+    expect(parent).toHaveAttribute("href", "/virtual-crew")
 
-  it("SUPER_ADMIN role: 가상 DJ nav 노출 (role 무제한)", () => {
     mockRole = "SUPER_ADMIN"
     renderLayout()
-    const virtualCrew = screen.getByText("가상 DJ").closest("a")
-    expect(virtualCrew).toHaveAttribute("href", "/virtual-crew/pool")
+    const parent2 = screen.getAllByText("가상 크루")[0].closest("a")
+    expect(parent2).toHaveAttribute("href", "/virtual-crew")
+  })
+
+  it("가상 크루 셰브론 클릭 → 하위(봇 풀/송팩/크루 배치) 펼침", () => {
+    mockRole = "ADMIN"
+    renderLayout()
+    // 기본 접힘(현재 경로 '/'): 하위 미노출
+    expect(screen.queryByText("크루 배치")).toBeNull()
+
+    fireEvent.click(screen.getByRole("button", { name: "가상 크루 펼치기" }))
+
+    expect(screen.getByText("봇 풀").closest("a")).toHaveAttribute("href", "/virtual-crew/pool")
+    expect(screen.getByText("송팩").closest("a")).toHaveAttribute(
+      "href",
+      "/virtual-crew/song-packs",
+    )
+    expect(screen.getByText("크루 배치").closest("a")).toHaveAttribute("href", "/virtual-crew/rooms")
   })
 
   it("ADMIN role: '운영 관리' 헤더만 노출, '시스템 관리' 헤더 + 항목 미노출", () => {
