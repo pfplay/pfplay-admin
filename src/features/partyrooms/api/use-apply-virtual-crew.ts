@@ -10,7 +10,7 @@ export function useApplyVirtualCrew(partyroomId: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["virtual-crew", "room", partyroomId] })
       qc.invalidateQueries({ queryKey: ["partyrooms"] })
-      mutationSuccessToast("가상 DJ 설정 적용 완료")
+      mutationSuccessToast("가상 크루 설정 적용 완료")
     },
     onError: mutationErrorToast,
   })

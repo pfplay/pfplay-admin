@@ -41,7 +41,7 @@ describe("useApplyVirtualCrew", () => {
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["virtual-crew", "room", 5] })
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["partyrooms"] })
-    expect(successSpy).toHaveBeenCalledWith("가상 DJ 설정 적용 완료")
+    expect(successSpy).toHaveBeenCalledWith("가상 크루 설정 적용 완료")
   })
 
   it("on 409 error: does NOT invalidate", async () => {

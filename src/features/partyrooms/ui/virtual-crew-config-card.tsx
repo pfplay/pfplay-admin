@@ -97,7 +97,7 @@ export function VirtualCrewConfigCard({ partyroomId }: Props) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>가상 DJ</CardTitle>
+          <CardTitle>가상 크루</CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-24 w-full" />
@@ -110,11 +110,11 @@ export function VirtualCrewConfigCard({ partyroomId }: Props) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>가상 DJ</CardTitle>
+          <CardTitle>가상 크루</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-destructive">
-            가상 DJ 상태를 불러오지 못했습니다.
+            가상 크루 상태를 불러오지 못했습니다.
           </p>
         </CardContent>
       </Card>
@@ -128,7 +128,7 @@ export function VirtualCrewConfigCard({ partyroomId }: Props) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          가상 DJ
+          가상 크루
           <Badge variant={VIRTUAL_CREW_STATUS.variant[live.status] ?? "outline"}>
             {VIRTUAL_CREW_STATUS.label[live.status] ?? live.status}
           </Badge>
@@ -148,7 +148,7 @@ export function VirtualCrewConfigCard({ partyroomId }: Props) {
           <Label htmlFor="vdj-room-status">상태</Label>
           <select
             id="vdj-room-status"
-            aria-label="가상 DJ 상태"
+            aria-label="가상 크루 상태"
             value={status}
             onChange={(e) => setStatus(e.target.value as VirtualCrewStatus)}
             className="border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm"
@@ -259,7 +259,7 @@ export function VirtualCrewConfigCard({ partyroomId }: Props) {
           <DialogHeader>
             <DialogTitle>봇 전부 제거</DialogTitle>
             <DialogDescription>
-              이 파티룸의 가상 DJ 봇을 전부 제거하고 미운영(OFF) 상태로
+              이 파티룸의 가상 크루 봇을 전부 제거하고 미운영(OFF) 상태로
               전환합니다. 운영을 유지한 채 봇만 회수하려면 "리소스 회수"를
               사용하세요.
             </DialogDescription>
@@ -295,7 +295,7 @@ export function VirtualCrewConfigCard({ partyroomId }: Props) {
           <DialogHeader>
             <DialogTitle>봇 재배치</DialogTitle>
             <DialogDescription>
-              이 파티룸의 가상 DJ 봇을 전부 회수한 뒤 현재 설정·송팩 기준으로
+              이 파티룸의 가상 크루 봇을 전부 회수한 뒤 현재 설정·송팩 기준으로
               다시 배치합니다. 송팩 교체/곡 구성 변경을 반영하거나 트랙 분배를
               다시 계산할 때 사용하세요. 운영(운영중) 상태는 유지됩니다.
             </DialogDescription>

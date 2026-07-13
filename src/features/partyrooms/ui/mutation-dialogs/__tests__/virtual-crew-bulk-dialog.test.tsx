@@ -38,7 +38,7 @@ describe("VirtualCrewBulkDialog", () => {
   it("renders title with selection count", () => {
     mockSongPacks()
     renderWithClient(<VirtualCrewBulkDialog {...baseProps} />)
-    expect(screen.getByText(/가상 DJ 설정.*3건/)).toBeInTheDocument()
+    expect(screen.getByText(/가상 크루 설정.*3건/)).toBeInTheDocument()
   })
 
   it("OFF (기본) → target/floor 숨김, 송팩 숨김", () => {
@@ -187,6 +187,6 @@ describe("VirtualCrewBulkDialog", () => {
   it("does not render when open=false", () => {
     mockSongPacks()
     renderWithClient(<VirtualCrewBulkDialog {...baseProps} open={false} />)
-    expect(screen.queryByText(/가상 DJ 설정.*3건/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/가상 크루 설정.*3건/)).not.toBeInTheDocument()
   })
 })

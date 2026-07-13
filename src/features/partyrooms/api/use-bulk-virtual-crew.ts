@@ -9,9 +9,11 @@ export function useBulkVirtualCrew() {
   return useMutation<void, unknown, VirtualCrewBulkRequest>({
     mutationFn: (body) => bulkApplyVirtualCrew(body),
     onSuccess: (_void, variables) => {
-      // 봇 컬럼이 갱신되도록 파티룸 목록 쿼리 invalidate (use-partyrooms-list 와 동일 키 prefix)
+      // 목록(봇 컬럼) + 파티룸 상세의 live 상태(["virtual-crew","room",id]) 양쪽 갱신 —
+      // 그래야 크루 배치에서 일괄 적용한 값이 파티룸 상세 카드와 동기화된다.
       qc.invalidateQueries({ queryKey: ["partyrooms"] })
-      toast.success(`가상 DJ 일괄 적용 완료 (${variables.partyroomIds.length}건)`)
+      qc.invalidateQueries({ queryKey: ["virtual-crew"] })
+      toast.success(`가상 크루 일괄 적용 완료 (${variables.partyroomIds.length}건)`)
     },
     onError: mutationErrorToast,
   })
