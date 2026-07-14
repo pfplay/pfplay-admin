@@ -1,8 +1,15 @@
-import { describe, it, expect, afterEach, vi } from "vitest"
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
 import { MemoryRouter, Route, Routes } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AnnouncementLaunchForm } from "../announcement-launch-form"
+import { createAnnouncement } from "../../api/announcements-api"
+
+// 요청 body 단언을 위해 api 레이어를 모킹 — hook/mutation 은 실제 경로 유지.
+vi.mock("../../api/announcements-api", () => ({
+  createAnnouncement: vi.fn(),
+}))
+const createAnnouncementMock = vi.mocked(createAnnouncement)
 
 function renderForm() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -28,7 +35,33 @@ const futureLocal = (offsetMs: number) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+// 점검 공지 필수 필드를 모두 채워 valid 한 제출 상태로 만든다.
+function fillValidMaintenanceForm() {
+  fireEvent.change(screen.getByLabelText("제목 (한국어)"), {
+    target: { value: "정기 점검" },
+  })
+  fireEvent.change(screen.getByLabelText("제목 (English)"), {
+    target: { value: "Maintenance" },
+  })
+  fireEvent.change(screen.getByLabelText("본문 (한국어)"), {
+    target: { value: "본문" },
+  })
+  fireEvent.change(screen.getByLabelText("본문 (English)"), {
+    target: { value: "Body" },
+  })
+  fireEvent.change(screen.getByLabelText("점검 시작"), {
+    target: { value: futureLocal(60 * 60 * 1000) },
+  })
+  fireEvent.change(screen.getByLabelText("점검 종료"), {
+    target: { value: futureLocal(2 * 60 * 60 * 1000) },
+  })
+}
+
 describe("AnnouncementLaunchForm", () => {
+  beforeEach(() => {
+    createAnnouncementMock.mockReset()
+    createAnnouncementMock.mockResolvedValue({ announcementId: 1 })
+  })
   afterEach(() => vi.restoreAllMocks())
 
   it("초기 상태 — MAINTENANCE_NOTICE 선택, 점검 시작/종료 입력 노출", () => {
@@ -105,6 +138,31 @@ describe("AnnouncementLaunchForm", () => {
     fireEvent.click(screen.getByRole("button", { name: /공지 송출/ }))
     await waitFor(() => {
       expect(screen.getByTestId("history-page")).toBeInTheDocument()
+    })
+  })
+
+  it("Web Push 발송 체크 + 송출 → body.sendPush === true", async () => {
+    renderForm()
+    fillValidMaintenanceForm()
+    fireEvent.click(screen.getByLabelText("Web Push 발송"))
+    fireEvent.click(screen.getByRole("button", { name: /공지 송출/ }))
+    await waitFor(() => {
+      expect(createAnnouncementMock).toHaveBeenCalledTimes(1)
+    })
+    expect(createAnnouncementMock.mock.calls[0][0]).toMatchObject({
+      sendPush: true,
+    })
+  })
+
+  it("기본(미체크) 송출 → body.sendPush === false", async () => {
+    renderForm()
+    fillValidMaintenanceForm()
+    fireEvent.click(screen.getByRole("button", { name: /공지 송출/ }))
+    await waitFor(() => {
+      expect(createAnnouncementMock).toHaveBeenCalledTimes(1)
+    })
+    expect(createAnnouncementMock.mock.calls[0][0]).toMatchObject({
+      sendPush: false,
     })
   })
 })

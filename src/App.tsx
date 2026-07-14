@@ -18,7 +18,8 @@ import { AdministratorsPage } from "@/pages/administrators-page"
 import { AdministratorDetailPage } from "@/pages/administrator-detail-page"
 import { BugReportsPage } from "@/pages/bug-reports-page"
 import { BugReportDetailPage } from "@/pages/bug-report-detail-page"
-import { VirtualDjPage } from "@/pages/virtual-dj-page"
+import { VirtualCrewPage } from "@/pages/virtual-crew-page"
+import { VirtualCrewHubPage } from "@/pages/virtual-crew-hub-page"
 import { SongPackDetailPage } from "@/pages/song-pack-detail-page"
 import { ProtectedRoute } from "@/widgets/protected-route"
 
@@ -45,9 +46,9 @@ export function App() {
         <Route path="/administrators/:administratorId" element={<AdministratorDetailPage />} />
         <Route path="/voc/bug-reports" element={<BugReportsPage />} />
         <Route path="/voc/bug-reports/:bugReportId" element={<BugReportDetailPage />} />
-        <Route path="/virtual-dj" element={<Navigate to="/virtual-dj/pool" replace />} />
-        <Route path="/virtual-dj/:resourceType" element={<VirtualDjPage />} />
-        <Route path="/virtual-dj/song-packs/:packId" element={<SongPackDetailPage />} />
+        <Route path="/virtual-crew" element={<VirtualCrewHubPage />} />
+        <Route path="/virtual-crew/:resourceType" element={<VirtualCrewPage />} />
+        <Route path="/virtual-crew/song-packs/:packId" element={<SongPackDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

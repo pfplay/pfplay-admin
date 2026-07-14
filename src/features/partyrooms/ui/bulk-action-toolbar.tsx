@@ -4,14 +4,14 @@ interface Props {
   selectionSize: number
   onClearSelection: () => void
   onOpenDialog: () => void
-  onOpenVirtualDj: () => void
+  onOpenVirtualCrew: () => void
 }
 
 export function BulkActionToolbar({
   selectionSize,
   onClearSelection,
   onOpenDialog,
-  onOpenVirtualDj,
+  onOpenVirtualCrew,
 }: Props) {
   if (selectionSize === 0) return null
   const overLimit = selectionSize > 100
@@ -33,7 +33,7 @@ export function BulkActionToolbar({
         <Button
           variant="outline"
           size="sm"
-          onClick={onOpenVirtualDj}
+          onClick={onOpenVirtualCrew}
           disabled={overLimit}
         >
           가상 DJ 설정

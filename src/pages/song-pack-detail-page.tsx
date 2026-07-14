@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { SongPackBuilder } from "@/features/virtual-dj-song-packs"
+import { SongPackBuilder } from "@/features/virtual-crew-song-packs"
 
 export function SongPackDetailPage() {
   const { packId } = useParams<{ packId: string }>()
@@ -10,7 +10,7 @@ export function SongPackDetailPage() {
   return (
     <div className="p-6 lg:p-8 space-y-6">
       <Link
-        to="/virtual-dj/song-packs"
+        to="/virtual-crew/song-packs"
         className="inline-block text-sm text-muted-foreground"
       >
         ← 송팩 목록
@@ -24,7 +24,7 @@ export function SongPackDetailPage() {
             존재하지 않는 송팩입니다
           </h2>
           <Button asChild variant="outline">
-            <Link to="/virtual-dj/song-packs">목록으로</Link>
+            <Link to="/virtual-crew/song-packs">목록으로</Link>
           </Button>
         </div>
       )}
