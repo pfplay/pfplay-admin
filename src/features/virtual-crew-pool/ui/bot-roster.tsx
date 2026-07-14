@@ -11,6 +11,7 @@ import { DistributeAvatarsDialog } from "./distribute-avatars-dialog"
 import { SetBotAvatarDialog } from "./set-bot-avatar-dialog"
 import { AssignPersonaDialog } from "./assign-persona-dialog"
 import { RemoveBotsDialog } from "./remove-bots-dialog"
+import { RenameBotDialog } from "./rename-bot-dialog"
 
 /**
  * 봇 전역 로스터 — 행마다 바디 썸네일 + 닉네임 + 배치룸(있으면 링크) + 선택 체크박스 +
@@ -23,6 +24,7 @@ export function BotRoster() {
   const [distributeOpen, setDistributeOpen] = useState(false)
   const [removeOpen, setRemoveOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<BotRosterItem | null>(null)
+  const [renameTarget, setRenameTarget] = useState<BotRosterItem | null>(null)
   const [personaTargetIds, setPersonaTargetIds] = useState<number[] | null>(
     null,
   )
@@ -169,6 +171,13 @@ export function BotRoster() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setRenameTarget(bot)}
+                >
+                  닉네임 변경
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setEditTarget(bot)}
                 >
                   아바타 변경
@@ -193,6 +202,17 @@ export function BotRoster() {
         onOpenChange={setRemoveOpen}
         onRemoved={() => setSelectedIds([])}
       />
+
+      {renameTarget && (
+        <RenameBotDialog
+          userId={renameTarget.userId}
+          nickname={renameTarget.nickname}
+          open={renameTarget !== null}
+          onOpenChange={(next) => {
+            if (!next) setRenameTarget(null)
+          }}
+        />
+      )}
 
       {editTarget && (
         <SetBotAvatarDialog

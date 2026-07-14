@@ -180,6 +180,33 @@ describe("BotRoster", () => {
     )
   })
 
+  it("닉네임 변경 버튼 → 다이얼로그(현재 닉 프리필) → 저장 시 PUT 호출", async () => {
+    mockRoster()
+    let renamed: string | null = null
+    server.use(
+      http.put("*/api/v1/admin/virtual-crew/bots/:userId/nickname", async ({ request }) => {
+        const body = (await request.json()) as { nickname: string }
+        renamed = body.nickname
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    renderRoster()
+    await waitFor(() => expect(screen.getByText("봇하나")).toBeInTheDocument())
+
+    await userEvent.click(
+      screen.getAllByRole("button", { name: "닉네임 변경" })[0],
+    )
+    const dialog = await screen.findByRole("dialog")
+    const input = within(dialog).getByLabelText("닉네임") as HTMLInputElement
+    expect(input.value).toBe("봇하나") // 현재 닉 프리필
+
+    await userEvent.clear(input)
+    await userEvent.type(input, "루나")
+    await userEvent.click(within(dialog).getByRole("button", { name: "저장" }))
+
+    await waitFor(() => expect(renamed).toBe("루나"))
+  })
+
   it("idle 봇 선택 → 선택 제거 → 확인 다이얼로그 → 제거 성공 시 선택 해제", async () => {
     mockRoster()
     let removeCalled = false

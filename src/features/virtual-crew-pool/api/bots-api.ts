@@ -33,6 +33,16 @@ export async function setBotAvatar(
   })
 }
 
+export async function renameBot(
+  userId: number,
+  nickname: string,
+): Promise<void> {
+  await http<void>(`${API}/${userId}/nickname`, {
+    method: "PUT",
+    body: { nickname },
+  })
+}
+
 export async function distributeAvatars(
   botIds: number[],
   bodyUris: string[],
