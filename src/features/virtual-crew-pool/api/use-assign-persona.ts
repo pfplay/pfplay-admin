@@ -3,7 +3,7 @@ import { assignPersona, unassignPersona } from "./bots-api"
 import { mutationErrorToast } from "@/shared/lib/mutation-toast"
 
 interface AssignVars {
-  botIds: number[]
+  botIds: string[]
   personaId: number
 }
 
@@ -24,7 +24,7 @@ export function useAssignPersona() {
 export function useUnassignPersona() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (botIds: number[]) => unassignPersona(botIds),
+    mutationFn: (botIds: string[]) => unassignPersona(botIds),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["virtual-crew", "bots"] })
     },

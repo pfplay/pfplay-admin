@@ -26,7 +26,7 @@ describe("useDistributeAvatars", () => {
         HttpResponse.json(
           {
             data: {
-              assigned: [{ userId: 1, avatarBodyUri: "body://a" }],
+              assigned: [{ userId: "1", avatarBodyUri: "body://a" }],
             },
           },
           { status: 200 },
@@ -35,7 +35,7 @@ describe("useDistributeAvatars", () => {
     )
 
     const { result } = renderHook(() => useDistributeAvatars(), { wrapper })
-    result.current.mutate({ botIds: [1], bodyUris: ["body://a"] })
+    result.current.mutate({ botIds: ["1"], bodyUris: ["body://a"] })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(invalidateSpy).toHaveBeenCalledWith({
@@ -56,7 +56,7 @@ describe("useDistributeAvatars", () => {
     )
 
     const { result } = renderHook(() => useDistributeAvatars(), { wrapper })
-    result.current.mutate({ botIds: [1], bodyUris: ["body://a"] })
+    result.current.mutate({ botIds: ["1"], bodyUris: ["body://a"] })
     await waitFor(() => expect(result.current.isError).toBe(true))
 
     expect(invalidateSpy).not.toHaveBeenCalled()

@@ -29,7 +29,7 @@ describe("useSetBotAvatar", () => {
     )
 
     const { result } = renderHook(() => useSetBotAvatar(), { wrapper })
-    result.current.mutate({ userId: 7, avatarBodyUri: "body://x" })
+    result.current.mutate({ userId: "7", avatarBodyUri: "body://x" })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(invalidateSpy).toHaveBeenCalledWith({
@@ -50,7 +50,7 @@ describe("useSetBotAvatar", () => {
     )
 
     const { result } = renderHook(() => useSetBotAvatar(), { wrapper })
-    result.current.mutate({ userId: 7, avatarBodyUri: "body://x" })
+    result.current.mutate({ userId: "7", avatarBodyUri: "body://x" })
     await waitFor(() => expect(result.current.isError).toBe(true))
 
     expect(invalidateSpy).not.toHaveBeenCalled()

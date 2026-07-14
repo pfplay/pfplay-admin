@@ -12,7 +12,7 @@ import {
 export function useRemoveBots() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (botUserIds: number[]) => removeBots(botUserIds),
+    mutationFn: (botUserIds: string[]) => removeBots(botUserIds),
     onSuccess: (result) => {
       mutationSuccessToast(`봇 ${result.removed}명을 제거했습니다.`)
       qc.invalidateQueries({ queryKey: ["virtual-crew"] })

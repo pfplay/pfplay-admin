@@ -20,12 +20,12 @@ import { RenameBotDialog } from "./rename-bot-dialog"
  */
 export function BotRoster() {
   const { data, isLoading, isError } = useBots()
-  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [distributeOpen, setDistributeOpen] = useState(false)
   const [removeOpen, setRemoveOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<BotRosterItem | null>(null)
   const [renameTarget, setRenameTarget] = useState<BotRosterItem | null>(null)
-  const [personaTargetIds, setPersonaTargetIds] = useState<number[] | null>(
+  const [personaTargetIds, setPersonaTargetIds] = useState<string[] | null>(
     null,
   )
 
@@ -33,7 +33,7 @@ export function BotRoster() {
     selectedIds.includes(b.userId),
   )
 
-  const toggle = (userId: number) => {
+  const toggle = (userId: string) => {
     setSelectedIds((prev) =>
       prev.includes(userId)
         ? prev.filter((id) => id !== userId)

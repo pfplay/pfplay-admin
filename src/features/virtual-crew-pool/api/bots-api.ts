@@ -6,7 +6,8 @@ import type { BotRosterItem } from "@/entities/virtual-crew"
 const API = "/api/v1/admin/virtual-crew/bots"
 
 export interface DistributeResult {
-  assigned: { userId: number; avatarBodyUri: string }[]
+  // userId 는 TSID(문자열) — JS 정밀도 손실 방지
+  assigned: { userId: string; avatarBodyUri: string }[]
 }
 
 export interface PersonaApplyResult {
@@ -15,7 +16,7 @@ export interface PersonaApplyResult {
 
 export interface RemoveBotsResult {
   removed: number
-  removedUserIds: number[]
+  removedUserIds: string[]
 }
 
 export async function getBots(): Promise<BotRosterItem[]> {
@@ -24,7 +25,7 @@ export async function getBots(): Promise<BotRosterItem[]> {
 }
 
 export async function setBotAvatar(
-  userId: number,
+  userId: string,
   avatarBodyUri: string,
 ): Promise<void> {
   await http<void>(`${API}/${userId}/avatar`, {
@@ -34,7 +35,7 @@ export async function setBotAvatar(
 }
 
 export async function renameBot(
-  userId: number,
+  userId: string,
   nickname: string,
 ): Promise<void> {
   await http<void>(`${API}/${userId}/nickname`, {
@@ -44,7 +45,7 @@ export async function renameBot(
 }
 
 export async function distributeAvatars(
-  botIds: number[],
+  botIds: string[],
   bodyUris: string[],
 ): Promise<DistributeResult> {
   const res = await http<ApiCommonResponse<DistributeResult>>(
@@ -55,7 +56,7 @@ export async function distributeAvatars(
 }
 
 export async function assignPersona(
-  botIds: number[],
+  botIds: string[],
   personaId: number,
 ): Promise<PersonaApplyResult> {
   const res = await http<ApiCommonResponse<PersonaApplyResult>>(
@@ -66,7 +67,7 @@ export async function assignPersona(
 }
 
 export async function unassignPersona(
-  botIds: number[],
+  botIds: string[],
 ): Promise<PersonaApplyResult> {
   const res = await http<ApiCommonResponse<PersonaApplyResult>>(
     `${API}/persona/unassign`,
@@ -76,7 +77,7 @@ export async function unassignPersona(
 }
 
 export async function removeBots(
-  botUserIds: number[],
+  botUserIds: string[],
 ): Promise<RemoveBotsResult> {
   const res = await http<ApiCommonResponse<RemoveBotsResult>>(`${API}/remove`, {
     method: "POST",
