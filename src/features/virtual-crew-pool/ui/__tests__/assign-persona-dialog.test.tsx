@@ -24,7 +24,7 @@ function renderDialog() {
   })
   return render(
     <QueryClientProvider client={qc}>
-      <AssignPersonaDialog botIds={[1, 2]} open onOpenChange={() => {}} />
+      <AssignPersonaDialog botIds={["1", "2"]} open onOpenChange={() => {}} />
     </QueryClientProvider>,
   )
 }

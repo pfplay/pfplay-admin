@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { useRenameBot } from "../api/use-rename-bot"
 
 interface Props {
-  userId: number
+  userId: string
   nickname: string
   open: boolean
   onOpenChange: (open: boolean) => void

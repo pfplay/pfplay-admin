@@ -70,7 +70,9 @@ export interface AvatarCatalogItem {
 }
 
 export interface BotRosterItem {
-  userId: number
+  // TSID(2^53 초과)라 JSON 숫자로 받으면 JS 정밀도가 손실된다. 백엔드가 문자열로 내려주며
+  // 어드민도 문자열로 취급해 변형 없이 그대로 mutation 요청에 되싣는다.
+  userId: string
   nickname: string
   avatarBodyUri: string
   avatarIconUri: string

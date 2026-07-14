@@ -13,7 +13,7 @@ import { useSetBotAvatar } from "../api/use-set-bot-avatar"
 import { AvatarPicker } from "./avatar-picker"
 
 interface Props {
-  userId: number
+  userId: string
   nickname: string
   open: boolean
   onOpenChange: (open: boolean) => void

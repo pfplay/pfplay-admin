@@ -15,7 +15,7 @@ import { AvatarPicker } from "./avatar-picker"
 
 interface Props {
   /** 일괄 배분 대상 봇 userId 목록 */
-  botIds: number[]
+  botIds: string[]
   open: boolean
   onOpenChange: (open: boolean) => void
   /** 배분 성공(invalidate 후) 시 호출 — 부모가 선택 해제 등 처리 */

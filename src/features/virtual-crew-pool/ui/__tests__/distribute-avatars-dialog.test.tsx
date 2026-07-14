@@ -34,7 +34,7 @@ function mockCatalog() {
 function renderDialog(props: {
   open?: boolean
   onOpenChange?: (o: boolean) => void
-  botIds?: number[]
+  botIds?: string[]
 }) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -44,7 +44,7 @@ function renderDialog(props: {
       <DistributeAvatarsDialog
         open={props.open ?? true}
         onOpenChange={props.onOpenChange ?? (() => {})}
-        botIds={props.botIds ?? [1, 2]}
+        botIds={props.botIds ?? ["1", "2"]}
       />
     </QueryClientProvider>,
   )
@@ -69,15 +69,15 @@ describe("DistributeAvatarsDialog", () => {
           return HttpResponse.json({
             data: {
               assigned: [
-                { userId: 1, avatarBodyUri: "u1" },
-                { userId: 2, avatarBodyUri: "u2" },
+                { userId: "1", avatarBodyUri: "u1" },
+                { userId: "2", avatarBodyUri: "u2" },
               ],
             },
           })
         },
       ),
     )
-    renderDialog({ botIds: [1, 2] })
+    renderDialog({ botIds: ["1", "2"] })
     await waitFor(() => expect(screen.getByText("바디 1")).toBeInTheDocument())
 
     await userEvent.click(screen.getByRole("button", { name: /바디 1/ }))
@@ -85,7 +85,7 @@ describe("DistributeAvatarsDialog", () => {
     await userEvent.click(screen.getByRole("button", { name: /배분/ }))
 
     await waitFor(() => expect(captured).not.toBeNull())
-    expect(captured).toEqual({ botIds: [1, 2], bodyUris: ["u1", "u2"] })
+    expect(captured).toEqual({ botIds: ["1", "2"], bodyUris: ["u1", "u2"] })
 
     // 결과 요약 표기
     await waitFor(() =>
@@ -102,12 +102,12 @@ describe("DistributeAvatarsDialog", () => {
         "*/api/v1/admin/virtual-crew/bots/avatar/distribute",
         () =>
           HttpResponse.json({
-            data: { assigned: [{ userId: 1, avatarBodyUri: "u1" }] },
+            data: { assigned: [{ userId: "1", avatarBodyUri: "u1" }] },
           }),
       ),
     )
     const onOpenChange = vi.fn()
-    renderDialog({ botIds: [1], onOpenChange })
+    renderDialog({ botIds: ["1"], onOpenChange })
     await waitFor(() => expect(screen.getByText("바디 1")).toBeInTheDocument())
     await userEvent.click(screen.getByRole("button", { name: /바디 1/ }))
     await userEvent.click(screen.getByRole("button", { name: /배분/ }))

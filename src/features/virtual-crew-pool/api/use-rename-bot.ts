@@ -6,7 +6,7 @@ import {
 } from "@/shared/lib/mutation-toast"
 
 interface RenameVars {
-  userId: number
+  userId: string
   nickname: string
 }
 

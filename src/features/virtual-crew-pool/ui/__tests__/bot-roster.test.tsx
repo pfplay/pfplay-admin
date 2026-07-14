@@ -9,7 +9,7 @@ import { BotRoster } from "../bot-roster"
 
 const ROSTER = [
   {
-    userId: 1,
+    userId: "864530440482800637",
     nickname: "봇하나",
     avatarBodyUri: "body1",
     avatarIconUri: "icon1",
@@ -17,7 +17,7 @@ const ROSTER = [
     placementRoomTitle: "메인룸",
   },
   {
-    userId: 2,
+    userId: "864530440482800638",
     nickname: "봇둘",
     avatarBodyUri: "body2",
     avatarIconUri: "icon2",
@@ -152,7 +152,7 @@ describe("BotRoster", () => {
         "*/api/v1/admin/virtual-crew/bots/avatar/distribute",
         () =>
           HttpResponse.json({
-            data: { assigned: [{ userId: 1, avatarBodyUri: "u1" }] },
+            data: { assigned: [{ userId: "864530440482800637", avatarBodyUri: "u1" }] },
           }),
       ),
     )
@@ -213,7 +213,7 @@ describe("BotRoster", () => {
     server.use(
       http.post("*/api/v1/admin/virtual-crew/bots/remove", () => {
         removeCalled = true
-        return HttpResponse.json({ data: { removed: 1, removedUserIds: [2] } })
+        return HttpResponse.json({ data: { removed: 1, removedUserIds: ["864530440482800638"] } })
       }),
     )
     renderRoster()
