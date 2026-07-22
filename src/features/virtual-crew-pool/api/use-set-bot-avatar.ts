@@ -3,7 +3,7 @@ import { setBotAvatar } from "./bots-api"
 import { mutationErrorToast } from "@/shared/lib/mutation-toast"
 
 interface SetBotAvatarVars {
-  userId: number
+  userId: string
   avatarBodyUri: string
 }
 

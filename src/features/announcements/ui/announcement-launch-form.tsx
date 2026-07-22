@@ -44,7 +44,8 @@ interface FormState {
 
 const INITIAL: FormState = {
   type: "MAINTENANCE_NOTICE",
-  severity: "WARN",
+  // #37 기본 심각도는 '정보' — 대부분의 공지가 정보성이므로 WARN 기본값은 과함
+  severity: "INFO",
   titleKo: "",
   titleEn: "",
   messageKo: "",

@@ -10,14 +10,19 @@ import {
 } from "../bots-api"
 import { ApiError } from "@/shared/api/error"
 
+// TSID(2^53 초과) — 문자열로 왕복하지 않으면 JS number 정밀도가 손실되는 실제 규모의 id.
+const BOT_A = "864530440482800637"
+const BOT_B = "864530440482800638"
+const BOT_C = "864530440482800639"
+
 describe("bots-api", () => {
-  it("getBots — GET 로스터 unwrap", async () => {
+  it("getBots — GET 로스터 unwrap (userId 문자열 유지)", async () => {
     server.use(
       http.get("*/api/v1/admin/virtual-crew/bots", () =>
         HttpResponse.json({
           data: [
             {
-              userId: 101,
+              userId: BOT_A,
               nickname: "봇하나",
               avatarBodyUri: "https://cdn/body_001.png",
               avatarIconUri: "https://cdn/icon_001.png",
@@ -25,7 +30,7 @@ describe("bots-api", () => {
               placementRoomTitle: "메인",
             },
             {
-              userId: 102,
+              userId: BOT_B,
               nickname: "봇둘",
               avatarBodyUri: "https://cdn/body_002.png",
               avatarIconUri: "https://cdn/icon_002.png",
@@ -39,7 +44,7 @@ describe("bots-api", () => {
     const r = await getBots()
     expect(r).toHaveLength(2)
     expect(r[0]).toEqual({
-      userId: 101,
+      userId: BOT_A,
       nickname: "봇하나",
       avatarBodyUri: "https://cdn/body_001.png",
       avatarIconUri: "https://cdn/icon_001.png",
@@ -49,7 +54,7 @@ describe("bots-api", () => {
     expect(r[1].placementRoomId).toBeNull()
   })
 
-  it("setBotAvatar — PUT {userId}/avatar body {avatarBodyUri}, 204", async () => {
+  it("setBotAvatar — PUT {userId}/avatar body {avatarBodyUri}, 204 (대형 TSID URL 무손실)", async () => {
     let urlSeen = ""
     let bodySeen: unknown
     server.use(
@@ -63,9 +68,9 @@ describe("bots-api", () => {
       ),
     )
     await expect(
-      setBotAvatar(101, "https://cdn/body_003.png"),
+      setBotAvatar(BOT_A, "https://cdn/body_003.png"),
     ).resolves.toBeUndefined()
-    expect(urlSeen).toBe("101")
+    expect(urlSeen).toBe(BOT_A)
     expect(bodySeen).toEqual({ avatarBodyUri: "https://cdn/body_003.png" })
   })
 
@@ -79,8 +84,8 @@ describe("bots-api", () => {
           return HttpResponse.json({
             data: {
               assigned: [
-                { userId: 101, avatarBodyUri: "https://cdn/body_001.png" },
-                { userId: 102, avatarBodyUri: "https://cdn/body_002.png" },
+                { userId: BOT_A, avatarBodyUri: "https://cdn/body_001.png" },
+                { userId: BOT_B, avatarBodyUri: "https://cdn/body_002.png" },
               ],
             },
           })
@@ -88,16 +93,16 @@ describe("bots-api", () => {
       ),
     )
     const r = await distributeAvatars(
-      [101, 102],
+      [BOT_A, BOT_B],
       ["https://cdn/body_001.png", "https://cdn/body_002.png"],
     )
     expect(bodySeen).toEqual({
-      botIds: [101, 102],
+      botIds: [BOT_A, BOT_B],
       bodyUris: ["https://cdn/body_001.png", "https://cdn/body_002.png"],
     })
     expect(r.assigned).toHaveLength(2)
     expect(r.assigned[0]).toEqual({
-      userId: 101,
+      userId: BOT_A,
       avatarBodyUri: "https://cdn/body_001.png",
     })
   })
@@ -125,8 +130,8 @@ describe("bots-api", () => {
         },
       ),
     )
-    const r = await assignPersona([101, 102], 7)
-    expect(bodySeen).toEqual({ botIds: [101, 102], personaId: 7 })
+    const r = await assignPersona([BOT_A, BOT_B], 7)
+    expect(bodySeen).toEqual({ botIds: [BOT_A, BOT_B], personaId: 7 })
     expect(r.applied).toBe(2)
   })
 
@@ -141,8 +146,8 @@ describe("bots-api", () => {
         },
       ),
     )
-    const r = await unassignPersona([101, 102, 103])
-    expect(bodySeen).toEqual({ botIds: [101, 102, 103] })
+    const r = await unassignPersona([BOT_A, BOT_B, BOT_C])
+    expect(bodySeen).toEqual({ botIds: [BOT_A, BOT_B, BOT_C] })
     expect(r.applied).toBe(3)
   })
 
@@ -155,6 +160,6 @@ describe("bots-api", () => {
         ),
       ),
     )
-    await expect(assignPersona([101], 999)).rejects.toBeInstanceOf(ApiError)
+    await expect(assignPersona([BOT_A], 999)).rejects.toBeInstanceOf(ApiError)
   })
 })

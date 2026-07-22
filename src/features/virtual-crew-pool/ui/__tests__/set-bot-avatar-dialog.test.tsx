@@ -34,7 +34,7 @@ function mockCatalog() {
 function renderDialog(props: {
   open?: boolean
   onOpenChange?: (o: boolean) => void
-  userId?: number
+  userId?: string
   nickname?: string
 }) {
   const qc = new QueryClient({
@@ -45,7 +45,7 @@ function renderDialog(props: {
       <SetBotAvatarDialog
         open={props.open ?? true}
         onOpenChange={props.onOpenChange ?? (() => {})}
-        userId={props.userId ?? 7}
+        userId={props.userId ?? "864530440482800637"}
         nickname={props.nickname ?? "봇세븐"}
       />
     </QueryClientProvider>,
@@ -73,14 +73,14 @@ describe("SetBotAvatarDialog", () => {
       ),
     )
     const onOpenChange = vi.fn()
-    renderDialog({ userId: 42, onOpenChange })
+    renderDialog({ userId: "864530440482800637", onOpenChange })
     await waitFor(() => expect(screen.getByText("바디 1")).toBeInTheDocument())
 
     await userEvent.click(screen.getByRole("button", { name: /바디 1/ }))
     await userEvent.click(screen.getByRole("button", { name: /적용/ }))
 
     await waitFor(() => expect(captured).not.toBeNull())
-    expect(captured!.url).toContain("/bots/42/avatar")
+    expect(captured!.url).toContain("/bots/864530440482800637/avatar")
     expect(captured!.body).toEqual({ avatarBodyUri: "u1" })
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false))
   })

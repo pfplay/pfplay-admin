@@ -28,7 +28,7 @@ describe("useAssignPersona", () => {
     )
 
     const { result } = renderHook(() => useAssignPersona(), { wrapper })
-    result.current.mutate({ botIds: [1, 2], personaId: 5 })
+    result.current.mutate({ botIds: ["1", "2"], personaId: 5 })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(invalidateSpy).toHaveBeenCalledWith({
@@ -49,7 +49,7 @@ describe("useAssignPersona", () => {
     )
 
     const { result } = renderHook(() => useAssignPersona(), { wrapper })
-    result.current.mutate({ botIds: [1, 2], personaId: 5 })
+    result.current.mutate({ botIds: ["1", "2"], personaId: 5 })
     await waitFor(() => expect(result.current.isError).toBe(true))
 
     expect(invalidateSpy).not.toHaveBeenCalled()
@@ -69,7 +69,7 @@ describe("useUnassignPersona", () => {
     )
 
     const { result } = renderHook(() => useUnassignPersona(), { wrapper })
-    result.current.mutate([1, 2])
+    result.current.mutate(["1", "2"])
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
     expect(invalidateSpy).toHaveBeenCalledWith({
@@ -90,7 +90,7 @@ describe("useUnassignPersona", () => {
     )
 
     const { result } = renderHook(() => useUnassignPersona(), { wrapper })
-    result.current.mutate([1, 2])
+    result.current.mutate(["1", "2"])
     await waitFor(() => expect(result.current.isError).toBe(true))
 
     expect(invalidateSpy).not.toHaveBeenCalled()

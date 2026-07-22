@@ -87,6 +87,13 @@ describe("AnnouncementLaunchForm", () => {
     expect(critical.getAttribute("aria-checked")).toBe("true")
   })
 
+  it("#37 심각도 기본 선택값은 '정보(INFO)'", () => {
+    renderForm()
+    expect(screen.getByRole("radio", { name: "정보" }).getAttribute("aria-checked")).toBe("true")
+    expect(screen.getByRole("radio", { name: "경고" }).getAttribute("aria-checked")).toBe("false")
+    expect(screen.getByRole("radio", { name: "위급" }).getAttribute("aria-checked")).toBe("false")
+  })
+
   it("빈 form 제출 — i18n 필수 메시지 노출 (한쪽만 작성 차단)", () => {
     renderForm()
     fireEvent.click(screen.getByRole("button", { name: /공지 송출/ }))

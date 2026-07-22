@@ -3,7 +3,7 @@ import { distributeAvatars } from "./bots-api"
 import { mutationErrorToast } from "@/shared/lib/mutation-toast"
 
 interface DistributeVars {
-  botIds: number[]
+  botIds: string[]
   bodyUris: string[]
 }
 
